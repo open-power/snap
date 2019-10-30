@@ -367,7 +367,7 @@ Component capi_bsp_wrap
 
     gold_factory        : in  std_logic;
     pci_user_reset      : out std_logic;                   --PCI hip user_reset signal if required
-    pci_clock_125MHz    : out std_logic                   --125MHz clock if required
+    pci_clock_125MHz    : out std_logic                    --125MHz clock if required
   );
 
 END Component capi_bsp_wrap;

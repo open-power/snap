@@ -49,11 +49,6 @@ ifeq "$(CAPI20)" "y"
 else
 	export CAPI_VER=capi10
 endif
-ifeq "$(FPGACARD)" "AD9H3"
-	export HBM_USED="TRUE"
-else
-	export HBM_USED="FALSE"
-endif
 
 export DCP_ROOT ?= $(SNAP_ROOT)/dcp
 
@@ -448,6 +443,8 @@ nosim:
 	@echo -e "[BUILD $@ MODEL....] start `date +"%T %a %b %d %Y"`"
 	@echo -e "                        Info: Not building a simulation model, since SIMULATOR is set to \"nosim\"";
 	@echo -e "[BUILD $@ MODEL....] done  `date +"%T %a %b %d %Y"`"
+	@echo "-----------"
+	@echo "  Suggested next step: to run a simulation, execute: make sim"
 
 $(SNAP_SIMULATORS): check_nvme .hw_project_done app
 	@if [ "$(SIMULATOR)" != "$@" ]; then \
@@ -467,6 +464,8 @@ $(SNAP_SIMULATORS): check_nvme .hw_project_done app
 		fi
 	@touch .model_$@
 	@echo -e "[BUILD $@ MODEL....] done  `date +"%T %a %b %d %Y"`"
+	@echo "-----------"
+	@echo "  Suggested next step: to run a simulation, execute: make sim"
 
 $(SNAP_MODELS):
 	@$(MAKE) -s $(subst .model_,,$@)
@@ -480,6 +479,8 @@ sim: check_simulator
 	@echo "                        SIMULATOR is set to $(SIMULATOR)"
 	@if [ "$(SIMULATOR)" != "nosim" ]; then cd sim; ./run_sim; fi
 	@echo -e "[SIMULATION........] done  `date +"%T %a %b %d %Y"`"
+	@echo "-----------"
+	@echo "  Suggested next step: to display waveforms, execute: ./snap_trace"
 
 sim_tmux:
 	@tmux new-session "$(MAKE) -s sim"

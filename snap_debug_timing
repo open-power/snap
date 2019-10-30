@@ -1,18 +1,26 @@
-if [ -f ./hardware/build/Reports/timing_summary.rpt ]; then \
+#!/bin/bash
+FILE="./hardware/build/Reports/timing_summary.rpt"
+if [ -f $FILE ]; then \
+	TEXT="Timing constraints are not met"
+ 	MAX_VIOLATION=`grep -B3 "$TEXT" "$FILE" | awk '{print $1}' | head -n 1`
+	LINE=`grep -A1 -n VIOL "$FILE"|grep -m1 -e "$MAX_VIOLATION" | cut -d ':' -f 1`
 	echo "-------------------------------------------------------------------"
-	echo "-------------- DISPLAY the 10 first timing violations -------------"
+	echo "-------------- DISPLAY the 10 worst timing violations -------------"
 	echo "-------------------------------------------------------------------"
-	grep -A1 -m10 VIOL hardware/build/Reports/timing_summary.rpt
+	#grep -A1 -m10 VIOL hardware/build/Reports/timing_summary.rpt
+	tail -n +"$LINE" "$FILE" | grep -A1 -m10 VIOL
 	echo "-------------------------------------------------------------------"
 	echo "-      =>  Few options to solve these timing violations <=        -"
 	echo "- c0 signals are related to BSP/PSL logic                         -"
 	echo "-    There is not a lot you can do in the logic, but ....         -"
 	echo "-    Not a FPGA expert? => retry a make image                     -"
+	echo "-                   or  => use Kconfig menu to select derated clk -"
 	echo "-    FPGA expert? => change placement constraints of the PSL/BSP  -"
 	echo "- a0 signals are related to SNAP or Action logic                  -"
 	echo "-    There should be a way to solve that in the logic             -"
 	echo "-    You can first retry a make image (a new placement may work)  -"
 	echo "-    Try changing the way you have coded the logic of your action -"
+	echo "-    or use Kconfig menu to try and decrease the HLS clock period -"
 	echo "-    The path listed above should show you the function to change -"
 	echo "-------------------------------------------------------------------"
 else

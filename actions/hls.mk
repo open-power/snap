@@ -112,7 +112,7 @@ check: $(syn_dir)
 	@grep -A8 CRITICAL vivado_hls.log;  \
 		test $$? = 1 
 	@echo "OK"
-	@if [ $(HLS_ACTION_CLOCK) == $(HLS_ACTION_CLOCK_DEFAULT) ]; then                \
+	@if [ "$(HLS_ACTION_CLOCK)" = "$(HLS_ACTION_CLOCK_DEFAULT)" ]; then                \
 		echo -n "   Checking for critical timings during HLS synthesis  .... ";    \
         	grep -A8 critical vivado_hls.log;     \
 		if [ $$? -eq 0 ]; then \

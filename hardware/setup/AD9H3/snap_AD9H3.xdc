@@ -36,15 +36,15 @@ set_false_path -from [get_ports *pci_pi_nperst0]
 #set_false_path -from [get_pins {*/XSL9_WRAP/XSL9/RGS/XSL_PARAM_CG_PARREG_RGS_10/gr_data_ff_reg[*]*/C}]
 #set_false_path -from [get_pins {*/XSL9_WRAP/XSL9/RGS/XSL_PARAM_CG_PARREG_RGS_18/gr_data_ff_reg[*]*/C}]
 
-
-set_max_delay -datapath_only -from [get_clocks -of_objects [get_nets pcihip0_psl_clk]] -to [get_clocks -of_objects [get_nets psl_clk]]         4.000
-set_max_delay -datapath_only -from [get_clocks -of_objects [get_nets psl_clk]]         -to [get_clocks -of_objects [get_nets pcihip0_psl_clk]] 4.000
+# no valid objects found from the clocks of 2 lines below => commenting them
+#set_max_delay -datapath_only -from [get_clocks -of_objects [get_nets pcihip0_psl_clk]] -to [get_clocks -of_objects [get_nets psl_clk]]         4.000
+#set_max_delay -datapath_only -from [get_clocks -of_objects [get_nets psl_clk]]         -to [get_clocks -of_objects [get_nets pcihip0_psl_clk]] 4.000
 
 # Set the 300MHz clk for HBM_REF_CLK and APB_CLK
 create_clock -period 3.332 -name refclk300_p  [get_ports refclk300_p ]
 #create_clock -period 3.333 -name refclk [get_ports {refclk300_p}]
-set_property PACKAGE_PIN AY31 [get_ports {refclk300_p}]
-set_property PACKAGE_PIN BA31 [get_ports {refclk300_n}]
+set_property PACKAGE_PIN AY31 [get_ports {refclk300_n}]
+set_property PACKAGE_PIN BA31 [get_ports {refclk300_p}]
 
 set_property IOSTANDARD LVDS [get_ports {refclk300_p}]
 set_property IOSTANDARD LVDS [get_ports {refclk300_n}]
@@ -52,8 +52,11 @@ set_property IOSTANDARD LVDS [get_ports {refclk300_n}]
 set_property DIFF_TERM_ADV TERM_100 [get_ports {refclk300_p}]
 set_property DIFF_TERM_ADV TERM_100 [get_ports {refclk300_n}]
 
-
-
+#Bug Vivado AR#72607 corrected by 2 following lines -- not corrected yet in 2019.2
+#ERROR: [Chipscope 16-213] The debug port 'dbg_hub/clk' has 1 unconnected channels (bits). This will cause errors during implementation
+set_property C_USER_SCAN_CHAIN 1 [get_debug_cores dbg_hub]
+connect_debug_port dbg_hub/clk [get_bd_pins */APB_0_PCLK]
+#
 
 #from capi_bsp_io.xdc
 #Alpha Data 9H3 I/O constraints

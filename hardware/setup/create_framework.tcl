@@ -229,28 +229,31 @@ if { $hbm_used == TRUE } {
 #  Following line modified to support metalfs:
 #  set_property  ip_repo_paths $hdl_dir/hbm/ [current_project]
   set_property  ip_repo_paths [concat [get_property ip_repo_paths [current_project]] $hdl_dir/hbm/] [current_project] 
+  add_files -norecurse                          $ip_dir/hbm/hbm.srcs/sources_1/bd/hbm_top/hdl/hbm_top_wrapper.vhd >> $log_file
   update_ip_catalog  >> $log_file
+
+#============
+  add_files -scan_for_includes $hdl_dir/hbm/  >> $log_file
+  import_files  $hdl_dir/hbm/
+
+  #add_files -scan_for_includes { $hdl_dir/hbm/refclk_bufg_div4.vhd $hdl_dir/hbm/reset_sync.vhd $hdl_dir/hbm/refclk_bufg_div3.vhd }
+  #import_files { $hdl_dir/hbm/refclk_bufg_div4.vhd $hdl_dir/hbm/reset_sync.vhd $hdl_dir/hbm/refclk_bufg_div3.vhd }
+  update_compile_order -fileset sources_1
+#============
+
+
   add_files -norecurse                          $ip_dir/hbm/hbm.srcs/sources_1/bd/hbm_top/hbm_top.bd  >> $log_file
   export_ip_user_files -of_objects  [get_files  $ip_dir/hbm/hbm.srcs/sources_1/bd/hbm_top/hbm_top.bd] -lib_map_path [list {{ies=$root_dir/viv_project/framework.cache/compile_simlib/ies}}] -no_script -sync -force -quiet
 
-#  if { $denali_used == TRUE } {
-#    puts "                        adding NVMe Denali simulation files"
-#    add_files -fileset sim_1 -scan_for_includes $sim_dir/hbm
-#    add_files -fileset sim_1 -scan_for_includes $ip_dir/hbm/axi_pcie3_0_ex/imports/xil_sig2pipe.v
-#
-#    set denali $::env(DENALI)
-#    add_files -fileset sim_1 -norecurse -scan_for_includes $denali/ddvapi/verilog/denaliPcie.v
-#    set_property include_dirs                              $denali/ddvapi/verilog [get_filesets sim_1]
-#  } else {
-#    puts "                        adding HBM Verilog simulation files"
-#    set_property used_in_simulation false [get_files  $ip_dir/hbm/hbm.srcs/sources_1/bd/hbm_top/hbm_top.bd]
+  puts "                        adding HBM Verilog simulation files"
+  set_property used_in_simulation false [get_files  $ip_dir/hbm/hbm.srcs/sources_1/bd/hbm_top/hbm_top.bd]
 #    add_files -fileset sim_1 -norecurse $sim_dir/hbm_lite
 #    add_files -fileset sim_1 -norecurse $hdl_dir/hbm/hbm_defines.sv
 #    set_property file_type {Verilog Header} [get_files $sim_dir/hbm_lite/snap_config.sv]
 #    set_property file_type {Verilog Header} [get_files $hdl_dir/hbm/hbm_defines.sv]
-#  }
 } else {
-  remove_files $action_hw_dir/action_axi_hbm.vhd -quiet
+  puts "                        removing HBM block design"
+  #remove_files $action_hw_dir/action_axi_hbm.vhd -quiet
 }
 
 # Add NVME
