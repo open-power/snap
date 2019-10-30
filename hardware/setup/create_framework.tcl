@@ -235,9 +235,6 @@ if { $hbm_used == TRUE } {
 #============
   add_files -scan_for_includes $hdl_dir/hbm/  >> $log_file
   import_files  $hdl_dir/hbm/
-
-  #add_files -scan_for_includes { $hdl_dir/hbm/refclk_bufg_div4.vhd $hdl_dir/hbm/reset_sync.vhd $hdl_dir/hbm/refclk_bufg_div3.vhd }
-  #import_files { $hdl_dir/hbm/refclk_bufg_div4.vhd $hdl_dir/hbm/reset_sync.vhd $hdl_dir/hbm/refclk_bufg_div3.vhd }
   update_compile_order -fileset sources_1
 #============
 
@@ -247,10 +244,66 @@ if { $hbm_used == TRUE } {
 
   puts "                        adding HBM Verilog simulation files"
   set_property used_in_simulation false [get_files  $ip_dir/hbm/hbm.srcs/sources_1/bd/hbm_top/hbm_top.bd]
-#    add_files -fileset sim_1 -norecurse $sim_dir/hbm_lite
-#    add_files -fileset sim_1 -norecurse $hdl_dir/hbm/hbm_defines.sv
-#    set_property file_type {Verilog Header} [get_files $sim_dir/hbm_lite/snap_config.sv]
-#    set_property file_type {Verilog Header} [get_files $hdl_dir/hbm/hbm_defines.sv]
+#===========
+  # Create 'sim_1' fileset
+  #set sim_set [get_filesets sim_1]
+
+  set sim_files [list \
+    [file normalize "$sim_dir/hbm/board.v"] \
+    [file normalize "$sim_dir/hbm/board_common.vh"] \
+    [file normalize "$sim_dir/hbm/pci_exp_expect_tasks.vh"] \
+    [file normalize "$sim_dir/hbm/pcie_4_0_rp.v"] \
+    [file normalize "$sim_dir/hbm/sample_tests.vh"] \
+    [file normalize "$sim_dir/hbm/sys_clk_gen.v"] \
+    [file normalize "$sim_dir/hbm/sys_clk_gen_ds.v"] \
+    [file normalize "$sim_dir/hbm/tests.vh"] \
+    [file normalize "$sim_dir/hbm/usp_pci_exp_usrapp_cfg.v"] \
+    [file normalize "$sim_dir/hbm/usp_pci_exp_usrapp_com.v"] \
+    [file normalize "$sim_dir/hbm/usp_pci_exp_usrapp_rx.v"] \
+    [file normalize "$sim_dir/hbm/usp_pci_exp_usrapp_tx.v"] \
+    [file normalize "$sim_dir/hbm/xilinx_pcie_uscale_rp.v"] \
+    [file normalize "$sim_dir/hbm/xp4_usp_smsw_model_core_top.v"] \
+  ]
+#  add_files -norecurse -fileset $sim_set $sim_files
+   add_files -norecurse -fileset sim_1 $sim_files
+   set_property file_type {Verilog Header} [get_files $sim_files]
+
+  # Set fileset properties
+  #set_property "source_set" "sources_1" $sim_set
+  #set_property "top" "board" $sim_set
+  # Need to `define SIMULATION so that the XDMA (mcap_enablement=Tandem_PROM) instance asserts the mcap_design_switch signal.
+  #set_property "verilog_define" {SIMULATION=1} $sim_set
+  # XSIM incremental compilation seems unreliable for large projects
+  #set_property "incremental" "false" $sim_set
+  #set_property "runtime" "200 us" $sim_set
+  
+  #set_property "target_simulator" "ModelSim" [current_project]
+  # Incremental compilation seems unreliable ("unknown signal" caught) for large projects
+  #set_property "modelsim.compile.incremental" "false" $sim_set
+  #set_property "modelsim.simulate.runtime" "200 us" $sim_set
+  
+  #set_property "target_simulator" "Questa" [current_project]
+  #set_property "questa.simulate.runtime" "200us" $sim_set
+  
+  #set_property "target_simulator" "Riviera" [current_project]
+  #set_property "riviera.simulate.runtime" "200us" $sim_set
+  
+  # ActiveHDL is not supported in the Linux version of Vivado.
+  #if { [string compare -nocase $tcl_platform(os) "Linux"] != 0 } {
+    #set_property "target_simulator" "ActiveHDL" [current_project]
+    #set_property "activehdl.simulate.runtime" "200us" $sim_set
+  #}
+
+  #set_property "target_simulator" "XSim" [current_project]
+  ## Incremental compilation seems unreliable (runaway xvlog process) for large projects
+  #set_property "xsim.compile.incremental" "false" $sim_set
+  #set_property "xsim.simulate.runtime" "200 us" $sim_set
+
+  #set_property "simulator_language" "Mixed" [current_project]
+
+  #update_compile_order -fileset $sim_set >> $log_file
+
+#===================
 } else {
   puts "                        removing HBM block design"
   #remove_files $action_hw_dir/action_axi_hbm.vhd -quiet
@@ -356,7 +409,6 @@ if { $fpga_card == "ADKU3" } {
     add_files -fileset constrs_1 -norecurse  $root_dir/setup/$fpga_card/snap_ddr4pins.xdc
     set_property used_in_synthesis false [get_files $root_dir/setup/$fpga_card/snap_ddr4pins.xdc]
   }
-
 } elseif { ($fpga_card == "N250S") || ($fpga_card == "N250SP") } {
   if { $sdram_used == "TRUE" } {
     add_files -fileset constrs_1 -norecurse  $root_dir/setup/$fpga_card/snap_ddr4pins.xdc
@@ -366,7 +418,9 @@ if { $fpga_card == "ADKU3" } {
     add_files -fileset constrs_1 -norecurse  $root_dir/setup/N250S/snap_refclk100.xdc
     add_files -fileset constrs_1 -norecurse  $root_dir/setup/N250S/snap_nvme.xdc
   }
-
+} elseif { ($fpga_card == "AD9H3") } {
+    #cirumventing unconnected clock for hbm Xilinx AR#72607
+    add_files -fileset constrs_1 -norecurse  $root_dir/setup/AD9H3/AR72607.xdc
 }
 
 if { $ila_debug == "TRUE" } {
