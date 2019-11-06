@@ -21,6 +21,8 @@
 set root_dir       $::env(SNAP_HARDWARE_ROOT)
 set ip_dir         $root_dir/ip
 set hls_ip_dir     $ip_dir/hls_ip_project/hls_ip_project.srcs/sources_1/ip
+set hbm_ip_dir     $ip_dir/hbm/hbm.srcs/sources_1/bd/hbm_top/ip/
+set hbm_ipsh_dir   $ip_dir/hbm/hbm.srcs/sources_1/bd/hbm_top/ipshared/
 set hdl_dir        $root_dir/hdl
 set sim_dir        $root_dir/sim
 set fpga_part      $::env(FPGACHIP)
@@ -228,16 +230,15 @@ if { $hbm_used == TRUE } {
   puts "                        adding HBM block design"
 #  Following line modified to support metalfs:
 #  set_property  ip_repo_paths $hdl_dir/hbm/ [current_project]
-  set_property  ip_repo_paths [concat [get_property ip_repo_paths [current_project]] $hdl_dir/hbm/] [current_project] 
+  #set_property  ip_repo_paths [concat [get_property ip_repo_paths [current_project]] $hdl_dir/hbm/] [current_project] 
   add_files -norecurse                          $ip_dir/hbm/hbm.srcs/sources_1/bd/hbm_top/hdl/hbm_top_wrapper.vhd >> $log_file
   update_ip_catalog  >> $log_file
 
 #============
-  add_files -scan_for_includes $hdl_dir/hbm/  >> $log_file
-  import_files  $hdl_dir/hbm/
-  update_compile_order -fileset sources_1
+  #add_files -scan_for_includes $hdl_dir/hbm/  >> $log_file
+  #import_files  $hdl_dir/hbm/
+  #update_compile_order -fileset sources_1
 #============
-
 
   add_files -norecurse                          $ip_dir/hbm/hbm.srcs/sources_1/bd/hbm_top/hbm_top.bd  >> $log_file
   export_ip_user_files -of_objects  [get_files  $ip_dir/hbm/hbm.srcs/sources_1/bd/hbm_top/hbm_top.bd] -lib_map_path [list {{ies=$root_dir/viv_project/framework.cache/compile_simlib/ies}}] -no_script -sync -force -quiet
@@ -245,8 +246,45 @@ if { $hbm_used == TRUE } {
   puts "                        adding HBM Verilog simulation files"
   set_property used_in_simulation false [get_files  $ip_dir/hbm/hbm.srcs/sources_1/bd/hbm_top/hbm_top.bd]
 #===========
-  # Create 'sim_1' fileset
-  #set sim_set [get_filesets sim_1]
+  add_files -fileset sim_1 -norecurse -scan_for_includes $ip_dir/hbm/hbm.srcs/sources_1/bd/hbm_top/sim/hbm_top.vhd >> $log_file
+  import_files -fileset sim_1 -norecurse $ip_dir/hbm/hbm.srcs/sources_1/bd/hbm_top/sim/hbm_top.vhd >> $log_file
+  update_compile_order -fileset sim_1 >> $log_file
+  ##
+  #NEW
+  #set hbm_ip_dir     $ip_dir/hbm/hbm.srcs/sources_1/bd/hbm_top/ip/
+  puts "                        ..adding HBM Verilog functions"
+  foreach ip_verilog [glob -nocomplain -dir $hbm_ip_dir */sim/*.v] {
+    set ip_name [exec basename $ip_verilog .v]
+    puts "                        ....adding HDL Action IP $ip_name"
+    #add_files -fileset sim_1 -norecurse -scan_for_includes $ip_verilog -force >> $log_file
+    add_files -fileset sim_1 -norecurse -scan_for_includes $ip_verilog >> $log_file
+    import_files -fileset sim_1 -norecurse $ip_verilog
+  }
+
+  #set hbm_ipsh_dir     $ip_dir/hbm/hbm.srcs/sources_1/bd/hbm_top/ipshared/
+  puts "                        ..adding HBM Verilog library IPs (ipshared)"
+  foreach ip_verilog [glob -nocomplain -dir $hbm_ipsh_dir */hdl/*.v] {
+    set ip_name [exec basename $ip_verilog .v]
+    puts "                        ....adding HDL Action IP $ip_name"
+  #  add_files -fileset sim_1 -norecurse -scan_for_includes $ip_verilog -force >> $log_file
+    add_files -fileset sim_1 -norecurse -scan_for_includes $ip_verilog >> $log_file
+    import_files -fileset sim_1 -norecurse $ip_verilog
+  }
+
+  #puts "                        ..adding HBM VHDL files"
+  #foreach ip_vhdl [glob -nocomplain -dir $hdl_dir/hbm/ *.vhd] {
+  #  set ip_name [exec basename $ip_vhdl .vhd]
+  #  puts "                        ....adding HDL Action IP $ip_name"
+  #  #add_files -fileset sim_1 -norecurse -scan_for_includes $ip_vhdl -force >> $log_file
+  #  add_files -fileset sim_1 -norecurse -scan_for_includes $ip_vhdl >> $log_file
+  #  import_files -fileset sim_1 -norecurse $ip_vhdl
+  #}
+ 
+  add_files -fileset sim_1 -norecurse -scan_for_includes $hbm_ip_dir/hbm_top_hbm_0/hdl/rtl/hbm_v1_0_3.sv
+  import_files -fileset sim_1 -norecurse $hbm_ip_dir/hbm_top_hbm_0/hdl/rtl/hbm_v1_0_3.sv
+
+  update_compile_order -fileset sim_1 >> $log_file
+  #END NEW
 
   set sim_files [list \
     [file normalize "$sim_dir/hbm/board.v"] \

@@ -38,7 +38,7 @@ module top (
              input           ah_jcack_top,
              input  [0:63]   ah_jerror_top,
              input  [0:3]    ah_brlat_top,
-//             input           ah_jyield,
+             input           ah_jyield,
              input           ah_tbreq_top,
              input           ah_paren_top,
              inout           ha_mmval_top,
@@ -205,7 +205,7 @@ module top (
   reg             ah_jdone_top;
   reg             ah_jcack_top;
   reg    [0:63]   ah_jerror_top;
-//  reg             ah_jyield_top;
+  reg             ah_jyield_top;
   reg             ah_tbreq_top;
   reg             ah_paren_top;
   reg             d0h_dvalid_top;
@@ -374,7 +374,7 @@ module top (
   wire            ah_jdone;
   wire            ah_jcack;
   wire   [0:63]   ah_jerror;
-//  wire            ah_jyield;
+  wire            ah_jyield;
   wire            ah_tbreq;
   wire            ah_paren;
   wire            rvalid_ul;
@@ -596,7 +596,7 @@ module top (
              ah_jcack_top,
              ah_jerror_top,
              ah_brlat_top,
-//             ah_jyield,
+             ah_jyield,
              ah_tbreq_top,
              ah_paren_top,
              ha_mmval_top,
@@ -715,7 +715,7 @@ module top (
     ah_jerror_top <= ah_jerror;
     ah_jdone_top <= ah_jdone;
     ah_brlat_top <= ah_brlat;
-//    ah_jyield_top <= ah_jyield;
+    ah_jyield_top <= ah_jyield;
     ah_tbreq_top <= ah_tbreq;
     ah_paren_top <= ah_paren;
     ah_cvalid_top <= ah_cvalid;
@@ -1187,6 +1187,15 @@ module top (
 #endif
 #endif
 #endif
+#ifdef CONFIG_ENABLE_HBM
+  // SDRAM System Clock generation
+  reg       refclk300_p;
+  initial   refclk300_p <= 0;
+  // 300.MHz DDR4 system clock
+  always begin
+     refclk300_p = !refclk300_p; #(3.332ns / 2.0); // a line can not start with "#", because SNAP is unsing the C preprocessor
+  end
+#endif
 #if CONFIG_ENABLE_NVME
   // NVME Reference Clock generation
   reg refclk_nvme_p;
@@ -1263,9 +1272,14 @@ module top (
     .ah_jdone(ah_jdone),
     .ah_jcack(ah_jcack),
     .ah_jerror(ah_jerror),
-//    .ah_jyield(ah_jyield),    - mcp004 does not seem to have this port
+    .ah_jyield(ah_jyield),    //- mcp004 does not seem to have this port => BM reassigned it
     .ah_tbreq(ah_tbreq),
     .ah_paren(ah_paren),
+#ifdef CONFIG_ENABLE_HBM
+    // HBM
+    .refclk300_p           (refclk300_p),
+    .refclk300_n           (~refclk300_p),
+#endif
 #ifdef CONFIG_ENABLE_DDR3
     // DDR3
     .c0_sys_clk_p           (sys_clk_p),

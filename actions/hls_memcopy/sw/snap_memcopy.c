@@ -35,7 +35,7 @@ int verbose_flag = 0;
 
 static const char *version = GIT_VERSION;
 
-static const char *mem_tab[] = { "HOST_DRAM", "CARD_DRAM", "TYPE_NVME", "FPGA_BRAM"};
+static const char *mem_tab[] = { "HOST_DRAM", "CARD_DRAM", "HBM_P0", "HBM_P1", "TYPE_NVME", "FPGA_BRAM"};
 
 /*
  * @brief	prints valid command line options
@@ -48,9 +48,9 @@ static void usage(const char *prog)
 	       "  -C, --card <cardno>        can be (0...3)\n"
 	       "  -i, --input <file.bin>     input file.\n"
 	       "  -o, --output <file.bin>    output file.\n"
-	       "  -A, --type-in <HOST_DRAM,  CARD_DRAM, UNUSED, ...>.\n"
+	       "  -A, --type-in <HOST_DRAM,  CARD_DRAM, HBM_P0/P1, UNUSED, ...>.\n"
 	       "  -a, --addr-in <addr>       address e.g. in CARD_RAM.\n"
-	       "  -D, --type-out <HOST_DRAM, CARD_DRAM, UNUSED, ...>.\n"
+	       "  -D, --type-out <HOST_DRAM, CARD_DRAM, HBM_P0/P1, UNUSED, ...>.\n"
 	       "  -d, --addr-out <addr>      address e.g. in CARD_RAM.\n"
 	       "  -s, --size <size>          size of data.\n"
 	       "  -m, --mode <mode>          mode flags.\n"
@@ -64,6 +64,7 @@ static void usage(const char *prog)
 	       "NOTES : \n"
 	       "  - HOST_DRAM is the Host machine (Power cpu based) attached memory\n"
 	       "  - CARD_DRAM is the FPGA generally DDR attached memory\n"
+	       "  - HBM_P0/P1 is the FPGA High Bandwidth memory (AD9H3 - AD9H7 cards only)\n"
 	       "  - NVMe usage requires specific driver, use hls_nvme_memcopy example instead\n"
 	       "  - When providing an input file, a corresponding memory allocation will be performed\n"
 	       "    in the HOST_DRAM at the reported adress\n"
@@ -216,6 +217,10 @@ int main(int argc, char *argv[])
 				type_in = SNAP_ADDRTYPE_CARD_DRAM;
 			else if (strcmp(space, "HOST_DRAM") == 0)
 				type_in = SNAP_ADDRTYPE_HOST_DRAM;
+			else if (strcmp(space, "HBM_P0") == 0)
+				type_in = SNAP_ADDRTYPE_HBM_P0;
+			else if (strcmp(space, "HBM_P1") == 0)
+				type_in = SNAP_ADDRTYPE_HBM_P1;
 			else {
 				usage(argv[0]);
 				exit(EXIT_FAILURE);
@@ -231,6 +236,10 @@ int main(int argc, char *argv[])
 				type_out = SNAP_ADDRTYPE_CARD_DRAM;
 			else if (strcmp(space, "HOST_DRAM") == 0)
 				type_out = SNAP_ADDRTYPE_HOST_DRAM;
+			else if (strcmp(space, "HBM_P0") == 0)
+				type_out = SNAP_ADDRTYPE_HBM_P0;
+			else if (strcmp(space, "HBM_P1") == 0)
+				type_out = SNAP_ADDRTYPE_HBM_P1;
 			else {
 				usage(argv[0]);
 				exit(EXIT_FAILURE);
