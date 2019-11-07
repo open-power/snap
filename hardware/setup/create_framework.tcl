@@ -83,7 +83,12 @@ set_property default_lib work [current_project]
 if { ( $simulator == "irun" ) } {
   set_property target_simulator IES [current_project]
   set_property compxlib.ies_compiled_library_dir $::env(IES_LIBS) [current_project]
-  set_property -name {ies.elaborate.ncelab.more_options} -value {-access +rwc} -objects [current_fileset -simset]
+  #set_property -name {ies.elaborate.ncelab.more_options} -value {-access +rwc} -objects [current_fileset -simset]
+  #NEW - TRIAL
+  set_property -name {ies.simulate.ncsim.more_options} -value {+notimingcheck} -objects [get_filesets sim_1]
+  set_property -name {ies.elaborate.ncelab.more_options} -value {-access +rwc -notimingchecks} -objects [get_filesets sim_1]
+  set_property -name {ies.simulate.runtime} -value {1ms} -objects [get_filesets sim_1]
+
 } elseif { $simulator == "xsim" } {
   set_property -name {xsim.elaborate.xelab.more_options} -value {-sv_lib libdpi -sv_root .} -objects [current_fileset -simset]
 }
@@ -255,19 +260,17 @@ if { $hbm_used == TRUE } {
   puts "                        ..adding HBM Verilog functions"
   foreach ip_verilog [glob -nocomplain -dir $hbm_ip_dir */sim/*.v] {
     set ip_name [exec basename $ip_verilog .v]
-    puts "                        ....adding HDL Action IP $ip_name"
-    #add_files -fileset sim_1 -norecurse -scan_for_includes $ip_verilog -force >> $log_file
-    add_files -fileset sim_1 -norecurse -scan_for_includes $ip_verilog >> $log_file
+    puts "                        ....adding IP $ip_name"
+    add_files -fileset sim_1 -norecurse -scan_for_includes $ip_verilog -force >> $log_file
     import_files -fileset sim_1 -norecurse $ip_verilog
   }
 
   #set hbm_ipsh_dir     $ip_dir/hbm/hbm.srcs/sources_1/bd/hbm_top/ipshared/
   puts "                        ..adding HBM Verilog library IPs (ipshared)"
-  foreach ip_verilog [glob -nocomplain -dir $hbm_ipsh_dir */hdl/*.v] {
+  foreach ip_verilog [glob -nocomplain -dir $hbm_ipsh_dir */*/*.v] {
     set ip_name [exec basename $ip_verilog .v]
-    puts "                        ....adding HDL Action IP $ip_name"
-  #  add_files -fileset sim_1 -norecurse -scan_for_includes $ip_verilog -force >> $log_file
-    add_files -fileset sim_1 -norecurse -scan_for_includes $ip_verilog >> $log_file
+    puts "                        ....adding IP $ip_name"
+    add_files -fileset sim_1 -norecurse -scan_for_includes $ip_verilog -force >> $log_file
     import_files -fileset sim_1 -norecurse $ip_verilog
   }
 
@@ -459,6 +462,9 @@ if { $fpga_card == "ADKU3" } {
 } elseif { ($fpga_card == "AD9H3") } {
     #cirumventing unconnected clock for hbm Xilinx AR#72607
     add_files -fileset constrs_1 -norecurse  $root_dir/setup/AD9H3/AR72607.xdc
+#    set_property used_in_synthesis false [get_files $root_dir/setup/AD9H3/AR72607.xdc]
+    add_files -fileset constrs_1 -norecurse  $root_dir/setup/AD9H3/capi_hbm_pblock.xdc
+#    set_property used_in_synthesis false [get_files $root_dir/setup/AD9H3/capi_hbm_pblock.xdc]
 }
 
 if { $ila_debug == "TRUE" } {

@@ -103,31 +103,33 @@ set_property -dict [list CONFIG.C_BUF_TYPE {BUFG}] [get_bd_cells refclk_bufg_ins
 
 #====================
 #create the axi_clock_converters for each of the HBM interfaces
+#CONFIG.ADDR_WIDTH {17} \ for simu
 create_bd_cell -type ip -vlnv xilinx.com:ip:axi_clock_converter:2.1 axi_clock_converter_0
 set_property -dict [list  \
    CONFIG.DATA_WIDTH.VALUE_SRC USER \
    CONFIG.DATA_WIDTH {512} \
-   CONFIG.ADDR_WIDTH {64} \
+   CONFIG.ADDR_WIDTH {32} \
    ] [get_bd_cells axi_clock_converter_0]
 
 create_bd_cell -type ip -vlnv xilinx.com:ip:axi_clock_converter:2.1 axi_clock_converter_1
 set_property -dict [list  \
    CONFIG.DATA_WIDTH.VALUE_SRC USER \
    CONFIG.DATA_WIDTH {512} \
-   CONFIG.ADDR_WIDTH {64} \
+   CONFIG.ADDR_WIDTH {32} \
    ] [get_bd_cells axi_clock_converter_1]
 
 #====================
 #create the axi 512 to 256 converters
 set cell [create_bd_cell -type ip -vlnv {xilinx.com:ip:axi_dwidth_converter:*} axi_512_to_256_15]
 set_property -dict {      \
- 
- CONFIG.SI_DATA_WIDTH {512}    \
+  CONFIG.ADDR_WIDTH.VALUE_SRC PROPAGATED \
+  CONFIG.SI_DATA_WIDTH {512}    \
   CONFIG.MI_DATA_WIDTH {256}    \
 } $cell
 
 set cell [create_bd_cell -type ip -vlnv {xilinx.com:ip:axi_dwidth_converter:*} axi_512_to_256_23]
 set_property -dict {      \
+  CONFIG.ADDR_WIDTH.VALUE_SRC PROPAGATED \
   CONFIG.SI_DATA_WIDTH {512}    \
   CONFIG.MI_DATA_WIDTH {256}    \
 } $cell
