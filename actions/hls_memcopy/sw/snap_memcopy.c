@@ -35,7 +35,7 @@ int verbose_flag = 0;
 
 static const char *version = GIT_VERSION;
 
-static const char *mem_tab[] = { "HOST_DRAM", "CARD_DRAM", "HBM_P0", "HBM_P1", "TYPE_NVME", "FPGA_BRAM"};
+static const char *mem_tab[] = { "HOST_DRAM", "CARD_DRAM", "TYPE_NVME", "FPGA_BRAM", "HBM_P0", "HBM_P1"};
 
 /*
  * @brief	prints valid command line options
@@ -337,8 +337,8 @@ int main(int argc, char *argv[])
 	       "  mode:        %08x\n",
 	       input  ? input  : "unknown",
 	       output ? output : "unknown",
-	       type_in,  mem_tab[type_in%4],  (long long)addr_in,
-	       type_out, mem_tab[type_out%4], (long long)addr_out,
+	       type_in,  mem_tab[type_in%6],  (long long)addr_in,
+	       type_out, mem_tab[type_out%6], (long long)addr_out,
 	       size, mode);
 
 	snprintf(device, sizeof(device)-1, "/dev/cxl/afu%d.0s", card_no);
@@ -424,7 +424,7 @@ int main(int argc, char *argv[])
 	mib_sec = (diff_usec == 0) ? 0.0 : (double)size / diff_usec;
 
 	fprintf(stdout, "memcopy of %lld bytes took %lld usec @ %.3f MiB/sec (from %s to %s)\n",
-		(long long)size, (long long)diff_usec, mib_sec, mem_tab[type_in%4], mem_tab[type_out%4]);
+		(long long)size, (long long)diff_usec, mib_sec, mem_tab[type_in%6], mem_tab[type_out%6]);
         fprintf(stdout, "This time represents the register transfer time + memcopy action time\n");       
 
 	snap_detach_action(action);
