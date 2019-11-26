@@ -35,7 +35,8 @@ int verbose_flag = 0;
 
 static const char *version = GIT_VERSION;
 
-static const char *mem_tab[] = { "HOST_DRAM", "CARD_DRAM", "TYPE_NVME", "FPGA_BRAM", "HBM_P0", "HBM_P1"};
+static const char *mem_tab[] = { "HOST_DRAM", "CARD_DRAM", "TYPE_NVME", "FPGA_BRAM", 
+          "HBM_P0", "HBM_P1", "HBM_P2", "HBM_P3", "HBM_P4", "HBM_P5", "HBM_P6"};
 
 /*
  * @brief	prints valid command line options
@@ -221,6 +222,16 @@ int main(int argc, char *argv[])
 				type_in = SNAP_ADDRTYPE_HBM_P0;
 			else if (strcmp(space, "HBM_P1") == 0)
 				type_in = SNAP_ADDRTYPE_HBM_P1;
+			else if (strcmp(space, "HBM_P2") == 0)
+				type_in = SNAP_ADDRTYPE_HBM_P2;
+			else if (strcmp(space, "HBM_P3") == 0)
+				type_in = SNAP_ADDRTYPE_HBM_P3;
+			else if (strcmp(space, "HBM_P4") == 0)
+				type_in = SNAP_ADDRTYPE_HBM_P4;
+			else if (strcmp(space, "HBM_P5") == 0)
+				type_in = SNAP_ADDRTYPE_HBM_P5;
+			else if (strcmp(space, "HBM_P6") == 0)
+				type_in = SNAP_ADDRTYPE_HBM_P6;
 			else {
 				usage(argv[0]);
 				exit(EXIT_FAILURE);
@@ -240,6 +251,16 @@ int main(int argc, char *argv[])
 				type_out = SNAP_ADDRTYPE_HBM_P0;
 			else if (strcmp(space, "HBM_P1") == 0)
 				type_out = SNAP_ADDRTYPE_HBM_P1;
+			else if (strcmp(space, "HBM_P2") == 0)
+				type_out = SNAP_ADDRTYPE_HBM_P2;
+			else if (strcmp(space, "HBM_P3") == 0)
+				type_out = SNAP_ADDRTYPE_HBM_P3;
+			else if (strcmp(space, "HBM_P4") == 0)
+				type_out = SNAP_ADDRTYPE_HBM_P4;
+			else if (strcmp(space, "HBM_P5") == 0)
+				type_out = SNAP_ADDRTYPE_HBM_P5;
+			else if (strcmp(space, "HBM_P6") == 0)
+				type_out = SNAP_ADDRTYPE_HBM_P6;
 			else {
 				usage(argv[0]);
 				exit(EXIT_FAILURE);
