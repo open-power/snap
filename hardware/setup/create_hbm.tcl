@@ -75,15 +75,15 @@ set_property -dict [list CONFIG.C_BUF_TYPE {BUFG}] [get_bd_cells refclk_bufg_ins
 
 #====================
 #create the clocks and the reset signals for the design
-create_bd_cell -type ip -vlnv xilinx.com:ip:util_ds_buf:2.1 refclk_bufg_div3
-set_property -dict [list CONFIG.C_BUF_TYPE {BUFGCE_DIV} CONFIG.C_BUFGCE_DIV {3}] [get_bd_cells refclk_bufg_div3]
+#create_bd_cell -type ip -vlnv xilinx.com:ip:util_ds_buf:2.1 refclk_bufg_div3
+#set_property -dict [list CONFIG.C_BUF_TYPE {BUFGCE_DIV} CONFIG.C_BUFGCE_DIV {3}] [get_bd_cells refclk_bufg_div3]
 
 create_bd_cell -type ip -vlnv xilinx.com:ip:util_ds_buf:2.1 refclk_bufg_div4
 set_property -dict [list CONFIG.C_BUF_TYPE {BUFGCE_DIV} CONFIG.C_BUFGCE_DIV {4}] [get_bd_cells refclk_bufg_div4]
 
 #====================
-connect_bd_net [get_bd_pins constant_1_zero/dout] [get_bd_pins refclk_bufg_div3/BUFGCE_CLR]
-connect_bd_net [get_bd_pins constant_1_one/dout] [get_bd_pins refclk_bufg_div3/BUFGCE_CE]
+#connect_bd_net [get_bd_pins constant_1_zero/dout] [get_bd_pins refclk_bufg_div3/BUFGCE_CLR]
+#connect_bd_net [get_bd_pins constant_1_one/dout] [get_bd_pins refclk_bufg_div3/BUFGCE_CE]
 connect_bd_net [get_bd_pins constant_1_zero/dout] [get_bd_pins refclk_bufg_div4/BUFGCE_CLR]
 connect_bd_net [get_bd_pins constant_1_one/dout] [get_bd_pins refclk_bufg_div4/BUFGCE_CE]
 
@@ -98,7 +98,7 @@ connect_bd_net [get_bd_ports refclk300_p] [get_bd_pins refclk_ibufds_inst/IBUF_D
 connect_bd_net [get_bd_ports refclk300_n] [get_bd_pins refclk_ibufds_inst/IBUF_DS_N] >> $log_file
 connect_bd_net [get_bd_pins refclk_ibufds_inst/IBUF_OUT] [get_bd_pins refclk_bufg_inst/BUFG_I]
 
-connect_bd_net [get_bd_pins refclk_ibufds_inst/IBUF_OUT] [get_bd_pins refclk_bufg_div3/BUFGCE_I]
+#connect_bd_net [get_bd_pins refclk_ibufds_inst/IBUF_OUT] [get_bd_pins refclk_bufg_div3/BUFGCE_I]
 connect_bd_net [get_bd_pins refclk_ibufds_inst/IBUF_OUT] [get_bd_pins refclk_bufg_div4/BUFGCE_I]
 
 
@@ -110,18 +110,38 @@ set cell [create_bd_cell -quiet -type ip -vlnv {xilinx.com:ip:hbm:*} hbm]
 # The reference clock provided to HBM is at 100MHz (output of refclk_bufg_div3)
 # and HBM IP logic generates internally the 800MHz which HBM operates at
 #(params provided by AlphaData)
-set_property -dict [list  \
-  CONFIG.USER_HBM_DENSITY {4GB}  \
-  CONFIG.USER_HBM_STACK {1}  \
-  CONFIG.USER_AUTO_POPULATE {no}  \
-  CONFIG.USER_SWITCH_ENABLE_00 {FALSE}  \
-  CONFIG.USER_HBM_TCK_0 {800} \
-  CONFIG.HBM_MMCM_FBOUT_MULT0 {112} \
-  CONFIG.USER_APB_PCLK_0 {75} \
-  CONFIG.USER_TEMP_POLL_CNT_0 {75000} \
+#Setting for ES chips: HBM_REF_CLK=100MHz => HBM Mem freq=800MHz
+#set_property -dict [list  \
+#  CONFIG.USER_HBM_DENSITY {4GB}  \
+#  CONFIG.USER_HBM_STACK {1}  \
+#  CONFIG.USER_AUTO_POPULATE {no}  \
+#  CONFIG.USER_SWITCH_ENABLE_00 {FALSE}  \
+#  CONFIG.USER_HBM_TCK_0 {800} \
+#  CONFIG.HBM_MMCM_FBOUT_MULT0 {112} \
+#  CONFIG.USER_APB_PCLK_0 {75} \
+#  CONFIG.USER_TEMP_POLL_CNT_0 {75000} \
+#] $cell >> $log_file
+
+#Setting for Production chips: HBM_REF_CLK=300MHz => HBM Mem freq=900MHz
+set_property -dict [list                               \
+  CONFIG.USER_HBM_DENSITY {4GB}                        \
+  CONFIG.USER_HBM_STACK {1}                            \
+  CONFIG.USER_AUTO_POPULATE {no}                       \
+  CONFIG.USER_SWITCH_ENABLE_00 {FALSE}                 \
+  CONFIG.USER_APB_PCLK_0 {75}                          \
+  CONFIG.USER_HBM_REF_CLK_0 {300}                      \
+  CONFIG.USER_HBM_REF_CLK_PS_0 {1666.67}               \
+  CONFIG.USER_HBM_REF_CLK_XDC_0 {3.33}                 \
+  CONFIG.USER_HBM_FBDIV_0 {12}                         \
+  CONFIG.USER_HBM_CP_0 {3}                             \
+  CONFIG.USER_HBM_RES_0 {1}                            \
+  CONFIG.USER_HBM_LOCK_REF_DLY_0 {13}                  \
+  CONFIG.USER_HBM_LOCK_FB_DLY_0 {13}                   \
+  CONFIG.USER_HBM_HEX_CP_RES_0 {0x00001300}            \
+  CONFIG.USER_HBM_HEX_LOCK_FB_REF_DLY_0 {0x00000d0d}   \
+  CONFIG.USER_HBM_HEX_FBDIV_CLKOUTDIV_0 {0x00000302}   \
 ] $cell >> $log_file
-
-
+  
 #===============================================================================
 #== ALL PARAMETERS BELOW DEPEND ON THE NUMBER OF HBM MEMORIES YOU WANT TO USE ==
 #===============================================================================
@@ -168,7 +188,8 @@ connect_bd_net [get_bd_pins constant_1_zero/dout] [get_bd_pins hbm/APB_0_PSEL] >
 connect_bd_net [get_bd_pins constant_32_zero/dout] [get_bd_pins hbm/APB_0_PWDATA] >> $log_file
 connect_bd_net [get_bd_pins constant_1_zero/dout] [get_bd_pins hbm/APB_0_PWRITE] >> $log_file
 
-connect_bd_net [get_bd_pins refclk_bufg_div3/BUFGCE_O] [get_bd_pins hbm/HBM_REF_CLK_0]
+#connect_bd_net [get_bd_pins refclk_bufg_div3/BUFGCE_O] [get_bd_pins hbm/HBM_REF_CLK_0]
+connect_bd_net [get_bd_pins hbm/HBM_REF_CLK_0] [get_bd_pins refclk_ibufds_inst/IBUF_OUT]  
 connect_bd_net [get_bd_pins refclk_bufg_div4/BUFGCE_O] [get_bd_pins hbm/APB_0_PCLK]
 connect_bd_net [get_bd_pins ARESETN] [get_bd_pins hbm/APB_0_PRESET_N]
 
