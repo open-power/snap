@@ -327,19 +327,30 @@ ARCHITECTURE STRUCTURE OF action_wrapper IS
       C_M_AXI_NVME_BUSER_WIDTH         : integer;
 #endif
       -- Parameters for HBM port 0 and Port 1
-      C_M_AXI_CARD_HBM_ADDR_WIDTH   : INTEGER := 64;
-      C_M_AXI_CARD_HBM_ID_WIDTH : INTEGER := 1;
-      C_M_AXI_CARD_HBM_AWUSER_WIDTH : INTEGER := 1;
-      C_M_AXI_CARD_HBM_DATA_WIDTH : INTEGER := 512;
-      C_M_AXI_CARD_HBM_WUSER_WIDTH : INTEGER := 1;
-      C_M_AXI_CARD_HBM_ARUSER_WIDTH : INTEGER := 1;
-      C_M_AXI_CARD_HBM_RUSER_WIDTH : INTEGER := 1;
-      C_M_AXI_CARD_HBM_BUSER_WIDTH : INTEGER := 1;
-
+--CHANGE_HBM_INTERFACES_NUMBER
+-- copy/paste these 8 signals for a new AXI interface
+      C_M_AXI_CARD_HBM_P0_ADDR_WIDTH      : INTEGER;
+      C_M_AXI_CARD_HBM_P0_ID_WIDTH        : INTEGER;
+      C_M_AXI_CARD_HBM_P0_AWUSER_WIDTH    : INTEGER;
+      C_M_AXI_CARD_HBM_P0_DATA_WIDTH      : INTEGER;
+      C_M_AXI_CARD_HBM_P0_WUSER_WIDTH     : INTEGER;
+      C_M_AXI_CARD_HBM_P0_ARUSER_WIDTH    : INTEGER;
+      C_M_AXI_CARD_HBM_P0_RUSER_WIDTH     : INTEGER;
+      C_M_AXI_CARD_HBM_P0_BUSER_WIDTH     : INTEGER;
+--
+      C_M_AXI_CARD_HBM_P1_ADDR_WIDTH      : INTEGER;
+      C_M_AXI_CARD_HBM_P1_ID_WIDTH        : INTEGER;
+      C_M_AXI_CARD_HBM_P1_AWUSER_WIDTH    : INTEGER;
+      C_M_AXI_CARD_HBM_P1_DATA_WIDTH      : INTEGER;
+      C_M_AXI_CARD_HBM_P1_WUSER_WIDTH     : INTEGER;
+      C_M_AXI_CARD_HBM_P1_ARUSER_WIDTH    : INTEGER;
+      C_M_AXI_CARD_HBM_P1_RUSER_WIDTH     : INTEGER;
+      C_M_AXI_CARD_HBM_P1_BUSER_WIDTH     : INTEGER;
+--
       -- Parameters for Axi Slave Bus Interface AXI_CTRL_REG
       C_S_AXI_CTRL_REG_DATA_WIDTH      : integer;
       C_S_AXI_CTRL_REG_ADDR_WIDTH      : integer;
-
+--
       -- Parameters for Axi Master Bus Interface AXI_HOST_MEM : to Host memory
       C_M_AXI_HOST_MEM_ID_WIDTH        : integer;
       C_M_AXI_HOST_MEM_ADDR_WIDTH      : integer;
@@ -457,8 +468,8 @@ ARCHITECTURE STRUCTURE OF action_wrapper IS
 -- copy/paste these 45 signals for a new AXI interface
       m_axi_card_hbm_p0_AWVALID : OUT STD_LOGIC;
       m_axi_card_hbm_p0_AWREADY : IN STD_LOGIC;
-      m_axi_card_hbm_p0_AWADDR : OUT STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_ADDR_WIDTH-1 downto 0);
-      m_axi_card_hbm_p0_AWID : OUT STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_ID_WIDTH-1 downto 0);
+      m_axi_card_hbm_p0_AWADDR : OUT STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_P0_ADDR_WIDTH-1 downto 0);
+      m_axi_card_hbm_p0_AWID : OUT STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_P0_ID_WIDTH-1 downto 0);
       m_axi_card_hbm_p0_AWLEN : OUT STD_LOGIC_VECTOR (7 downto 0);
       m_axi_card_hbm_p0_AWSIZE : OUT STD_LOGIC_VECTOR (2 downto 0);
       m_axi_card_hbm_p0_AWBURST : OUT STD_LOGIC_VECTOR (1 downto 0);
@@ -467,18 +478,18 @@ ARCHITECTURE STRUCTURE OF action_wrapper IS
       m_axi_card_hbm_p0_AWPROT : OUT STD_LOGIC_VECTOR (2 downto 0);
       m_axi_card_hbm_p0_AWQOS : OUT STD_LOGIC_VECTOR (3 downto 0);
       m_axi_card_hbm_p0_AWREGION : OUT STD_LOGIC_VECTOR (3 downto 0);
-      m_axi_card_hbm_p0_AWUSER : OUT STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_AWUSER_WIDTH-1 downto 0);
+      m_axi_card_hbm_p0_AWUSER : OUT STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_P0_AWUSER_WIDTH-1 downto 0);
       m_axi_card_hbm_p0_WVALID : OUT STD_LOGIC;
       m_axi_card_hbm_p0_WREADY : IN STD_LOGIC;
-      m_axi_card_hbm_p0_WDATA : OUT STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_DATA_WIDTH-1 downto 0);
-      m_axi_card_hbm_p0_WSTRB : OUT STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_DATA_WIDTH/8-1 downto 0);
+      m_axi_card_hbm_p0_WDATA : OUT STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_P0_DATA_WIDTH-1 downto 0);
+      m_axi_card_hbm_p0_WSTRB : OUT STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_P0_DATA_WIDTH/8-1 downto 0);
       m_axi_card_hbm_p0_WLAST : OUT STD_LOGIC;
-      m_axi_card_hbm_p0_WID : OUT STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_ID_WIDTH-1 downto 0);
-      m_axi_card_hbm_p0_WUSER : OUT STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_WUSER_WIDTH-1 downto 0);
+      m_axi_card_hbm_p0_WID : OUT STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_P0_ID_WIDTH-1 downto 0);
+      m_axi_card_hbm_p0_WUSER : OUT STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_P0_WUSER_WIDTH-1 downto 0);
       m_axi_card_hbm_p0_ARVALID : OUT STD_LOGIC;
       m_axi_card_hbm_p0_ARREADY : IN STD_LOGIC;
-      m_axi_card_hbm_p0_ARADDR : OUT STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_ADDR_WIDTH-1 downto 0);
-      m_axi_card_hbm_p0_ARID : OUT STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_ID_WIDTH-1 downto 0);
+      m_axi_card_hbm_p0_ARADDR : OUT STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_P0_ADDR_WIDTH-1 downto 0);
+      m_axi_card_hbm_p0_ARID : OUT STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_P0_ID_WIDTH-1 downto 0);
       m_axi_card_hbm_p0_ARLEN : OUT STD_LOGIC_VECTOR (7 downto 0);
       m_axi_card_hbm_p0_ARSIZE : OUT STD_LOGIC_VECTOR (2 downto 0);
       m_axi_card_hbm_p0_ARBURST : OUT STD_LOGIC_VECTOR (1 downto 0);
@@ -487,24 +498,24 @@ ARCHITECTURE STRUCTURE OF action_wrapper IS
       m_axi_card_hbm_p0_ARPROT : OUT STD_LOGIC_VECTOR (2 downto 0);
       m_axi_card_hbm_p0_ARQOS : OUT STD_LOGIC_VECTOR (3 downto 0);
       m_axi_card_hbm_p0_ARREGION : OUT STD_LOGIC_VECTOR (3 downto 0);
-      m_axi_card_hbm_p0_ARUSER : OUT STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_ARUSER_WIDTH-1 downto 0);
+      m_axi_card_hbm_p0_ARUSER : OUT STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_P0_ARUSER_WIDTH-1 downto 0);
       m_axi_card_hbm_p0_RVALID : IN STD_LOGIC;
       m_axi_card_hbm_p0_RREADY : OUT STD_LOGIC;
-      m_axi_card_hbm_p0_RDATA : IN STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_DATA_WIDTH-1 downto 0);
+      m_axi_card_hbm_p0_RDATA : IN STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_P0_DATA_WIDTH-1 downto 0);
       m_axi_card_hbm_p0_RLAST : IN STD_LOGIC;
-      m_axi_card_hbm_p0_RID : IN STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_ID_WIDTH-1 downto 0);
-      m_axi_card_hbm_p0_RUSER : IN STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_RUSER_WIDTH-1 downto 0);
+      m_axi_card_hbm_p0_RID : IN STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_P0_ID_WIDTH-1 downto 0);
+      m_axi_card_hbm_p0_RUSER : IN STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_P0_RUSER_WIDTH-1 downto 0);
       m_axi_card_hbm_p0_RRESP : IN STD_LOGIC_VECTOR (1 downto 0);
       m_axi_card_hbm_p0_BVALID : IN STD_LOGIC;
       m_axi_card_hbm_p0_BREADY : OUT STD_LOGIC;
       m_axi_card_hbm_p0_BRESP : IN STD_LOGIC_VECTOR (1 downto 0);
-      m_axi_card_hbm_p0_BID : IN STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_ID_WIDTH-1 downto 0);
-      m_axi_card_hbm_p0_BUSER : IN STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_BUSER_WIDTH-1 downto 0);
+      m_axi_card_hbm_p0_BID : IN STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_P0_ID_WIDTH-1 downto 0);
+      m_axi_card_hbm_p0_BUSER : IN STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_P0_BUSER_WIDTH-1 downto 0);
 --
       m_axi_card_hbm_p1_AWVALID : OUT STD_LOGIC;
       m_axi_card_hbm_p1_AWREADY : IN STD_LOGIC;
-      m_axi_card_hbm_p1_AWADDR : OUT STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_ADDR_WIDTH-1 downto 0);
-      m_axi_card_hbm_p1_AWID : OUT STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_ID_WIDTH-1 downto 0);
+      m_axi_card_hbm_p1_AWADDR : OUT STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_P1_ADDR_WIDTH-1 downto 0);
+      m_axi_card_hbm_p1_AWID : OUT STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_P1_ID_WIDTH-1 downto 0);
       m_axi_card_hbm_p1_AWLEN : OUT STD_LOGIC_VECTOR (7 downto 0);
       m_axi_card_hbm_p1_AWSIZE : OUT STD_LOGIC_VECTOR (2 downto 0);
       m_axi_card_hbm_p1_AWBURST : OUT STD_LOGIC_VECTOR (1 downto 0);
@@ -513,18 +524,18 @@ ARCHITECTURE STRUCTURE OF action_wrapper IS
       m_axi_card_hbm_p1_AWPROT : OUT STD_LOGIC_VECTOR (2 downto 0);
       m_axi_card_hbm_p1_AWQOS : OUT STD_LOGIC_VECTOR (3 downto 0);
       m_axi_card_hbm_p1_AWREGION : OUT STD_LOGIC_VECTOR (3 downto 0);
-      m_axi_card_hbm_p1_AWUSER : OUT STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_AWUSER_WIDTH-1 downto 0);
+      m_axi_card_hbm_p1_AWUSER : OUT STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_P1_AWUSER_WIDTH-1 downto 0);
       m_axi_card_hbm_p1_WVALID : OUT STD_LOGIC;
       m_axi_card_hbm_p1_WREADY : IN STD_LOGIC;
-      m_axi_card_hbm_p1_WDATA : OUT STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_DATA_WIDTH-1 downto 0);
-      m_axi_card_hbm_p1_WSTRB : OUT STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_DATA_WIDTH/8-1 downto 0);
+      m_axi_card_hbm_p1_WDATA : OUT STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_P1_DATA_WIDTH-1 downto 0);
+      m_axi_card_hbm_p1_WSTRB : OUT STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_P1_DATA_WIDTH/8-1 downto 0);
       m_axi_card_hbm_p1_WLAST : OUT STD_LOGIC;
-      m_axi_card_hbm_p1_WID : OUT STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_ID_WIDTH-1 downto 0);
-      m_axi_card_hbm_p1_WUSER : OUT STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_WUSER_WIDTH-1 downto 0);
+      m_axi_card_hbm_p1_WID : OUT STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_P1_ID_WIDTH-1 downto 0);
+      m_axi_card_hbm_p1_WUSER : OUT STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_P1_WUSER_WIDTH-1 downto 0);
       m_axi_card_hbm_p1_ARVALID : OUT STD_LOGIC;
       m_axi_card_hbm_p1_ARREADY : IN STD_LOGIC;
-      m_axi_card_hbm_p1_ARADDR : OUT STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_ADDR_WIDTH-1 downto 0);
-      m_axi_card_hbm_p1_ARID : OUT STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_ID_WIDTH-1 downto 0);
+      m_axi_card_hbm_p1_ARADDR : OUT STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_P1_ADDR_WIDTH-1 downto 0);
+      m_axi_card_hbm_p1_ARID : OUT STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_P1_ID_WIDTH-1 downto 0);
       m_axi_card_hbm_p1_ARLEN : OUT STD_LOGIC_VECTOR (7 downto 0);
       m_axi_card_hbm_p1_ARSIZE : OUT STD_LOGIC_VECTOR (2 downto 0);
       m_axi_card_hbm_p1_ARBURST : OUT STD_LOGIC_VECTOR (1 downto 0);
@@ -533,19 +544,19 @@ ARCHITECTURE STRUCTURE OF action_wrapper IS
       m_axi_card_hbm_p1_ARPROT : OUT STD_LOGIC_VECTOR (2 downto 0);
       m_axi_card_hbm_p1_ARQOS : OUT STD_LOGIC_VECTOR (3 downto 0);
       m_axi_card_hbm_p1_ARREGION : OUT STD_LOGIC_VECTOR (3 downto 0);
-      m_axi_card_hbm_p1_ARUSER : OUT STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_ARUSER_WIDTH-1 downto 0);
+      m_axi_card_hbm_p1_ARUSER : OUT STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_P1_ARUSER_WIDTH-1 downto 0);
       m_axi_card_hbm_p1_RVALID : IN STD_LOGIC;
       m_axi_card_hbm_p1_RREADY : OUT STD_LOGIC;
-      m_axi_card_hbm_p1_RDATA : IN STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_DATA_WIDTH-1 downto 0);
+      m_axi_card_hbm_p1_RDATA : IN STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_P1_DATA_WIDTH-1 downto 0);
       m_axi_card_hbm_p1_RLAST : IN STD_LOGIC;
-      m_axi_card_hbm_p1_RID : IN STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_ID_WIDTH-1 downto 0);
-      m_axi_card_hbm_p1_RUSER : IN STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_RUSER_WIDTH-1 downto 0);
+      m_axi_card_hbm_p1_RID : IN STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_P1_ID_WIDTH-1 downto 0);
+      m_axi_card_hbm_p1_RUSER : IN STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_P1_RUSER_WIDTH-1 downto 0);
       m_axi_card_hbm_p1_RRESP : IN STD_LOGIC_VECTOR (1 downto 0);
       m_axi_card_hbm_p1_BVALID : IN STD_LOGIC;
       m_axi_card_hbm_p1_BREADY : OUT STD_LOGIC;
       m_axi_card_hbm_p1_BRESP : IN STD_LOGIC_VECTOR (1 downto 0);
-      m_axi_card_hbm_p1_BID : IN STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_ID_WIDTH-1 downto 0);
-      m_axi_card_hbm_p1_BUSER : IN STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_BUSER_WIDTH-1 downto 0);
+      m_axi_card_hbm_p1_BID : IN STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_P1_ID_WIDTH-1 downto 0);
+      m_axi_card_hbm_p1_BUSER : IN STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_P1_BUSER_WIDTH-1 downto 0);
 --
       --
       -- Ports of Axi Slave Bus Interface AXI_CTRL_REG
@@ -644,15 +655,26 @@ BEGIN
     C_M_AXI_NVME_RUSER_WIDTH    => C_M_AXI_NVME_RUSER_WIDTH,
     C_M_AXI_NVME_BUSER_WIDTH    => C_M_AXI_NVME_BUSER_WIDTH,
 #endif
+--CHANGE_HBM_INTERFACES_NUMBER
+-- copy/paste these 8 signals for a new AXI interface
     -- Parameters for HBM port 0 and Port 1
-    C_M_AXI_CARD_HBM_ADDR_WIDTH   => C_M_AXI_CARD_HBM_ADDR_WIDTH,
-    C_M_AXI_CARD_HBM_ID_WIDTH     => C_M_AXI_CARD_HBM_ID_WIDTH,
-    C_M_AXI_CARD_HBM_AWUSER_WIDTH => C_M_AXI_CARD_HBM_AWUSER_WIDTH,
-    C_M_AXI_CARD_HBM_DATA_WIDTH   => C_M_AXI_CARD_HBM_DATA_WIDTH,
-    C_M_AXI_CARD_HBM_WUSER_WIDTH  => C_M_AXI_CARD_HBM_WUSER_WIDTH,
-    C_M_AXI_CARD_HBM_ARUSER_WIDTH => C_M_AXI_CARD_HBM_ARUSER_WIDTH,
-    C_M_AXI_CARD_HBM_RUSER_WIDTH  => C_M_AXI_CARD_HBM_RUSER_WIDTH,
-    C_M_AXI_CARD_HBM_BUSER_WIDTH  => C_M_AXI_CARD_HBM_BUSER_WIDTH,
+    C_M_AXI_CARD_HBM_P0_ADDR_WIDTH   => C_M_AXI_CARD_HBM_ADDR_WIDTH,
+    C_M_AXI_CARD_HBM_P0_ID_WIDTH     => C_M_AXI_CARD_HBM_ID_WIDTH,
+    C_M_AXI_CARD_HBM_P0_AWUSER_WIDTH => C_M_AXI_CARD_HBM_AWUSER_WIDTH,
+    C_M_AXI_CARD_HBM_P0_DATA_WIDTH   => C_M_AXI_CARD_HBM_DATA_WIDTH,
+    C_M_AXI_CARD_HBM_P0_WUSER_WIDTH  => C_M_AXI_CARD_HBM_WUSER_WIDTH,
+    C_M_AXI_CARD_HBM_P0_ARUSER_WIDTH => C_M_AXI_CARD_HBM_ARUSER_WIDTH,
+    C_M_AXI_CARD_HBM_P0_RUSER_WIDTH  => C_M_AXI_CARD_HBM_RUSER_WIDTH,
+    C_M_AXI_CARD_HBM_P0_BUSER_WIDTH  => C_M_AXI_CARD_HBM_BUSER_WIDTH,
+    -- 
+    C_M_AXI_CARD_HBM_P1_ADDR_WIDTH   => C_M_AXI_CARD_HBM_ADDR_WIDTH,
+    C_M_AXI_CARD_HBM_P1_ID_WIDTH     => C_M_AXI_CARD_HBM_ID_WIDTH,
+    C_M_AXI_CARD_HBM_P1_AWUSER_WIDTH => C_M_AXI_CARD_HBM_AWUSER_WIDTH,
+    C_M_AXI_CARD_HBM_P1_DATA_WIDTH   => C_M_AXI_CARD_HBM_DATA_WIDTH,
+    C_M_AXI_CARD_HBM_P1_WUSER_WIDTH  => C_M_AXI_CARD_HBM_WUSER_WIDTH,
+    C_M_AXI_CARD_HBM_P1_ARUSER_WIDTH => C_M_AXI_CARD_HBM_ARUSER_WIDTH,
+    C_M_AXI_CARD_HBM_P1_RUSER_WIDTH  => C_M_AXI_CARD_HBM_RUSER_WIDTH,
+    C_M_AXI_CARD_HBM_P1_BUSER_WIDTH  => C_M_AXI_CARD_HBM_BUSER_WIDTH,
     -- Parameters for Axi Slave Bus Interface AXI_CTRL_REG
     C_S_AXI_CTRL_REG_DATA_WIDTH      => C_S_AXI_CTRL_REG_DATA_WIDTH,
     C_S_AXI_CTRL_REG_ADDR_WIDTH      => C_S_AXI_CTRL_REG_ADDR_WIDTH,
