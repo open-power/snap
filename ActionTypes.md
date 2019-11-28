@@ -26,6 +26,7 @@ IBM | 10.14.10.0F | 10.14.10.0F | HLS Parallel Memcpy
 IBM | 10.14.10.10 | 10.14.FF.FF | Reserved for IBM Actions
 MLE | 22.DB.00.01 | 22.DB.00.01 | HDL 10G Ethernet TCP/UDP/IP Accelerator Demo
 MLE | 22.DB.00.02 | 22.DB.00.02 | HDL 25G Ethernet TCP/UDP/IP Accelerator Demo
+PSI | 52.32.00.01 | 52.32.00.FF | X-ray Detector Data Acquisition and Analysis
 HPI | FB.06.00.01 | FB.06.00.01 | Metal FS
 Reserved | FF.FF.00.00 | FF.FF.FF.FF | Reserved
 
