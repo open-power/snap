@@ -101,7 +101,7 @@ set_property STEPS.SYNTH_DESIGN.ARGS.FLATTEN_HIERARCHY         rebuilt [get_runs
 # AD9H3 PSL doesn't time well with default strategy
   if { ($fpga_card == "AD9H3") } {
         set_property strategy Performance_ExplorePostRoutePhysOpt [get_runs impl_1]
-# next with next one we experiment with capi primary flash programming issue
+# with following strategy, we experimented programming issue when flashing capi primary flash 
 #        set_property strategy Performance_Explore [get_runs impl_1]
      }
 set_property STEPS.OPT_DESIGN.ARGS.DIRECTIVE Explore [get_runs impl_1]
