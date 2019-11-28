@@ -98,8 +98,11 @@ set_property STEPS.SYNTH_DESIGN.ARGS.KEEP_EQUIVALENT_REGISTERS true    [get_runs
 set_property STEPS.SYNTH_DESIGN.ARGS.NO_LC                     true    [get_runs synth_1]
 set_property STEPS.SYNTH_DESIGN.ARGS.FLATTEN_HIERARCHY         rebuilt [get_runs synth_1]
 # Implementation
+# AD9H3 PSL doesn't time well with default strategy
   if { ($fpga_card == "AD9H3") } {
-        set_property strategy Performance_Explore [get_runs impl_1]
+        set_property strategy Performance_ExplorePostRoutePhysOpt [get_runs impl_1]
+# with following strategy, we experimented programming issue when flashing capi primary flash 
+#        set_property strategy Performance_Explore [get_runs impl_1]
      }
 set_property STEPS.OPT_DESIGN.ARGS.DIRECTIVE Explore [get_runs impl_1]
 set_property STEPS.PLACE_DESIGN.ARGS.DIRECTIVE Explore [get_runs impl_1]
