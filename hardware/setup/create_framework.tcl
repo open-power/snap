@@ -252,12 +252,12 @@ if { $hbm_used == TRUE } {
 ##=========== COMMENT ALL FOLLOWING LINES UNTIL HBM Model is functional ===========================
 #
   puts "                        adding HBM Verilog simulation files"
-  puts "                         (details for HBM debug only - need to sort what is really needed later)"
 #  set_property used_in_simulation false [get_files  $ip_dir/hbm/hbm.srcs/sources_1/bd/hbm_top/hbm_top.bd]
 ##===========
   add_files -fileset sim_1 -norecurse -scan_for_includes $ip_dir/hbm/hbm.srcs/sources_1/bd/hbm_top/sim/hbm_top.vhd >> $log_file
   import_files -fileset sim_1 -norecurse $ip_dir/hbm/hbm.srcs/sources_1/bd/hbm_top/sim/hbm_top.vhd >> $log_file
 
+#  puts "                         (details for HBM debug only - need to sort what is really needed later)"
 #  puts "                        ..adding HBM Verilog functions"
 #  #foreach ip_verilog [glob -nocomplain -dir $hbm_ip_dir */sim/*.v] 
 #  foreach ip_verilog [glob -nocomplain -dir $hbm_ip_dir */*/*.v] {
