@@ -89,9 +89,11 @@ connect_bd_net [get_bd_pins constant_1_one/dout] [get_bd_pins refclk_bufg_div4/B
 
 set port [create_bd_port -dir I ARESETN]
 
+#2019.2 => set port [create_bd_port -dir I -type clk -freq_hz 300000000 refclk300_n]
 set port [create_bd_port -dir I -type clk refclk300_n]
 set_property {CONFIG.FREQ_HZ} {300000000} $port
 
+#2019.2 => set port [create_bd_port -dir I -type clk -freq_hz 300000000 refclk300_p]
 set port [create_bd_port -dir I -type clk refclk300_p]
 set_property {CONFIG.FREQ_HZ} {300000000} $port 
 connect_bd_net [get_bd_ports refclk300_p] [get_bd_pins refclk_ibufds_inst/IBUF_DS_P] >> $log_file
@@ -235,6 +237,7 @@ for {set i 0} {$i < $HBM_MEM_NUM} {incr i} {
   connect_bd_net [get_bd_pins ARESETN] [get_bd_pins axi_clock_converter_$i/m_axi_aresetn]
   connect_bd_net [get_bd_pins ARESETN] [get_bd_pins axi_clock_converter_$i/s_axi_aresetn]
   
+  #2019.2 => set port [create_bd_port -dir I -type clk -freq_hz 250000000 S_AXI_p$i\_HBM_ACLK]
   set port [create_bd_port -dir I -type clk S_AXI_p$i\_HBM_ACLK]
   set_property {CONFIG.FREQ_HZ} {250000000} $port
   connect_bd_net $port [get_bd_pins axi_clock_converter_$i/s_axi_aclk]

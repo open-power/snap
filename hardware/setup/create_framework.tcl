@@ -21,8 +21,8 @@
 set root_dir       $::env(SNAP_HARDWARE_ROOT)
 set ip_dir         $root_dir/ip
 set hls_ip_dir     $ip_dir/hls_ip_project/hls_ip_project.srcs/sources_1/ip
-set hbm_ip_dir     $ip_dir/hbm/hbm.srcs/sources_1/bd/hbm_top/ip/
-set hbm_ipsh_dir   $ip_dir/hbm/hbm.srcs/sources_1/bd/hbm_top/ipshared/
+set hbm_ip_dir     $ip_dir/hbm/hbm.srcs/sources_1/bd/hbm_top/ip
+set hbm_ipsh_dir   $ip_dir/hbm/hbm.srcs/sources_1/bd/hbm_top/ipshared
 set hdl_dir        $root_dir/hdl
 set sim_dir        $root_dir/sim
 set fpga_part      $::env(FPGACHIP)
@@ -88,7 +88,6 @@ if { ( $simulator == "irun" ) } {
   set_property -name {ies.simulate.ncsim.more_options} -value {+notimingcheck} -objects [get_filesets sim_1]
   set_property -name {ies.elaborate.ncelab.more_options} -value {-access +rwc -notimingchecks} -objects [get_filesets sim_1]
   set_property -name {ies.simulate.runtime} -value {1ms} -objects [get_filesets sim_1]
-
 } elseif { $simulator == "xsim" } {
   set_property -name {xsim.elaborate.xelab.more_options} -value {-sv_lib libdpi -sv_root .} -objects [current_fileset -simset]
 }
@@ -108,7 +107,9 @@ set_property STEPS.SYNTH_DESIGN.ARGS.NO_LC                     true    [get_runs
 set_property STEPS.SYNTH_DESIGN.ARGS.FLATTEN_HIERARCHY         rebuilt [get_runs synth_1]
 # Implementation
   if { ($fpga_card == "AD9H3") } {
-        set_property strategy Performance_Explore [get_runs impl_1]
+       set_property strategy Performance_ExplorePostRoutePhysOpt [get_runs impl_1]
+# next one is working, but we try another one to experiment with capi primary flash programming issue
+# #        set_property strategy Performance_Explore [get_runs impl_1]
      }
 set_property STEPS.OPT_DESIGN.ARGS.DIRECTIVE Explore [get_runs impl_1]
 set_property STEPS.PLACE_DESIGN.ARGS.DIRECTIVE Explore [get_runs impl_1]
@@ -251,100 +252,65 @@ if { $hbm_used == TRUE } {
 ##=========== COMMENT ALL FOLLOWING LINES UNTIL HBM Model is functional ===========================
 #
   puts "                        adding HBM Verilog simulation files"
+  puts "                         (details for HBM debug only)"
 #  set_property used_in_simulation false [get_files  $ip_dir/hbm/hbm.srcs/sources_1/bd/hbm_top/hbm_top.bd]
 ##===========
   add_files -fileset sim_1 -norecurse -scan_for_includes $ip_dir/hbm/hbm.srcs/sources_1/bd/hbm_top/sim/hbm_top.vhd >> $log_file
   import_files -fileset sim_1 -norecurse $ip_dir/hbm/hbm.srcs/sources_1/bd/hbm_top/sim/hbm_top.vhd >> $log_file
-#  update_compile_order -fileset sim_1 >> $log_file
-#  ##
-#  #NEW
-#  #set hbm_ip_dir     $ip_dir/hbm/hbm.srcs/sources_1/bd/hbm_top/ip/
+
   puts "                        ..adding HBM Verilog functions"
-  foreach ip_verilog [glob -nocomplain -dir $hbm_ip_dir */sim/*.v] {
+  #foreach ip_verilog [glob -nocomplain -dir $hbm_ip_dir */sim/*.v] 
+  foreach ip_verilog [glob -nocomplain -dir $hbm_ip_dir */*/*.v] {
     set ip_name [exec basename $ip_verilog .v]
     puts "                        ....adding IP $ip_name"
     add_files -fileset sim_1 -norecurse -scan_for_includes $ip_verilog -force >> $log_file
     import_files -fileset sim_1 -norecurse $ip_verilog
   }
 
-#  #set hbm_ipsh_dir     $ip_dir/hbm/hbm.srcs/sources_1/bd/hbm_top/ipshared/
-#  puts "                        ..adding HBM Verilog library IPs (ipshared)"
-#  foreach ip_verilog [glob -nocomplain -dir $hbm_ipsh_dir */*/*.v] {
-#    set ip_name [exec basename $ip_verilog .v]
-#    puts "                        ....adding IP $ip_name"
-#    add_files -fileset sim_1 -norecurse -scan_for_includes $ip_verilog -force >> $log_file
-#    import_files -fileset sim_1 -norecurse $ip_verilog
-#  }
+  #set hbm_ipsh_dir     $ip_dir/hbm/hbm.srcs/sources_1/bd/hbm_top/ipshared/
+  puts "                        ..adding HBM Verilog library IPs (ipshared)"
+  foreach ip_verilog [glob -nocomplain -dir $hbm_ipsh_dir */*/*.v] {
+    set ip_name [exec basename $ip_verilog .v]
+    puts "                        ....adding IP $ip_name"
+    add_files -fileset sim_1 -norecurse -scan_for_includes $ip_verilog -force >> $log_file
+    import_files -fileset sim_1 -norecurse $ip_verilog
+  }
 
-#  #puts "                        ..adding HBM VHDL files"
-#  #foreach ip_vhdl [glob -nocomplain -dir $hdl_dir/hbm/ *.vhd] {
-#  #  set ip_name [exec basename $ip_vhdl .vhd]
-#  #  puts "                        ....adding HDL Action IP $ip_name"
-#  #  #add_files -fileset sim_1 -norecurse -scan_for_includes $ip_vhdl -force >> $log_file
-#  #  add_files -fileset sim_1 -norecurse -scan_for_includes $ip_vhdl >> $log_file
-#  #  import_files -fileset sim_1 -norecurse $ip_vhdl
-#  #}
-# 
-  add_files -fileset sim_1 -norecurse -scan_for_includes $hbm_ip_dir/hbm_top_hbm_0/hdl/rtl/hbm_v1_0_3.sv
-  import_files -fileset sim_1 -norecurse $hbm_ip_dir/hbm_top_hbm_0/hdl/rtl/hbm_v1_0_3.sv
+  #puts "                        ..adding HBM VHDL files"
+  #foreach ip_vhdl [glob -nocomplain -dir $hdl_ip_dir/hbm *.vhd] {
+  #  set ip_name [exec basename $ip_vhdl .vhd]
+  #  puts "                        ....adding HDL Action IP $ip_name"
+  #  #add_files -fileset sim_1 -norecurse -scan_for_includes $ip_vhdl -force >> $log_file
+  #  add_files -fileset sim_1 -norecurse -scan_for_includes $ip_vhdl >> $log_file
+  #  import_files -fileset sim_1 -norecurse $ip_vhdl
+  #}
+
+  puts "                        ..adding HBM System Verilog library IPs"
+  foreach ip_sverilog [glob -nocomplain -dir $hbm_ip_dir */*/*/*.sv] {
+    set ip_name [exec basename $ip_sverilog .sv]
+    puts "                        ....adding IP $ip_name"
+    add_files -fileset sim_1 -norecurse -scan_for_includes $ip_sverilog -force >> $log_file
+    import_files -fileset sim_1 -norecurse $ip_sverilog
+  }
+  puts "                        ..adding HBM System Verilog library IPs -attempt"
+  foreach ip_sverilog [glob -nocomplain -dir $hbm_ip_dir */*/*.sv] {
+    set ip_name [exec basename $ip_sverilog .sv]
+    puts "                        ....adding IP $ip_name"
+    add_files -fileset sim_1 -norecurse -scan_for_includes $ip_sverilog -force >> $log_file
+    import_files -fileset sim_1 -norecurse $ip_sverilog
+  }
 
   update_compile_order -fileset sim_1 >> $log_file
-#  #END NEW
-#
-#  set sim_files [list \
-#    [file normalize "$sim_dir/hbm/board.v"] \
-#    [file normalize "$sim_dir/hbm/board_common.vh"] \
-#    [file normalize "$sim_dir/hbm/pci_exp_expect_tasks.vh"] \
-#    [file normalize "$sim_dir/hbm/pcie_4_0_rp.v"] \
-#    [file normalize "$sim_dir/hbm/sample_tests.vh"] \
-#    [file normalize "$sim_dir/hbm/sys_clk_gen.v"] \
-#    [file normalize "$sim_dir/hbm/sys_clk_gen_ds.v"] \
-#    [file normalize "$sim_dir/hbm/tests.vh"] \
-#    [file normalize "$sim_dir/hbm/usp_pci_exp_usrapp_cfg.v"] \
-#    [file normalize "$sim_dir/hbm/usp_pci_exp_usrapp_com.v"] \
-#    [file normalize "$sim_dir/hbm/usp_pci_exp_usrapp_rx.v"] \
-#    [file normalize "$sim_dir/hbm/usp_pci_exp_usrapp_tx.v"] \
-#    [file normalize "$sim_dir/hbm/xilinx_pcie_uscale_rp.v"] \
-#    [file normalize "$sim_dir/hbm/xp4_usp_smsw_model_core_top.v"] \
-#  ]
-##  add_files -norecurse -fileset $sim_set $sim_files
-#   add_files -norecurse -fileset sim_1 $sim_files
-#   set_property file_type {Verilog Header} [get_files $sim_files]
-#
-#  # Set fileset properties
-#  #set_property "source_set" "sources_1" $sim_set
-#  #set_property "top" "board" $sim_set
-#  # Need to `define SIMULATION so that the XDMA (mcap_enablement=Tandem_PROM) instance asserts the mcap_design_switch signal.
-#  #set_property "verilog_define" {SIMULATION=1} $sim_set
-#  # XSIM incremental compilation seems unreliable for large projects
-#  #set_property "incremental" "false" $sim_set
-#  #set_property "runtime" "200 us" $sim_set
-#  
-#  #set_property "target_simulator" "ModelSim" [current_project]
-#  # Incremental compilation seems unreliable ("unknown signal" caught) for large projects
-#  #set_property "modelsim.compile.incremental" "false" $sim_set
-#  #set_property "modelsim.simulate.runtime" "200 us" $sim_set
-#  
-#  #set_property "target_simulator" "Questa" [current_project]
-#  #set_property "questa.simulate.runtime" "200us" $sim_set
-#  
-#  #set_property "target_simulator" "Riviera" [current_project]
-#  #set_property "riviera.simulate.runtime" "200us" $sim_set
-#  
-#  # ActiveHDL is not supported in the Linux version of Vivado.
-#  #if { [string compare -nocase $tcl_platform(os) "Linux"] != 0 } {
-#    #set_property "target_simulator" "ActiveHDL" [current_project]
-#    #set_property "activehdl.simulate.runtime" "200us" $sim_set
-#  #}
-#
-#  #set_property "target_simulator" "XSim" [current_project]
-#  ## Incremental compilation seems unreliable (runaway xvlog process) for large projects
-#  #set_property "xsim.compile.incremental" "false" $sim_set
-#  #set_property "xsim.simulate.runtime" "200 us" $sim_set
-#
-#  #set_property "simulator_language" "Mixed" [current_project]
-#
-#  #update_compile_order -fileset $sim_set >> $log_file
+
+  if { $simulator == "xcelium" } {
+    puts "                        ..adding HBM initialization files "
+    foreach ip_files [glob -nocomplain -dir $hbm_ip_dir */*/xpm_internal_config_file_sim_*.mem] {
+      set ip_name [exec basename $ip_files .mem]
+      puts "                        ....adding file $ip_name"
+      add_files -fileset sim_1 -norecurse -scan_for_includes $ip_files  -force >> $log_file
+      import_files -fileset sim_1 -norecurse $ip_files
+    }
+  }
 #
 #===================
 } else {
