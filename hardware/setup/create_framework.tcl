@@ -252,65 +252,69 @@ if { $hbm_used == TRUE } {
 ##=========== COMMENT ALL FOLLOWING LINES UNTIL HBM Model is functional ===========================
 #
   puts "                        adding HBM Verilog simulation files"
-  puts "                         (details for HBM debug only)"
+  puts "                         (details for HBM debug only - need to sort what is really needed later)"
 #  set_property used_in_simulation false [get_files  $ip_dir/hbm/hbm.srcs/sources_1/bd/hbm_top/hbm_top.bd]
 ##===========
   add_files -fileset sim_1 -norecurse -scan_for_includes $ip_dir/hbm/hbm.srcs/sources_1/bd/hbm_top/sim/hbm_top.vhd >> $log_file
   import_files -fileset sim_1 -norecurse $ip_dir/hbm/hbm.srcs/sources_1/bd/hbm_top/sim/hbm_top.vhd >> $log_file
 
-  puts "                        ..adding HBM Verilog functions"
-  #foreach ip_verilog [glob -nocomplain -dir $hbm_ip_dir */sim/*.v] 
-  foreach ip_verilog [glob -nocomplain -dir $hbm_ip_dir */*/*.v] {
-    set ip_name [exec basename $ip_verilog .v]
-    puts "                        ....adding IP $ip_name"
-    add_files -fileset sim_1 -norecurse -scan_for_includes $ip_verilog -force >> $log_file
-    import_files -fileset sim_1 -norecurse $ip_verilog
-  }
+#  puts "                        ..adding HBM Verilog functions"
+#  #foreach ip_verilog [glob -nocomplain -dir $hbm_ip_dir */sim/*.v] 
+#  foreach ip_verilog [glob -nocomplain -dir $hbm_ip_dir */*/*.v] {
+#    set ip_name [exec basename $ip_verilog .v]
+#    puts "                        ....adding IP $ip_name"
+#    add_files -fileset sim_1 -norecurse -scan_for_includes $ip_verilog -force >> $log_file
+#    import_files -fileset sim_1 -norecurse $ip_verilog
+#  }
+#
+#  #set hbm_ipsh_dir     $ip_dir/hbm/hbm.srcs/sources_1/bd/hbm_top/ipshared/
+#  puts "                        ..adding HBM Verilog library IPs (ipshared)"
+#  foreach ip_verilog [glob -nocomplain -dir $hbm_ipsh_dir */*/*.v] {
+#    set ip_name [exec basename $ip_verilog .v]
+#    puts "                        ....adding IP $ip_name"
+#   add_files -fileset sim_1 -norecurse -scan_for_includes $ip_verilog -force >> $log_file
+#    import_files -fileset sim_1 -norecurse $ip_verilog
+#  }
+#
+#  #puts "                        ..adding HBM VHDL files"
+#  #foreach ip_vhdl [glob -nocomplain -dir $hdl_ip_dir/hbm *.vhd] {
+#  #  set ip_name [exec basename $ip_vhdl .vhd]
+#  #  puts "                        ....adding HDL Action IP $ip_name"
+#  #  #add_files -fileset sim_1 -norecurse -scan_for_includes $ip_vhdl -force >> $log_file
+#  #  add_files -fileset sim_1 -norecurse -scan_for_includes $ip_vhdl >> $log_file
+#  #  import_files -fileset sim_1 -norecurse $ip_vhdl
+#  #}
+#
+#  puts "                        ..adding HBM System Verilog library IPs"
+#  foreach ip_sverilog [glob -nocomplain -dir $hbm_ip_dir */*/*/*.sv] {
+#    set ip_name [exec basename $ip_sverilog .sv]
+#    puts "                        ....adding IP $ip_name"
+#    add_files -fileset sim_1 -norecurse -scan_for_includes $ip_sverilog -force >> $log_file
+#    import_files -fileset sim_1 -norecurse $ip_sverilog
+#  }
+#  puts "                        ..adding HBM System Verilog library IPs -attempt"
+#  foreach ip_sverilog [glob -nocomplain -dir $hbm_ip_dir */*/*.sv] {
+#    set ip_name [exec basename $ip_sverilog .sv]
+#    puts "                        ....adding IP $ip_name"
+#    add_files -fileset sim_1 -norecurse -scan_for_includes $ip_sverilog -force >> $log_file
+#    import_files -fileset sim_1 -norecurse $ip_sverilog
+#  }
 
-  #set hbm_ipsh_dir     $ip_dir/hbm/hbm.srcs/sources_1/bd/hbm_top/ipshared/
-  puts "                        ..adding HBM Verilog library IPs (ipshared)"
-  foreach ip_verilog [glob -nocomplain -dir $hbm_ipsh_dir */*/*.v] {
-    set ip_name [exec basename $ip_verilog .v]
-    puts "                        ....adding IP $ip_name"
-    add_files -fileset sim_1 -norecurse -scan_for_includes $ip_verilog -force >> $log_file
-    import_files -fileset sim_1 -norecurse $ip_verilog
-  }
+#  update_compile_order -fileset sim_1 >> $log_file
 
-  #puts "                        ..adding HBM VHDL files"
-  #foreach ip_vhdl [glob -nocomplain -dir $hdl_ip_dir/hbm *.vhd] {
-  #  set ip_name [exec basename $ip_vhdl .vhd]
-  #  puts "                        ....adding HDL Action IP $ip_name"
-  #  #add_files -fileset sim_1 -norecurse -scan_for_includes $ip_vhdl -force >> $log_file
-  #  add_files -fileset sim_1 -norecurse -scan_for_includes $ip_vhdl >> $log_file
-  #  import_files -fileset sim_1 -norecurse $ip_vhdl
-  #}
+  puts "                        ..adding HBM initialization files "
+#  foreach ip_files [glob -nocomplain -dir $hbm_ip_dir */*/xpm_internal_config_file_sim_*.mem] {
+#    set ip_name [exec basename $ip_files .mem]
+#    puts "                        ....adding file $ip_name"
+#    add_files -fileset sim_1 -norecurse -scan_for_includes $ip_files  -force >> $log_file
+#    import_files -fileset sim_1 -norecurse $ip_files
+#  }
+  set_property SOURCE_SET sources_1 [get_filesets sim_1]
+  add_files -fileset sim_1 -norecurse $hbm_ip_dir/hbm_top_hbm_0/hdl/rtl/xpm_internal_config_file_1.mem
+  add_files -fileset sim_1 -norecurse $hbm_ip_dir/hbm_top_hbm_0/hdl/rtl/xpm_internal_config_file_0.mem
+  add_files -fileset sim_1 -norecurse $hbm_ip_dir/hbm_top_hbm_0/hdl/rtl/xpm_internal_config_file_sim_1.mem
+  add_files -fileset sim_1 -norecurse $hbm_ip_dir/hbm_top_hbm_0/hdl/rtl/xpm_internal_config_file_sim_0.mem
 
-  puts "                        ..adding HBM System Verilog library IPs"
-  foreach ip_sverilog [glob -nocomplain -dir $hbm_ip_dir */*/*/*.sv] {
-    set ip_name [exec basename $ip_sverilog .sv]
-    puts "                        ....adding IP $ip_name"
-    add_files -fileset sim_1 -norecurse -scan_for_includes $ip_sverilog -force >> $log_file
-    import_files -fileset sim_1 -norecurse $ip_sverilog
-  }
-  puts "                        ..adding HBM System Verilog library IPs -attempt"
-  foreach ip_sverilog [glob -nocomplain -dir $hbm_ip_dir */*/*.sv] {
-    set ip_name [exec basename $ip_sverilog .sv]
-    puts "                        ....adding IP $ip_name"
-    add_files -fileset sim_1 -norecurse -scan_for_includes $ip_sverilog -force >> $log_file
-    import_files -fileset sim_1 -norecurse $ip_sverilog
-  }
-
-  update_compile_order -fileset sim_1 >> $log_file
-
-  if { $simulator == "xcelium" } {
-    puts "                        ..adding HBM initialization files "
-    foreach ip_files [glob -nocomplain -dir $hbm_ip_dir */*/xpm_internal_config_file_sim_*.mem] {
-      set ip_name [exec basename $ip_files .mem]
-      puts "                        ....adding file $ip_name"
-      add_files -fileset sim_1 -norecurse -scan_for_includes $ip_files  -force >> $log_file
-      import_files -fileset sim_1 -norecurse $ip_files
-    }
-  }
 #
 #===================
 } else {
