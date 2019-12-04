@@ -84,10 +84,13 @@ if { ( $simulator == "irun" ) } {
   set_property target_simulator IES [current_project]
   set_property compxlib.ies_compiled_library_dir $::env(IES_LIBS) [current_project]
   #set_property -name {ies.elaborate.ncelab.more_options} -value {-access +rwc} -objects [current_fileset -simset]
-  #NEW - 3 following lines to circumvent Xilinx bug when simulating HBM (PG276)
-  set_property -name {ies.simulate.ncsim.more_options} -value {+notimingcheck} -objects [get_filesets sim_1]
-  set_property -name {ies.elaborate.ncelab.more_options} -value {-access +rwc -notimingchecks} -objects [get_filesets sim_1]
-  set_property -name {ies.simulate.runtime} -value {1ms} -objects [get_filesets sim_1]
+
+  if { $hbm_used == TRUE } {
+    #NEW - 3 following lines to circumvent Xilinx bug when simulating HBM (PG276)
+    set_property -name {ies.simulate.ncsim.more_options} -value {+notimingcheck} -objects [get_filesets sim_1]
+    set_property -name {ies.elaborate.ncelab.more_options} -value {-access +rwc -notimingchecks} -objects [get_filesets sim_1]
+    set_property -name {ies.simulate.runtime} -value {1ms} -objects [get_filesets sim_1]
+  }
 } elseif { $simulator == "xsim" } {
   set_property -name {xsim.elaborate.xelab.more_options} -value {-sv_lib libdpi -sv_root .} -objects [current_fileset -simset]
 }
@@ -106,10 +109,11 @@ set_property STEPS.SYNTH_DESIGN.ARGS.KEEP_EQUIVALENT_REGISTERS true    [get_runs
 set_property STEPS.SYNTH_DESIGN.ARGS.NO_LC                     true    [get_runs synth_1]
 set_property STEPS.SYNTH_DESIGN.ARGS.FLATTEN_HIERARCHY         rebuilt [get_runs synth_1]
 # Implementation
+# AD9H3 PSL doesn't time well with default strategy
   if { ($fpga_card == "AD9H3") } {
-       set_property strategy Performance_ExplorePostRoutePhysOpt [get_runs impl_1]
-# next one is working, but we try another one to experiment with capi primary flash programming issue
-# #        set_property strategy Performance_Explore [get_runs impl_1]
+        set_property strategy Performance_ExplorePostRoutePhysOpt [get_runs impl_1]
+# with following strategy, we experimented programming issue when flashing capi primary flash 
+#        set_property strategy Performance_Explore [get_runs impl_1]
      }
 set_property STEPS.OPT_DESIGN.ARGS.DIRECTIVE Explore [get_runs impl_1]
 set_property STEPS.PLACE_DESIGN.ARGS.DIRECTIVE Explore [get_runs impl_1]
@@ -238,19 +242,16 @@ if { $hbm_used == TRUE } {
 #  set_property  ip_repo_paths $hdl_dir/hbm/ [current_project]
   #set_property  ip_repo_paths [concat [get_property ip_repo_paths [current_project]] $hdl_dir/hbm/] [current_project] 
   add_files -norecurse                          $ip_dir/hbm/hbm.srcs/sources_1/bd/hbm_top/hdl/hbm_top_wrapper.vhd >> $log_file
+  #puts "                        adding HBM initialization files "
+  add_files -norecurse $hbm_ip_dir/hbm_top_hbm_0/hdl/rtl/xpm_internal_config_file_1.mem
+  add_files -norecurse $hbm_ip_dir/hbm_top_hbm_0/hdl/rtl/xpm_internal_config_file_0.mem
   update_ip_catalog  >> $log_file
 
-#============
-  #add_files -scan_for_includes $hdl_dir/hbm/  >> $log_file
-  #import_files  $hdl_dir/hbm/
-  #update_compile_order -fileset sources_1
 #============
 
   add_files -norecurse                          $ip_dir/hbm/hbm.srcs/sources_1/bd/hbm_top/hbm_top.bd  >> $log_file
   export_ip_user_files -of_objects  [get_files  $ip_dir/hbm/hbm.srcs/sources_1/bd/hbm_top/hbm_top.bd] -lib_map_path [list {{ies=$root_dir/viv_project/framework.cache/compile_simlib/ies}}] -no_script -sync -force -quiet
 
-##=========== COMMENT ALL FOLLOWING LINES UNTIL HBM Model is functional ===========================
-#
   puts "                        adding HBM Verilog simulation files"
 #  set_property used_in_simulation false [get_files  $ip_dir/hbm/hbm.srcs/sources_1/bd/hbm_top/hbm_top.bd]
 ##===========
@@ -258,18 +259,11 @@ if { $hbm_used == TRUE } {
   import_files -fileset sim_1 -norecurse $ip_dir/hbm/hbm.srcs/sources_1/bd/hbm_top/sim/hbm_top.vhd >> $log_file
 
 
-  puts "                        adding HBM initialization files "
+  #puts "                        adding HBM initialization files "
   set_property SOURCE_SET sources_1 [get_filesets sim_1]
-  add_files -fileset sim_1 -norecurse $hbm_ip_dir/hbm_top_hbm_0/hdl/rtl/xpm_internal_config_file_1.mem
-  add_files -fileset sim_1 -norecurse $hbm_ip_dir/hbm_top_hbm_0/hdl/rtl/xpm_internal_config_file_0.mem
   add_files -fileset sim_1 -norecurse $hbm_ip_dir/hbm_top_hbm_0/hdl/rtl/xpm_internal_config_file_sim_1.mem
   add_files -fileset sim_1 -norecurse $hbm_ip_dir/hbm_top_hbm_0/hdl/rtl/xpm_internal_config_file_sim_0.mem
 
-#
-#===================
-} else {
-  puts "                        removing HBM block design"
-  #remove_files $action_hw_dir/action_axi_hbm.vhd -quiet
 }
 
 # Add NVME

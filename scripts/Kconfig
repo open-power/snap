@@ -252,6 +252,7 @@ choice
 		  All combination can be done.
 		  This example is written in C and compiled with HLS
 		select ENABLE_HLS_SUPPORT
+		select FORCE_SDRAM_OR_BRAM
 		select DISABLE_NVME
 
 	config HLS_HBM_MEMCOPY
