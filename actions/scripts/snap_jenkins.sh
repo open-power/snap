@@ -116,6 +116,9 @@ function test_all_actions() # $1 = card, $2 = accel
 		*"1014100f") # HLS Parallel memcpy
 			cmd="./actions/hls_parallel_memcpy/tests/test_0x1014100F.sh"
 		;;
+		*"10141010") # HLS HBM memcpy
+			cmd="./actions/hls_hbm_memcopy/tests/test_0x10141010.sh"
+		;;
 		*)
 			echo "Error: Action: $action is not valid !"
 			run_test=0

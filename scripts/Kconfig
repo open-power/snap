@@ -243,6 +243,7 @@ choice
 
 	config HLS_MEMCOPY
 		bool "HLS Memcopy"
+		depends on !AD9H3
 		help
 		  This is a basic example to start accessing data:
 		  - Read data from the server memory or from the card DDR
@@ -251,6 +252,20 @@ choice
 		  All combination can be done.
 		  This example is written in C and compiled with HLS
 		select ENABLE_HLS_SUPPORT
+		select DISABLE_NVME
+
+	config HLS_HBM_MEMCOPY
+		bool "HLS HBM Memcopy"
+		depends on AD9H3
+		help
+		  This is a basic example to start accessing data:
+		  - Read data from the server memory or from the FPGA HBM (High Bandwidth Memory)
+		  - Write data to the server memory or to the FPGA HBM
+		  - A temporary buffer is used in the FPGA (configurable size)
+		  All combination can be done.
+		  This example is written in C and compiled with HLS
+		select ENABLE_HLS_SUPPORT
+		select DISABLE_SDRAM_AND_BRAM
 		select DISABLE_NVME
 
 	config HLS_NVME_MEMCOPY
@@ -427,14 +442,14 @@ config ENABLE_HBM
 	bool
 	prompt "Enable HBM"
 	default y
-	depends on (HLS_MEMCOPY && AD9H3)
+	depends on (HLS_HBM_MEMCOPY && AD9H3)
 	help
 	  This option enables the on-card HBM on AD9H3 card.
 
 config HBM_USED
 	string
-	default "TRUE"  if (AD9H3 && HLS_MEMCOPY)
-	default "FALSE" if ! (AD9H3 && HLS_MEMCOPY)
+	default "TRUE"  if (AD9H3 && HLS_HBM_MEMCOPY)
+	default "FALSE" if ! (AD9H3 && HLS_HBM_MEMCOPY)
 
 config SDRAM_USED
 	string

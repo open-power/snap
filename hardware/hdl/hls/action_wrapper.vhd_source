@@ -131,7 +131,7 @@ ENTITY action_wrapper IS
     m_axi_nvme_wuser           : OUT STD_LOGIC_VECTOR (C_M_AXI_NVME_WUSER_WIDTH -1 DOWNTO 0 );
     m_axi_nvme_wvalid          : OUT STD_LOGIC;
 #endif
---CHANGE_HBM_INTERFACES_NUMBER
+#ifdef CONFIG_ENABLE_HBM
 -- copy/paste these 45 signals for a new AXI interface
     m_axi_card_hbm_p0_AWVALID : OUT STD_LOGIC;
     m_axi_card_hbm_p0_AWREADY : IN STD_LOGIC;
@@ -224,6 +224,7 @@ ENTITY action_wrapper IS
     m_axi_card_hbm_p1_BRESP : IN STD_LOGIC_VECTOR (1 downto 0);
     m_axi_card_hbm_p1_BID : IN STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_ID_WIDTH-1 downto 0);
     m_axi_card_hbm_p1_BUSER : IN STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_BUSER_WIDTH-1 downto 0);
+#endif
   --
     -- AXI Control Register Interface
     s_axi_ctrl_reg_araddr      : IN  STD_LOGIC_VECTOR ( C_S_AXI_CTRL_REG_ADDR_WIDTH-1 DOWNTO 0 );
@@ -326,8 +327,8 @@ ARCHITECTURE STRUCTURE OF action_wrapper IS
       C_M_AXI_NVME_RUSER_WIDTH         : integer;
       C_M_AXI_NVME_BUSER_WIDTH         : integer;
 #endif
-      -- Parameters for HBM port 0 and Port 1
---CHANGE_HBM_INTERFACES_NUMBER
+#ifdef CONFIG_ENABLE_HBM
+-- Parameters for HBM port 0 and Port 1
 -- copy/paste these 8 signals for a new AXI interface
       C_M_AXI_CARD_HBM_P0_ADDR_WIDTH      : INTEGER;
       C_M_AXI_CARD_HBM_P0_ID_WIDTH        : INTEGER;
@@ -346,6 +347,7 @@ ARCHITECTURE STRUCTURE OF action_wrapper IS
       C_M_AXI_CARD_HBM_P1_ARUSER_WIDTH    : INTEGER;
       C_M_AXI_CARD_HBM_P1_RUSER_WIDTH     : INTEGER;
       C_M_AXI_CARD_HBM_P1_BUSER_WIDTH     : INTEGER;
+#endif
 --
       -- Parameters for Axi Slave Bus Interface AXI_CTRL_REG
       C_S_AXI_CTRL_REG_DATA_WIDTH      : integer;
@@ -464,7 +466,7 @@ ARCHITECTURE STRUCTURE OF action_wrapper IS
       m_axi_nvme_ruser           : IN  STD_LOGIC_VECTOR(C_M_AXI_NVME_RUSER_WIDTH-1 DOWNTO 0);
       m_axi_nvme_wuser           : OUT STD_LOGIC_VECTOR(C_M_AXI_NVME_WUSER_WIDTH-1 DOWNTO 0);
 #endif
---CHANGE_HBM_INTERFACES_NUMBER
+#ifdef CONFIG_ENABLE_HBM
 -- copy/paste these 45 signals for a new AXI interface
       m_axi_card_hbm_p0_AWVALID : OUT STD_LOGIC;
       m_axi_card_hbm_p0_AWREADY : IN STD_LOGIC;
@@ -557,6 +559,7 @@ ARCHITECTURE STRUCTURE OF action_wrapper IS
       m_axi_card_hbm_p1_BRESP : IN STD_LOGIC_VECTOR (1 downto 0);
       m_axi_card_hbm_p1_BID : IN STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_P1_ID_WIDTH-1 downto 0);
       m_axi_card_hbm_p1_BUSER : IN STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_P1_BUSER_WIDTH-1 downto 0);
+#endif
 --
       --
       -- Ports of Axi Slave Bus Interface AXI_CTRL_REG
@@ -655,7 +658,7 @@ BEGIN
     C_M_AXI_NVME_RUSER_WIDTH    => C_M_AXI_NVME_RUSER_WIDTH,
     C_M_AXI_NVME_BUSER_WIDTH    => C_M_AXI_NVME_BUSER_WIDTH,
 #endif
---CHANGE_HBM_INTERFACES_NUMBER
+#ifdef CONFIG_ENABLE_HBM
 -- copy/paste these 8 signals for a new AXI interface
     -- Parameters for HBM port 0 and Port 1
     C_M_AXI_CARD_HBM_P0_ADDR_WIDTH   => C_M_AXI_CARD_HBM_ADDR_WIDTH,
@@ -675,6 +678,7 @@ BEGIN
     C_M_AXI_CARD_HBM_P1_ARUSER_WIDTH => C_M_AXI_CARD_HBM_ARUSER_WIDTH,
     C_M_AXI_CARD_HBM_P1_RUSER_WIDTH  => C_M_AXI_CARD_HBM_RUSER_WIDTH,
     C_M_AXI_CARD_HBM_P1_BUSER_WIDTH  => C_M_AXI_CARD_HBM_BUSER_WIDTH,
+#endif
     -- Parameters for Axi Slave Bus Interface AXI_CTRL_REG
     C_S_AXI_CTRL_REG_DATA_WIDTH      => C_S_AXI_CTRL_REG_DATA_WIDTH,
     C_S_AXI_CTRL_REG_ADDR_WIDTH      => C_S_AXI_CTRL_REG_ADDR_WIDTH,
@@ -785,7 +789,7 @@ BEGIN
     m_axi_nvme_wuser             => m_axi_nvme_wuser,
     m_axi_nvme_wvalid            => m_axi_nvme_wvalid,
 #endif
---CHANGE_HBM_INTERFACES_NUMBER
+#ifdef CONFIG_ENABLE_HBM
 -- copy/paste these 45 signals for a new AXI interface
     m_axi_card_hbm_p0_araddr   => m_axi_card_hbm_p0_araddr,
     m_axi_card_hbm_p0_arburst  => m_axi_card_hbm_p0_arburst,
@@ -878,6 +882,7 @@ BEGIN
     m_axi_card_hbm_p1_wstrb    => m_axi_card_hbm_p1_wstrb,
     m_axi_card_hbm_p1_wuser    => m_axi_card_hbm_p1_wuser,
     m_axi_card_hbm_p1_wvalid   => m_axi_card_hbm_p1_wvalid,
+#endif
 --
     s_axi_ctrl_reg_araddr        => s_axi_ctrl_reg_araddr,
     s_axi_ctrl_reg_arready       => s_axi_ctrl_reg_arready,

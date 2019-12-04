@@ -35,7 +35,8 @@ int verbose_flag = 0;
 
 static const char *version = GIT_VERSION;
 
-static const char *mem_tab[] = { "HOST_DRAM", "CARD_DRAM", "TYPE_NVME", "FPGA_BRAM"};
+static const char *mem_tab[] = { "HOST_DRAM", "CARD_DRAM", "TYPE_NVME", "FPGA_BRAM", 
+          "HBM_P0", "HBM_P1", "HBM_P2", "HBM_P3", "HBM_P4", "HBM_P5", "HBM_P6"};
 
 /*
  * @brief	prints valid command line options
@@ -48,9 +49,9 @@ static void usage(const char *prog)
 	       "  -C, --card <cardno>        can be (0...3)\n"
 	       "  -i, --input <file.bin>     input file.\n"
 	       "  -o, --output <file.bin>    output file.\n"
-	       "  -A, --type-in <HOST_DRAM,  CARD_DRAM, UNUSED, ...>.\n"
+	       "  -A, --type-in <HOST_DRAM,  CARD_DRAM, HBM_P0/P1, UNUSED, ...>.\n"
 	       "  -a, --addr-in <addr>       address e.g. in CARD_RAM.\n"
-	       "  -D, --type-out <HOST_DRAM, CARD_DRAM, UNUSED, ...>.\n"
+	       "  -D, --type-out <HOST_DRAM, CARD_DRAM, HBM_P0/P1, UNUSED, ...>.\n"
 	       "  -d, --addr-out <addr>      address e.g. in CARD_RAM.\n"
 	       "  -s, --size <size>          size of data.\n"
 	       "  -m, --mode <mode>          mode flags.\n"
@@ -63,7 +64,7 @@ static void usage(const char *prog)
 	       "\n"
 	       "NOTES : \n"
 	       "  - HOST_DRAM is the Host machine (Power cpu based) attached memory\n"
-	       "  - CARD_DRAM is the FPGA generally DDR attached memory\n"
+	       "  - HBM_P0/P1 is the FPGA High Bandwidth memory (AD9H3 - AD9H7 cards only)\n"
 	       "  - NVMe usage requires specific driver, use hls_nvme_memcopy example instead\n"
 	       "  - When providing an input file, a corresponding memory allocation will be performed\n"
 	       "    in the HOST_DRAM at the reported adress\n"
@@ -79,7 +80,7 @@ static void usage(const char *prog)
 	       "\n"
 	       "Example on a real card :\n"
 	       "------------------------\n"
-	       "cd ~/snap && export ACTION_ROOT=~/snap/actions/hls_memcopy\n"
+	       "cd ~/snap && export ACTION_ROOT=~/snap/actions/hls_hbm_memcopy\n"
 	       "source snap_path.sh\n"
 	       "echo locate the slot number used by your card\n"
 	       "snap_find_card -v -AALL\n"
@@ -89,18 +90,19 @@ static void usage(const char *prog)
 	       "dd if=/dev/urandom of=t1 bs=1M count=512\n"
 	       "\n"
 	       "echo READ 512MB from Host - one direction\n"
-	       "snap_memcopy -i t1 -C0\n"
+	       "snap_hbm_memcopy -i t1 -C0\n"
 	       "echo WRITE 512MB to Host - one direction - (t1!=t2 since buffer is 256KB)\n"
-	       "snap_memcopy -o t2 -s0x20000000 -C0\n"
+	       "snap_hbm_memcopy -o t2 -s0x20000000 -C0\n"
 	       "\n"
-	       "echo READ 512MB from DDR - one direction\n"
-	       "snap_memcopy -s0x20000000 -ACARD_DRAM -a0x0 -C0\n"
-	       "echo WRITE 512MB to DDR - one direction\n"
-	       "snap_memcopy -s0x20000000 -DCARD_DRAM -d0x0 -C0\n"
+	       "echo READ 512MB from HBM port0- one direction\n"
+	       "snap_hbm_memcopy -s0x20000000 -A HBM_P0 -a0x0 -C0\n"
+	       "echo WRITE 512MB to HBM port0 - one direction\n"
+	       "snap_hbm_memcopy -s0x20000000 -D HBM_P0 -d0x0 -C0\n"
 	       "\n"
-	       "echo MOVE 512MB from Host to DDR back to Host and compare\n"
-	       "snap_memcopy -i t1 -DCARD_DRAM -d 0x0 -C0\n"
-	       "snap_memcopy -o t2 -s0x20000000 -ACARD_DRAM -a 0x0 -C0\n"
+	       "echo MOVE 512MB from Host to HBM port0 - port0 to port 1 and back to Host and compare\n"
+	       "snap_hbm_memcopy -i t1 -D HBM_P0 -d 0x0 -C0\n"
+	       "snap_hbm_memcopy -s0x20000000 -A HBM_P0 -a 0x0 -D HBM_P1 -d 0x0 -C0\n"
+	       "snap_hbm_memcopy -s0x20000000 -A HBM_P1 -a 0x0 -o t2 -C0\n"
 	       "diff t1 t2\n"
 	       "\n"
 	       "Example for a simulation\n"
@@ -108,14 +110,14 @@ static void usage(const char *prog)
 	       "snap_maint -vv\n"
 	       "echo create a 4KB file with random data \n"
 	       "rm t2; dd if=/dev/urandom of=t1 bs=1K count=4\n"
-	       "echo READ file t1 from host memory THEN write it at @0x0 in card DDR\n"
-	       "snap_memcopy -i t1 -D CARD_DRAM -d 0x0 -t70 \n"
-	       "echo READ 4KB from card DDR at @0x0 THEN write them to Host and file t2\n"
-	       "snap_memcopy -o t2 -A CARD_DRAM -a 0x0 -s0x1000 -t70 \n"
+	       "echo READ file t1 from host memory THEN write it at @0x0 in FPGA HBM port0 \n"
+	       "snap_hbm_memcopy -i t1 -D HBM_P0 -d 0x0 -t70 \n"
+	       "echo READ 4KB from FPGA HBM port0 at @0x0 THEN write them to Host and file t2\n"
+	       "snap_hbm_memcopy -o t2 -A HBM_P0 -a 0x0 -s0x1000 -t70 \n"
 	       "diff t1 t2\n"
 	       "\n"
 	       "echo same test using polling instead of IRQ waiting for the result\n"
-	       "snap_memcopy -o t2 -A CARD_DRAM -a 0x0 -s0x1000 -N\n"
+	       "snap_hbm_memcopy -o t2 -A HBM_P0 -a 0x0 -s0x1000 -N\n"
 	       "\n",
 	       prog);
 }
@@ -216,6 +218,20 @@ int main(int argc, char *argv[])
 				type_in = SNAP_ADDRTYPE_CARD_DRAM;
 			else if (strcmp(space, "HOST_DRAM") == 0)
 				type_in = SNAP_ADDRTYPE_HOST_DRAM;
+			else if (strcmp(space, "HBM_P0") == 0)
+				type_in = SNAP_ADDRTYPE_HBM_P0;
+			else if (strcmp(space, "HBM_P1") == 0)
+				type_in = SNAP_ADDRTYPE_HBM_P1;
+			else if (strcmp(space, "HBM_P2") == 0)
+				type_in = SNAP_ADDRTYPE_HBM_P2;
+			else if (strcmp(space, "HBM_P3") == 0)
+				type_in = SNAP_ADDRTYPE_HBM_P3;
+			else if (strcmp(space, "HBM_P4") == 0)
+				type_in = SNAP_ADDRTYPE_HBM_P4;
+			else if (strcmp(space, "HBM_P5") == 0)
+				type_in = SNAP_ADDRTYPE_HBM_P5;
+			else if (strcmp(space, "HBM_P6") == 0)
+				type_in = SNAP_ADDRTYPE_HBM_P6;
 			else {
 				usage(argv[0]);
 				exit(EXIT_FAILURE);
@@ -231,6 +247,20 @@ int main(int argc, char *argv[])
 				type_out = SNAP_ADDRTYPE_CARD_DRAM;
 			else if (strcmp(space, "HOST_DRAM") == 0)
 				type_out = SNAP_ADDRTYPE_HOST_DRAM;
+			else if (strcmp(space, "HBM_P0") == 0)
+				type_out = SNAP_ADDRTYPE_HBM_P0;
+			else if (strcmp(space, "HBM_P1") == 0)
+				type_out = SNAP_ADDRTYPE_HBM_P1;
+			else if (strcmp(space, "HBM_P2") == 0)
+				type_out = SNAP_ADDRTYPE_HBM_P2;
+			else if (strcmp(space, "HBM_P3") == 0)
+				type_out = SNAP_ADDRTYPE_HBM_P3;
+			else if (strcmp(space, "HBM_P4") == 0)
+				type_out = SNAP_ADDRTYPE_HBM_P4;
+			else if (strcmp(space, "HBM_P5") == 0)
+				type_out = SNAP_ADDRTYPE_HBM_P5;
+			else if (strcmp(space, "HBM_P6") == 0)
+				type_out = SNAP_ADDRTYPE_HBM_P6;
 			else {
 				usage(argv[0]);
 				exit(EXIT_FAILURE);
@@ -328,8 +358,8 @@ int main(int argc, char *argv[])
 	       "  mode:        %08x\n",
 	       input  ? input  : "unknown",
 	       output ? output : "unknown",
-	       type_in,  mem_tab[type_in%4],  (long long)addr_in,
-	       type_out, mem_tab[type_out%4], (long long)addr_out,
+	       type_in,  mem_tab[type_in%6],  (long long)addr_in,
+	       type_out, mem_tab[type_out%6], (long long)addr_out,
 	       size, mode);
 
 	snprintf(device, sizeof(device)-1, "/dev/cxl/afu%d.0s", card_no);
@@ -415,7 +445,7 @@ int main(int argc, char *argv[])
 	mib_sec = (diff_usec == 0) ? 0.0 : (double)size / diff_usec;
 
 	fprintf(stdout, "memcopy of %lld bytes took %lld usec @ %.3f MiB/sec (from %s to %s)\n",
-		(long long)size, (long long)diff_usec, mib_sec, mem_tab[type_in%4], mem_tab[type_out%4]);
+		(long long)size, (long long)diff_usec, mib_sec, mem_tab[type_in%6], mem_tab[type_out%6]);
         fprintf(stdout, "This time represents the register transfer time + memcopy action time\n");       
 
 	snap_detach_action(action);
