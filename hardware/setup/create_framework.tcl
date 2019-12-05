@@ -252,17 +252,12 @@ if { $hbm_used == TRUE } {
   add_files -norecurse                          $ip_dir/hbm/hbm.srcs/sources_1/bd/hbm_top/hbm_top.bd  >> $log_file
   export_ip_user_files -of_objects  [get_files  $ip_dir/hbm/hbm.srcs/sources_1/bd/hbm_top/hbm_top.bd] -lib_map_path [list {{ies=$root_dir/viv_project/framework.cache/compile_simlib/ies}}] -no_script -sync -force -quiet
 
-  puts "                        adding HBM Verilog simulation files"
-#  set_property used_in_simulation false [get_files  $ip_dir/hbm/hbm.srcs/sources_1/bd/hbm_top/hbm_top.bd]
-##===========
-  add_files -fileset sim_1 -norecurse -scan_for_includes $ip_dir/hbm/hbm.srcs/sources_1/bd/hbm_top/sim/hbm_top.vhd >> $log_file
-  import_files -fileset sim_1 -norecurse $ip_dir/hbm/hbm.srcs/sources_1/bd/hbm_top/sim/hbm_top.vhd >> $log_file
-
-
   #puts "                        adding HBM initialization files "
-  set_property SOURCE_SET sources_1 [get_filesets sim_1]
+  #set_property SOURCE_SET sources_1 [get_filesets sim_1]
   add_files -fileset sim_1 -norecurse $hbm_ip_dir/hbm_top_hbm_0/hdl/rtl/xpm_internal_config_file_sim_1.mem
   add_files -fileset sim_1 -norecurse $hbm_ip_dir/hbm_top_hbm_0/hdl/rtl/xpm_internal_config_file_sim_0.mem
+
+  #update_compile_order -fileset sim_1 >> $log_file
 
 }
 
