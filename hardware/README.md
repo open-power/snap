@@ -101,6 +101,8 @@ CAPI BSP (**B**oard **S**upport **P**ackage) and PSL got separated. For the CAPI
 The PSL is integrated into the CAPI BSP as an IP core with encrypted sources.
 Please go to the IBM Portal for OpenPOWER and download the required files under "**PSL IP Source Files for POWER9 CAPI**".
 
+Note : for AD9Hx cards containing HBM, HBM lib needs to added manually (see [hardware/setup/AD9H3/README.md](./setup/AD9H3/README.md))
+
 Alternatively, the following link will provide direct access:
 
 https://www-355.ibm.com/systems/power/openpower/posting.xhtml?postingId=1BED44BCA884D845852582B70076A89A
