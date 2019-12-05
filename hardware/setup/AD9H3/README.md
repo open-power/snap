@@ -2,7 +2,7 @@
 
 9H3 cards contains VU33P with an HBM.
 The following URL defines how to get the PSL 
-[image-and-model-build](../../../hardware/README.md#image-and-model-build)
+[image-and-model-build](../../../hardware/README.md#power9)
 
 However current PSL9 ZIP package doesn't contain the new HBM library reference.
 
