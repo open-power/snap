@@ -13,6 +13,7 @@
 U200=y
 # FX609 is not set
 # AD9V3 is not set
+# AD9H3 is not set
 FPGACARD="U200"
 FLASH_INTERFACE="SPIx4"
 FLASH_SIZE="128"
@@ -27,9 +28,11 @@ NUM_OF_ACTIONS=1
 # HDL_ACTION is not set
 # HDL_HELLOWORLD is not set
 # HDL_EXAMPLE is not set
+# HDL_NVME_EXAMPLE is not set
 # HLS_ACTION is not set
 # HLS_HELLOWORLD is not set
 # HLS_MEMCOPY is not set
+# HLS_NVME_MEMCOPY is not set
 # HLS_SPONGE is not set
 # HLS_HASHJOIN is not set
 HLS_SEARCH=y
@@ -39,6 +42,8 @@ HLS_SEARCH=y
 # HLS_MM_TEST is not set
 # HLS_DECIMAL_MULT is not set
 # HLS_SCATTER_GATHER is not set
+# HLS_VECTOR_GENERATOR is not set
+# HLS_PARALLEL_MEMCPY is not set
 ENABLE_HLS_SUPPORT=y
 HLS_SUPPORT="TRUE"
 # DISABLE_SDRAM_AND_BRAM is not set
