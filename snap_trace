@@ -50,5 +50,16 @@ if [ $simulator == "irun" ]; then
     echo "Please launch a simulation (make sim) prior to see traces"
   fi
 fi
+if [ $simulator == "xcelium" ]; then
+  if [ -d "xcelium" ]; then
+    if [ "$capi20" == "y" ]; then
+	simvision -wave -input ./debug2_action_gmem_ddr4.svwf ./xcelium/latest/capiWave.shm
+    else
+	simvision -wave -input ./debug_action_gmem_ddr4.svwf ./xcelium/latest/capiWave.shm
+    fi
+  else
+    echo "Please launch a simulation (make sim) prior to see traces"
+  fi
+fi
 
 cd ../..
