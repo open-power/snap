@@ -226,13 +226,13 @@ static void process_action(snap_membus_t *din_gmem,
 	action_xfer_size = MIN(act_reg->Data.in.size,
 			       act_reg->Data.out.size);
 
-	if (act_reg->Data.in.type == SNAP_ADDRTYPE_CARD_DRAM and
-	    act_reg->Data.in.size > CARD_DRAM_SIZE) {
+	if (act_reg->Data.out.type == SNAP_ADDRTYPE_HBM_P0 and
+	    act_reg->Data.out.size > HBM_P0_SIZE) {
 	        act_reg->Control.Retc = SNAP_RETC_FAILURE;
 		return;
         }
-	if (act_reg->Data.out.type == SNAP_ADDRTYPE_CARD_DRAM and
-	    act_reg->Data.out.size > CARD_DRAM_SIZE) {
+	if (act_reg->Data.out.type == SNAP_ADDRTYPE_HBM_P1 and
+	    act_reg->Data.out.size > HBM_P1_SIZE) {
 	        act_reg->Control.Retc = SNAP_RETC_FAILURE;
 		return;
         }

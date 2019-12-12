@@ -27,7 +27,8 @@
 #define RELEASE_LEVEL		0x00000001
 
 #define MAX_NB_OF_BYTES_READ	(256 * 1024)
-#define CARD_DRAM_SIZE		(1 * 1024 *1024 * 1024)	//Maximum size in bytes (depends on the card used)
+#define HBM_P0_SIZE		(256 * 1024 * 1024)	//Maximum size in bytes (depends on HBM configuration)
+#define HBM_P1_SIZE		(256 * 1024 * 1024)	//Maximum size in bytes (depends on HBM configuration)
 #define MAX_NB_OF_WORDS_READ	(MAX_NB_OF_BYTES_READ/BPERDW)
 
 //---------------------------------------------------------------------
