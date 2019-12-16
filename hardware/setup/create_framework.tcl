@@ -235,32 +235,36 @@ foreach ip_xci [glob -nocomplain -dir $action_ip_dir */*.xci] {
   export_ip_user_files -of_objects  [get_files "$ip_xci"] -no_script -sync -force >> $log_file
 }
 
+#============
 # Add HBM
 if { $hbm_used == TRUE } {
   puts "                        adding HBM block design"
-#  Following line modified to support metalfs:
-#  set_property  ip_repo_paths $hdl_dir/hbm/ [current_project]
-  #set_property  ip_repo_paths [concat [get_property ip_repo_paths [current_project]] $hdl_dir/hbm/] [current_project] 
-  add_files -norecurse                          $ip_dir/hbm/hbm.srcs/sources_1/bd/hbm_top/hdl/hbm_top_wrapper.vhd >> $log_file
-  #puts "                        adding HBM initialization files "
-  add_files -norecurse $hbm_ip_dir/hbm_top_hbm_0/hdl/rtl/xpm_internal_config_file_1.mem
-  add_files -norecurse $hbm_ip_dir/hbm_top_hbm_0/hdl/rtl/xpm_internal_config_file_0.mem
-  update_ip_catalog  >> $log_file
+  add_files -norecurse $ip_dir/hbm/hbm.srcs/sources_1/bd/hbm_top/hdl/hbm_top_wrapper.vhd >> $log_file
+  if { $bram_used != TRUE } {
+    # if BRAM model used replacing HBM do not add specific hbm init files
+    puts "                        adding HBM initialization files "
+    add_files -norecurse $hbm_ip_dir/hbm_top_hbm_0/hdl/rtl/xpm_internal_config_file_1.mem
+    add_files -norecurse $hbm_ip_dir/hbm_top_hbm_0/hdl/rtl/xpm_internal_config_file_0.mem
+    update_ip_catalog  >> $log_file
+  }
 
-#============
 
-  add_files -norecurse                          $ip_dir/hbm/hbm.srcs/sources_1/bd/hbm_top/hbm_top.bd  >> $log_file
+  add_files -norecurse $ip_dir/hbm/hbm.srcs/sources_1/bd/hbm_top/hbm_top.bd  >> $log_file
   export_ip_user_files -of_objects  [get_files  $ip_dir/hbm/hbm.srcs/sources_1/bd/hbm_top/hbm_top.bd] -lib_map_path [list {{ies=$root_dir/viv_project/framework.cache/compile_simlib/ies}}] -no_script -sync -force -quiet
 
   #puts "                        adding HBM initialization files "
-  #set_property SOURCE_SET sources_1 [get_filesets sim_1]
-  add_files -fileset sim_1 -norecurse $hbm_ip_dir/hbm_top_hbm_0/hdl/rtl/xpm_internal_config_file_sim_1.mem
-  add_files -fileset sim_1 -norecurse $hbm_ip_dir/hbm_top_hbm_0/hdl/rtl/xpm_internal_config_file_sim_0.mem
-
-  #update_compile_order -fileset sim_1 >> $log_file
+  # if BRAM model used to replace HBM then do not add specific hbm init files
+  if { $bram_used != TRUE } {
+    import_files -fileset sim_1 -norecurse $hbm_ip_dir/hbm_top_hbm_0/hdl/rtl/xpm_internal_config_file_sim_1.mem
+    import_files -fileset sim_1 -norecurse $hbm_ip_dir/hbm_top_hbm_0/hdl/rtl/xpm_internal_config_file_sim_0.mem
+    #import_files -fileset sim_1 -norecurse $root_dir/sim/hbm/xpm_internal_config_file_sim_0.mem
+    #import_files -fileset sim_1 -norecurse $root_dir/sim/hbm/xpm_internal_config_file_sim_1.mem
+  }
+  update_compile_order -fileset sim_1 >> $log_file
 
 }
 
+#============
 # Add NVME
 if { $nvme_used == TRUE } {
   puts "                        adding NVMe block design"

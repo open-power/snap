@@ -46,7 +46,7 @@ ENTITY psl_accel IS
     C_AXI_CARD_MEM0_WUSER_WIDTH         : integer   := C_DDR_AXI_WUSER_WIDTH;
     C_AXI_CARD_MEM0_RUSER_WIDTH         : integer   := C_DDR_AXI_RUSER_WIDTH;
     C_AXI_CARD_MEM0_BUSER_WIDTH         : integer   := C_DDR_AXI_BUSER_WIDTH;
-
+#ifdef CONFIG_HBM_USED
     -- Parameters for HBM port 0 and Port 1
     C_M_AXI_CARD_HBM_ADDR_WIDTH      : INTEGER := C_M_AXI_CARD_HBM_ADDR_WIDTH;
     C_M_AXI_CARD_HBM_ID_WIDTH        : INTEGER := C_M_AXI_CARD_HBM_ID_WIDTH;
@@ -56,7 +56,7 @@ ENTITY psl_accel IS
     C_M_AXI_CARD_HBM_ARUSER_WIDTH    : INTEGER := C_M_AXI_CARD_HBM_ARUSER_WIDTH;
     C_M_AXI_CARD_HBM_RUSER_WIDTH     : INTEGER := C_M_AXI_CARD_HBM_RUSER_WIDTH;
     C_M_AXI_CARD_HBM_BUSER_WIDTH     : INTEGER := C_M_AXI_CARD_HBM_BUSER_WIDTH;
-
+#endif
     -- Parameters for Axi Slave Bus Interface AXI_CTRL_REG
     C_AXI_CTRL_REG_DATA_WIDTH           : integer   := C_REG_DATA_WIDTH;
     C_AXI_CTRL_REG_ADDR_WIDTH           : integer   := C_REG_ADDR_WIDTH;
@@ -374,6 +374,7 @@ ARCHITECTURE psl_accel OF psl_accel IS
       m_axi_card_mem0_wuser   : OUT STD_LOGIC_VECTOR ( C_AXI_CARD_MEM0_WUSER_WIDTH-1 DOWNTO 0 );
       m_axi_card_mem0_wvalid  : OUT STD_LOGIC;
 #endif
+#ifdef CONFIG_HBM_USED
 --CHANGE_HBM_INTERFACES_NUMBER
 -- copy/paste these 45 signals for a new AXI interface
       m_axi_card_hbm_p0_AWVALID : OUT STD_LOGIC;
@@ -467,6 +468,7 @@ ARCHITECTURE psl_accel OF psl_accel IS
       m_axi_card_hbm_p1_BRESP : IN STD_LOGIC_VECTOR (1 downto 0);
       m_axi_card_hbm_p1_BID : IN STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_ID_WIDTH-1 downto 0);
       m_axi_card_hbm_p1_BUSER : IN STD_LOGIC_VECTOR (C_M_AXI_CARD_HBM_BUSER_WIDTH-1 downto 0);
+#endif
     --
       -- AXI Control Register Interface
       s_axi_ctrl_reg_araddr   : IN  STD_LOGIC_VECTOR ( C_AXI_CTRL_REG_ADDR_WIDTH-1 DOWNTO 0 );
@@ -772,6 +774,7 @@ SIGNAL tmp_sdram_axi_bid              : STD_LOGIC_VECTOR (5 downto 0);
   signal xn_d                           : XN_D_T;
   signal nx_d                           : NX_D_T := ('0','0', "00",'0','0', (31 downto 0 => '0'),
                                                      "00",'0');
+#ifdef CONFIG_HBM_USED
   -- HBM
   COMPONENT hbm_top_wrapper is
   PORT (
@@ -856,6 +859,7 @@ SIGNAL tmp_sdram_axi_bid              : STD_LOGIC_VECTOR (5 downto 0);
     refclk300_p                         : in STD_LOGIC
   );
   END COMPONENT;
+#endif
 
 #ifdef CONFIG_ENABLE_DDRI
   SIGNAL sdram_axi_clk                  : STD_LOGIC;
@@ -977,7 +981,7 @@ SIGNAL tmp_sdram_axi_bid              : STD_LOGIC_VECTOR (5 downto 0);
   SIGNAL ddr4_dbg_clk                   : STD_LOGIC;
   SIGNAL ddr4_dbg_bus                   : STD_LOGIC_VECTOR(511 DOWNTO 0);
 #endif
-
+#ifdef CONFIG_HBM_USED
 --HBM
 --CHANGE_HBM_INTERFACES_NUMBER
 -- copy/paste these 43 signals for a new AXI interface
@@ -1068,6 +1072,7 @@ SIGNAL tmp_sdram_axi_bid              : STD_LOGIC_VECTOR (5 downto 0);
     SIGNAL m_axi_card_hbm_p1_BRESP      : STD_LOGIC_VECTOR (1 downto 0);
     SIGNAL m_axi_card_hbm_p1_arlock_01  : STD_LOGIC_VECTOR (0 downto 0);
     SIGNAL m_axi_card_hbm_p1_awlock_01  : STD_LOGIC_VECTOR (0 downto 0);
+#endif
 --
 BEGIN
   --
@@ -1268,6 +1273,7 @@ BEGIN
       m_axi_card_mem0_wuser                => OPEN,
       m_axi_card_mem0_wvalid               => act_axi_card_mem0_wvalid,
 #endif
+#ifdef CONFIG_HBM_USED
 --CHANGE_HBM_INTERFACES_NUMBER
 -- copy/paste these 45 signals for a new AXI interface
       m_axi_card_hbm_p0_araddr   => m_axi_card_hbm_p0_araddr,
@@ -1361,6 +1367,7 @@ BEGIN
       m_axi_card_hbm_p1_wstrb    => m_axi_card_hbm_p1_wstrb,
       m_axi_card_hbm_p1_wuser    => m_axi_card_hbm_p1_wuser,
       m_axi_card_hbm_p1_wvalid   => m_axi_card_hbm_p1_wvalid,
+#endif
       --
       -- AXI Control Register Interface
       s_axi_ctrl_reg_araddr                => xk_d.m_axi_araddr,
@@ -1621,12 +1628,7 @@ BEGIN
     );
 #endif
 
--- #ifdef CONFIG_ENABLE_HBM
---  sdram_axi_araddr_s(31 DOWNTO 0) <= '0' & sdram_axi_araddr(31 DOWNTO 1);
---  sdram_axi_awaddr_s(31 DOWNTO 0) <= '0' & sdram_axi_awaddr(31 DOWNTO 1);
---  sdram_axi_rid(3 DOWNTO 0) <= tmp_sdram_axi_rid(3 DOWNTO 0);
---  sdram_axi_bid(3 DOWNTO 0) <= tmp_sdram_axi_bid(3 DOWNTO 0);
-
+#ifdef CONFIG_HBM_USED
     m_axi_card_hbm_p0_arlock_01 <= (OTHERS => '0'); --m_axi_card_hbm_p0_arlock(0) OR m_axi_card_hbm_p0_arlock(1);
     m_axi_card_hbm_p0_awlock_01 <= (OTHERS => '0'); --m_axi_card_hbm_p0_awlock(0) OR m_axi_card_hbm_p0_awlock(1);
 
@@ -1715,7 +1717,7 @@ BEGIN
     refclk300_n                => refclk300_p,
     refclk300_p                => refclk300_n
   );
----- #endif
+#endif
 
 #ifdef CONFIG_ENABLE_DDR4
   ddr4sdram_bank : ddr4sdram

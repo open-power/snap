@@ -468,12 +468,19 @@ config ENABLE_BRAM
 	prompt "Enable BRAM (replacing SDRAM for experimental use)"
 	depends on ! (DISABLE_SDRAM_AND_BRAM || ENABLE_PRFLOW)
 	help
-	  This is a development option. The AXI attached on-card SDRAM will be replaced by 512KB BRAM.
+	  This is a development option. The AXI attached on-card SDRAM will be replaced by 512KB BRAM
+
+config REPLACE_HBM_BY_BRAM
+	bool
+	prompt "Replace HBM by 32K BRAM (mandatory when simulating with xsim)"
+	depends on (AD9H3 && HLS_HBM_MEMCOPY)
+	help
+	  This is a development option. The AXI attached on-FPGA HBM will be replaced by 32K URAM.
 
 config BRAM_USED
 	string
-	default "TRUE"  if ENABLE_BRAM
-	default "FALSE" if ! ENABLE_BRAM
+	default "TRUE"  if (ENABLE_BRAM || REPLACE_HBM_BY_BRAM)
+	default "FALSE" if ! (ENABLE_BRAM || REPLACE_HBM_BY_BRAM)
 
 config ENABLE_DDR3
 	bool

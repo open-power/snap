@@ -110,16 +110,18 @@ static void usage(const char *prog)
 	       "Example for a simulation\n"
 	       "------------------------\n"
 	       "snap_maint -vv\n"
-	       "echo create a 4KB file with random data \n"
+	       "echo create a 4KB file t1 with random data \n"
 	       "rm t2; dd if=/dev/urandom of=t1 bs=1K count=4\n"
 	       "echo READ file t1 from host memory THEN write it at @0x0 in FPGA HBM port0 \n"
 	       "snap_hbm_memcopy -i t1 -D HBM_P0 -d 0x0 -t70 \n"
-	       "echo READ 4KB from FPGA HBM port0 at @0x0 THEN write them to Host and file t2\n"
-	       "snap_hbm_memcopy -o t2 -A HBM_P0 -a 0x0 -s0x1000 -t70 \n"
+	       "echo READ 4KB from FPGA HBM port0 at @0x0 THEN write it at @0x0 in FPGA HBM port1\n"
+	       "snap_hbm_memcopy -A HBM_P0 -a 0x0 -D HBM_P1 -d 0x0 -s 0x1000 -t70 \n"
+	       "echo READ 4KB from FPGA HBM port1 at @0x0 THEN write them to Host and file t2\n"
+	       "snap_hbm_memcopy -A HBM_P1 -a 0x0 -o t2 -s 0x1000 -t70 \n"
 	       "diff t1 t2\n"
 	       "\n"
 	       "echo same test using polling instead of IRQ waiting for the result\n"
-	       "snap_hbm_memcopy -o t2 -A HBM_P0 -a 0x0 -s0x1000 -N\n"
+	       "snap_hbm_memcopy -A HBM_P0 -a 0x0 -o t2 -s 0x1000 -t70 -N\n"
 	       "\n",
 	       prog);
 }

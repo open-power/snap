@@ -265,9 +265,14 @@ action_hw: prepare_logs
 	@echo -e "[CREATE NVME.........] done  `date +"%T %a %b %d %Y"`";
 	@touch .create_nvme_done
 
+# HBM part - call a different bd if simulation or HBM (HBM not supported by xsim yet)
 .create_hbm_done:
 	@echo -e "[CREATE HBM..........] start `date +"%T %a %b %d %Y"`";
-	@cd $(BUILD_DIR)  &&  vivado -quiet -mode batch -source $(SETUP_DIR)/create_hbm.tcl -notrace -log $(LOGS_DIR)/create_hbm.log -journal $(LOGS_DIR)/create_hbm.jou
+	@if [ "$(BRAM_USED)" == "TRUE" ]; then \
+		cd $(BUILD_DIR)  &&  vivado -quiet -mode batch -source $(SETUP_DIR)/create_hbm_for_simu.tcl -notrace -log $(LOGS_DIR)/create_hbm.log -journal $(LOGS_DIR)/create_hbm.jou; \
+	else \
+		cd $(BUILD_DIR)  &&  vivado -quiet -mode batch -source $(SETUP_DIR)/create_hbm.tcl -notrace -log $(LOGS_DIR)/create_hbm.log -journal $(LOGS_DIR)/create_hbm.jou; \
+	fi
 	@echo -e "[CREATE HBM..........] done  `date +"%T %a %b %d %Y"`";
 	@touch .create_hbm_done
 

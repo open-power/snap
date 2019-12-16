@@ -185,6 +185,7 @@
      cp ../qu*.tcl  	      $SIMOUT 2>/dev/null
    else echo "cannot prepare simout for simdir=$SIMDIR"; exit 1; fi
    cd $SIMOUT
+   cp ../xpm_internal_config_file_sim_0.mem .
 #  ln -s $SNAP_ROOT/hardware/support  support  	# to easier get to waveform signallists
    if   [ "$SIMDIR" == "ies" ];then
      ln -s $SNAP_ROOT/hardware/sim/ies/ies              # ?
