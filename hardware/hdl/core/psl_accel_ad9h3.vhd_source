@@ -46,7 +46,7 @@ ENTITY psl_accel IS
     C_AXI_CARD_MEM0_WUSER_WIDTH         : integer   := C_DDR_AXI_WUSER_WIDTH;
     C_AXI_CARD_MEM0_RUSER_WIDTH         : integer   := C_DDR_AXI_RUSER_WIDTH;
     C_AXI_CARD_MEM0_BUSER_WIDTH         : integer   := C_DDR_AXI_BUSER_WIDTH;
-#ifdef CONFIG_HBM_USED
+#ifdef CONFIG_ENABLE_HBM
     -- Parameters for HBM port 0 and Port 1
     C_M_AXI_CARD_HBM_ADDR_WIDTH      : INTEGER := C_M_AXI_CARD_HBM_ADDR_WIDTH;
     C_M_AXI_CARD_HBM_ID_WIDTH        : INTEGER := C_M_AXI_CARD_HBM_ID_WIDTH;
@@ -374,7 +374,7 @@ ARCHITECTURE psl_accel OF psl_accel IS
       m_axi_card_mem0_wuser   : OUT STD_LOGIC_VECTOR ( C_AXI_CARD_MEM0_WUSER_WIDTH-1 DOWNTO 0 );
       m_axi_card_mem0_wvalid  : OUT STD_LOGIC;
 #endif
-#ifdef CONFIG_HBM_USED
+#ifdef CONFIG_ENABLE_HBM
 --CHANGE_HBM_INTERFACES_NUMBER
 -- copy/paste these 45 signals for a new AXI interface
       m_axi_card_hbm_p0_AWVALID : OUT STD_LOGIC;
@@ -774,7 +774,7 @@ SIGNAL tmp_sdram_axi_bid              : STD_LOGIC_VECTOR (5 downto 0);
   signal xn_d                           : XN_D_T;
   signal nx_d                           : NX_D_T := ('0','0', "00",'0','0', (31 downto 0 => '0'),
                                                      "00",'0');
-#ifdef CONFIG_HBM_USED
+#ifdef CONFIG_ENABLE_HBM
   -- HBM
   COMPONENT hbm_top_wrapper is
   PORT (
@@ -981,7 +981,7 @@ SIGNAL tmp_sdram_axi_bid              : STD_LOGIC_VECTOR (5 downto 0);
   SIGNAL ddr4_dbg_clk                   : STD_LOGIC;
   SIGNAL ddr4_dbg_bus                   : STD_LOGIC_VECTOR(511 DOWNTO 0);
 #endif
-#ifdef CONFIG_HBM_USED
+#ifdef CONFIG_ENABLE_HBM
 --HBM
 --CHANGE_HBM_INTERFACES_NUMBER
 -- copy/paste these 43 signals for a new AXI interface
@@ -1273,7 +1273,7 @@ BEGIN
       m_axi_card_mem0_wuser                => OPEN,
       m_axi_card_mem0_wvalid               => act_axi_card_mem0_wvalid,
 #endif
-#ifdef CONFIG_HBM_USED
+#ifdef CONFIG_ENABLE_HBM
 --CHANGE_HBM_INTERFACES_NUMBER
 -- copy/paste these 45 signals for a new AXI interface
       m_axi_card_hbm_p0_araddr   => m_axi_card_hbm_p0_araddr,
@@ -1628,7 +1628,7 @@ BEGIN
     );
 #endif
 
-#ifdef CONFIG_HBM_USED
+#ifdef CONFIG_ENABLE_HBM
     m_axi_card_hbm_p0_arlock_01 <= (OTHERS => '0'); --m_axi_card_hbm_p0_arlock(0) OR m_axi_card_hbm_p0_arlock(1);
     m_axi_card_hbm_p0_awlock_01 <= (OTHERS => '0'); --m_axi_card_hbm_p0_awlock(0) OR m_axi_card_hbm_p0_awlock(1);
 
