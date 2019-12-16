@@ -257,8 +257,6 @@ if { $hbm_used == TRUE } {
   if { $bram_used != TRUE } {
     import_files -fileset sim_1 -norecurse $hbm_ip_dir/hbm_top_hbm_0/hdl/rtl/xpm_internal_config_file_sim_1.mem
     import_files -fileset sim_1 -norecurse $hbm_ip_dir/hbm_top_hbm_0/hdl/rtl/xpm_internal_config_file_sim_0.mem
-    #import_files -fileset sim_1 -norecurse $root_dir/sim/hbm/xpm_internal_config_file_sim_0.mem
-    #import_files -fileset sim_1 -norecurse $root_dir/sim/hbm/xpm_internal_config_file_sim_1.mem
   }
   update_compile_order -fileset sim_1 >> $log_file
 
