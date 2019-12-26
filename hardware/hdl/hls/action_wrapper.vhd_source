@@ -38,7 +38,7 @@ ENTITY action_wrapper IS
     interrupt_ack              : IN STD_LOGIC;
 #ifdef CONFIG_ENABLE_DDRI
     --
-    -- AXI DDR3 Interface
+    -- AXI DDR Interface
     m_axi_card_mem0_araddr     : OUT STD_LOGIC_VECTOR ( C_M_AXI_CARD_MEM0_ADDR_WIDTH-1 DOWNTO 0 );
     m_axi_card_mem0_arburst    : OUT STD_LOGIC_VECTOR ( 1 DOWNTO 0 );
     m_axi_card_mem0_arcache    : OUT STD_LOGIC_VECTOR ( 3 DOWNTO 0 );
@@ -83,6 +83,54 @@ ENTITY action_wrapper IS
     m_axi_card_mem0_wstrb      : OUT STD_LOGIC_VECTOR ( (C_M_AXI_CARD_MEM0_DATA_WIDTH/8)-1 DOWNTO 0 );
     m_axi_card_mem0_wuser      : OUT STD_LOGIC_VECTOR ( C_M_AXI_CARD_MEM0_WUSER_WIDTH-1 DOWNTO 0 );
     m_axi_card_mem0_wvalid     : OUT STD_LOGIC;
+
+    --
+    -- AXI DDR Interface
+    m_axi_card_mem1_araddr     : OUT STD_LOGIC_VECTOR ( C_M_AXI_CARD_MEM0_ADDR_WIDTH-1 DOWNTO 0 );
+    m_axi_card_mem1_arburst    : OUT STD_LOGIC_VECTOR ( 1 DOWNTO 0 );
+    m_axi_card_mem1_arcache    : OUT STD_LOGIC_VECTOR ( 3 DOWNTO 0 );
+    m_axi_card_mem1_arid       : OUT STD_LOGIC_VECTOR ( C_M_AXI_CARD_MEM0_ID_WIDTH-1 DOWNTO 0 );
+    m_axi_card_mem1_arlen      : OUT STD_LOGIC_VECTOR ( 7 DOWNTO 0 );
+    m_axi_card_mem1_arlock     : OUT STD_LOGIC_VECTOR ( 1 DOWNTO 0 );
+    m_axi_card_mem1_arprot     : OUT STD_LOGIC_VECTOR ( 2 DOWNTO 0 );
+    m_axi_card_mem1_arqos      : OUT STD_LOGIC_VECTOR ( 3 DOWNTO 0 );
+    m_axi_card_mem1_arready    : IN  STD_LOGIC;
+    m_axi_card_mem1_arregion   : OUT STD_LOGIC_VECTOR ( 3 DOWNTO 0 );
+    m_axi_card_mem1_arsize     : OUT STD_LOGIC_VECTOR ( 2 DOWNTO 0 );
+    m_axi_card_mem1_aruser     : OUT STD_LOGIC_VECTOR ( C_M_AXI_CARD_MEM0_ARUSER_WIDTH-1 DOWNTO 0 );
+    m_axi_card_mem1_arvalid    : OUT STD_LOGIC;
+    m_axi_card_mem1_awaddr     : OUT STD_LOGIC_VECTOR ( C_M_AXI_CARD_MEM0_ADDR_WIDTH-1 DOWNTO 0 );
+    m_axi_card_mem1_awburst    : OUT STD_LOGIC_VECTOR ( 1 DOWNTO 0 );
+    m_axi_card_mem1_awcache    : OUT STD_LOGIC_VECTOR ( 3 DOWNTO 0 );
+    m_axi_card_mem1_awid       : OUT STD_LOGIC_VECTOR ( C_M_AXI_CARD_MEM0_ID_WIDTH-1 DOWNTO 0 );
+    m_axi_card_mem1_awlen      : OUT STD_LOGIC_VECTOR ( 7 DOWNTO 0 );
+    m_axi_card_mem1_awlock     : OUT STD_LOGIC_VECTOR ( 1 DOWNTO 0 );
+    m_axi_card_mem1_awprot     : OUT STD_LOGIC_VECTOR ( 2 DOWNTO 0 );
+    m_axi_card_mem1_awqos      : OUT STD_LOGIC_VECTOR ( 3 DOWNTO 0 );
+    m_axi_card_mem1_awready    : IN  STD_LOGIC;
+    m_axi_card_mem1_awregion   : OUT STD_LOGIC_VECTOR ( 3 DOWNTO 0 );
+    m_axi_card_mem1_awsize     : OUT STD_LOGIC_VECTOR ( 2 DOWNTO 0 );
+    m_axi_card_mem1_awuser     : OUT STD_LOGIC_VECTOR ( C_M_AXI_CARD_MEM0_AWUSER_WIDTH-1 DOWNTO 0 );
+    m_axi_card_mem1_awvalid    : OUT STD_LOGIC;
+    m_axi_card_mem1_bid        : IN  STD_LOGIC_VECTOR ( C_M_AXI_CARD_MEM0_ID_WIDTH-1 DOWNTO 0 );
+    m_axi_card_mem1_bready     : OUT STD_LOGIC;
+    m_axi_card_mem1_bresp      : IN  STD_LOGIC_VECTOR ( 1 DOWNTO 0 );
+    m_axi_card_mem1_buser      : IN  STD_LOGIC_VECTOR ( C_M_AXI_CARD_MEM0_BUSER_WIDTH-1 DOWNTO 0 );
+    m_axi_card_mem1_bvalid     : IN  STD_LOGIC;
+    m_axi_card_mem1_rdata      : IN  STD_LOGIC_VECTOR ( C_M_AXI_CARD_MEM0_DATA_WIDTH-1 DOWNTO 0 );
+    m_axi_card_mem1_rid        : IN  STD_LOGIC_VECTOR ( C_M_AXI_CARD_MEM0_ID_WIDTH-1 DOWNTO 0 );
+    m_axi_card_mem1_rlast      : IN  STD_LOGIC;
+    m_axi_card_mem1_rready     : OUT STD_LOGIC;
+    m_axi_card_mem1_rresp      : IN  STD_LOGIC_VECTOR ( 1 DOWNTO 0 );
+    m_axi_card_mem1_ruser      : IN  STD_LOGIC_VECTOR ( C_M_AXI_CARD_MEM0_RUSER_WIDTH-1 DOWNTO 0 );
+    m_axi_card_mem1_rvalid     : IN  STD_LOGIC;
+    m_axi_card_mem1_wdata      : OUT STD_LOGIC_VECTOR ( C_M_AXI_CARD_MEM0_DATA_WIDTH-1 DOWNTO 0 );
+    m_axi_card_mem1_wlast      : OUT STD_LOGIC;
+    m_axi_card_mem1_wready     : IN  STD_LOGIC;
+    m_axi_card_mem1_wstrb      : OUT STD_LOGIC_VECTOR ( (C_M_AXI_CARD_MEM0_DATA_WIDTH/8)-1 DOWNTO 0 );
+    m_axi_card_mem1_wuser      : OUT STD_LOGIC_VECTOR ( C_M_AXI_CARD_MEM0_WUSER_WIDTH-1 DOWNTO 0 );
+    m_axi_card_mem1_wvalid     : OUT STD_LOGIC;
+
 #endif
 #ifdef CONFIG_ENABLE_NVME
     --
@@ -222,6 +270,17 @@ ARCHITECTURE STRUCTURE OF action_wrapper IS
       C_M_AXI_CARD_MEM0_WUSER_WIDTH    : integer;
       C_M_AXI_CARD_MEM0_RUSER_WIDTH    : integer;
       C_M_AXI_CARD_MEM0_BUSER_WIDTH    : integer;
+
+      -- Parameters for Axi Master Bus Interface AXI_CARD_MEM0 : to DDR memory
+      C_M_AXI_CARD_MEM1_ID_WIDTH       : integer;
+      C_M_AXI_CARD_MEM1_ADDR_WIDTH     : integer;
+      C_M_AXI_CARD_MEM1_DATA_WIDTH     : integer;
+      C_M_AXI_CARD_MEM1_AWUSER_WIDTH   : integer;
+      C_M_AXI_CARD_MEM1_ARUSER_WIDTH   : integer;
+      C_M_AXI_CARD_MEM1_WUSER_WIDTH    : integer;
+      C_M_AXI_CARD_MEM1_RUSER_WIDTH    : integer;
+      C_M_AXI_CARD_MEM1_BUSER_WIDTH    : integer;
+
 #endif
 #ifdef CONFIG_ENABLE_NVME
       -- Parameters for Axi Master Bus Interface AXI_NVME : to NVME
@@ -301,6 +360,53 @@ ARCHITECTURE STRUCTURE OF action_wrapper IS
       m_axi_card_mem0_ruser      : IN  STD_LOGIC_VECTOR(C_M_AXI_CARD_MEM0_RUSER_WIDTH-1 DOWNTO 0);
       m_axi_card_mem0_wid        : OUT STD_LOGIC_VECTOR (C_M_AXI_CARD_MEM0_ID_WIDTH-1 DOWNTO 0);
       m_axi_card_mem0_wuser      : OUT STD_LOGIC_VECTOR(C_M_AXI_CARD_MEM0_WUSER_WIDTH-1 DOWNTO 0);
+
+      m_axi_card_mem1_awaddr     : OUT STD_LOGIC_VECTOR(C_M_AXI_CARD_MEM0_ADDR_WIDTH-1 DOWNTO 0);
+      m_axi_card_mem1_awlen      : OUT STD_LOGIC_VECTOR(7 DOWNTO 0);
+      m_axi_card_mem1_awsize     : OUT STD_LOGIC_VECTOR(2 DOWNTO 0);
+      m_axi_card_mem1_awburst    : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);
+      m_axi_card_mem1_awlock     : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);
+      m_axi_card_mem1_awcache    : OUT STD_LOGIC_VECTOR(3 DOWNTO 0);
+      m_axi_card_mem1_awprot     : OUT STD_LOGIC_VECTOR(2 DOWNTO 0);
+      m_axi_card_mem1_awregion   : OUT STD_LOGIC_VECTOR(3 DOWNTO 0);
+      m_axi_card_mem1_awqos      : OUT STD_LOGIC_VECTOR(3 DOWNTO 0);
+      m_axi_card_mem1_awvalid    : OUT STD_LOGIC;
+      m_axi_card_mem1_awready    : IN  STD_LOGIC;
+      m_axi_card_mem1_wdata      : OUT STD_LOGIC_VECTOR(C_M_AXI_CARD_MEM0_DATA_WIDTH-1 DOWNTO 0);
+      m_axi_card_mem1_wstrb      : OUT STD_LOGIC_VECTOR(C_M_AXI_CARD_MEM0_DATA_WIDTH/8-1 DOWNTO 0);
+      m_axi_card_mem1_wlast      : OUT STD_LOGIC;
+      m_axi_card_mem1_wvalid     : OUT STD_LOGIC;
+      m_axi_card_mem1_wready     : IN  STD_LOGIC;
+      m_axi_card_mem1_bresp      : IN  STD_LOGIC_VECTOR(1 DOWNTO 0);
+      m_axi_card_mem1_bvalid     : IN  STD_LOGIC;
+      m_axi_card_mem1_bready     : OUT STD_LOGIC;
+      m_axi_card_mem1_araddr     : OUT STD_LOGIC_VECTOR(C_M_AXI_CARD_MEM0_ADDR_WIDTH-1 DOWNTO 0);
+      m_axi_card_mem1_arlen      : OUT STD_LOGIC_VECTOR(7 DOWNTO 0);
+      m_axi_card_mem1_arsize     : OUT STD_LOGIC_VECTOR(2 DOWNTO 0);
+      m_axi_card_mem1_arburst    : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);
+      m_axi_card_mem1_arlock     : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);
+      m_axi_card_mem1_arcache    : OUT STD_LOGIC_VECTOR(3 DOWNTO 0);
+      m_axi_card_mem1_arprot     : OUT STD_LOGIC_VECTOR(2 DOWNTO 0);
+      m_axi_card_mem1_arregion   : OUT STD_LOGIC_VECTOR(3 DOWNTO 0);
+      m_axi_card_mem1_arqos      : OUT STD_LOGIC_VECTOR(3 DOWNTO 0);
+      m_axi_card_mem1_arvalid    : OUT STD_LOGIC;
+      m_axi_card_mem1_arready    : IN  STD_LOGIC;
+      m_axi_card_mem1_rdata      : IN  STD_LOGIC_VECTOR(C_M_AXI_CARD_MEM0_DATA_WIDTH-1 DOWNTO 0);
+      m_axi_card_mem1_rresp      : IN  STD_LOGIC_VECTOR(1 DOWNTO 0);
+      m_axi_card_mem1_rlast      : IN  STD_LOGIC;
+      m_axi_card_mem1_rvalid     : IN  STD_LOGIC;
+      m_axi_card_mem1_rready     : OUT STD_LOGIC;
+      m_axi_card_mem1_arid       : OUT STD_LOGIC_VECTOR(C_M_AXI_CARD_MEM0_ID_WIDTH-1 DOWNTO 0);
+      m_axi_card_mem1_aruser     : OUT STD_LOGIC_VECTOR(C_M_AXI_CARD_MEM0_ARUSER_WIDTH-1 DOWNTO 0);
+      m_axi_card_mem1_awid       : OUT STD_LOGIC_VECTOR(C_M_AXI_CARD_MEM0_ID_WIDTH-1 DOWNTO 0);
+      m_axi_card_mem1_awuser     : OUT STD_LOGIC_VECTOR(C_M_AXI_CARD_MEM0_AWUSER_WIDTH-1 DOWNTO 0);
+      m_axi_card_mem1_bid        : IN  STD_LOGIC_VECTOR(C_M_AXI_CARD_MEM0_ID_WIDTH-1 DOWNTO 0);
+      m_axi_card_mem1_buser      : IN  STD_LOGIC_VECTOR(C_M_AXI_CARD_MEM0_BUSER_WIDTH-1 DOWNTO 0);
+      m_axi_card_mem1_rid        : IN  STD_LOGIC_VECTOR(C_M_AXI_CARD_MEM0_ID_WIDTH-1 DOWNTO 0);
+      m_axi_card_mem1_ruser      : IN  STD_LOGIC_VECTOR(C_M_AXI_CARD_MEM0_RUSER_WIDTH-1 DOWNTO 0);
+      m_axi_card_mem1_wid        : OUT STD_LOGIC_VECTOR (C_M_AXI_CARD_MEM0_ID_WIDTH-1 DOWNTO 0);
+      m_axi_card_mem1_wuser      : OUT STD_LOGIC_VECTOR(C_M_AXI_CARD_MEM0_WUSER_WIDTH-1 DOWNTO 0);
+
 #endif
 #ifdef CONFIG_ENABLE_NVME
      --
@@ -436,6 +542,17 @@ BEGIN
     C_M_AXI_CARD_MEM0_WUSER_WIDTH    => C_M_AXI_CARD_MEM0_WUSER_WIDTH,
     C_M_AXI_CARD_MEM0_RUSER_WIDTH    => C_M_AXI_CARD_MEM0_RUSER_WIDTH,
     C_M_AXI_CARD_MEM0_BUSER_WIDTH    => C_M_AXI_CARD_MEM0_BUSER_WIDTH,
+
+    -- Parameters for Axi Master Bus Interface AXI_CARD_MEM0 : to DDR memory
+    C_M_AXI_CARD_MEM1_ID_WIDTH       => 1, --C_M_AXI_CARD_MEM0_ID_WIDTH, --SR# 10394170
+    C_M_AXI_CARD_MEM1_ADDR_WIDTH     => C_M_AXI_CARD_MEM0_ADDR_WIDTH,
+    C_M_AXI_CARD_MEM1_DATA_WIDTH     => C_M_AXI_CARD_MEM0_DATA_WIDTH,
+    C_M_AXI_CARD_MEM1_AWUSER_WIDTH   => C_M_AXI_CARD_MEM0_AWUSER_WIDTH,
+    C_M_AXI_CARD_MEM1_ARUSER_WIDTH   => C_M_AXI_CARD_MEM0_ARUSER_WIDTH,
+    C_M_AXI_CARD_MEM1_WUSER_WIDTH    => C_M_AXI_CARD_MEM0_WUSER_WIDTH,
+    C_M_AXI_CARD_MEM1_RUSER_WIDTH    => C_M_AXI_CARD_MEM0_RUSER_WIDTH,
+    C_M_AXI_CARD_MEM1_BUSER_WIDTH    => C_M_AXI_CARD_MEM0_BUSER_WIDTH,
+
 #endif
 #ifdef CONFIG_ENABLE_NVME
     -- Parameters for Axi Master Bus Interface AXI_NVME : to NVME
@@ -511,6 +628,53 @@ BEGIN
     m_axi_card_mem0_wstrb        => m_axi_card_mem0_wstrb,
     m_axi_card_mem0_wuser        => m_axi_card_mem0_wuser,
     m_axi_card_mem0_wvalid       => m_axi_card_mem0_wvalid,
+
+    m_axi_card_mem1_araddr       => m_axi_card_mem1_araddr,
+    m_axi_card_mem1_arburst      => m_axi_card_mem1_arburst,
+    m_axi_card_mem1_arcache      => m_axi_card_mem1_arcache,
+    m_axi_card_mem1_arid         => m_axi_card_mem1_arid( 0 DOWNTO 0),--SR# 10394170
+    m_axi_card_mem1_arlen        => m_axi_card_mem1_arlen,
+    m_axi_card_mem1_arlock       => m_axi_card_mem1_arlock,
+    m_axi_card_mem1_arprot       => m_axi_card_mem1_arprot,
+    m_axi_card_mem1_arqos        => m_axi_card_mem1_arqos,
+    m_axi_card_mem1_arready      => m_axi_card_mem1_arready,
+    m_axi_card_mem1_arregion     => m_axi_card_mem1_arregion,
+    m_axi_card_mem1_arsize       => m_axi_card_mem1_arsize,
+    m_axi_card_mem1_aruser       => m_axi_card_mem1_aruser,
+    m_axi_card_mem1_arvalid      => m_axi_card_mem1_arvalid,
+    m_axi_card_mem1_awaddr       => m_axi_card_mem1_awaddr,
+    m_axi_card_mem1_awburst      => m_axi_card_mem1_awburst,
+    m_axi_card_mem1_awcache      => m_axi_card_mem1_awcache,
+    m_axi_card_mem1_awid         => m_axi_card_mem1_awid(0 DOWNTO 0),--SR# 10394170
+    m_axi_card_mem1_awlen        => m_axi_card_mem1_awlen,
+    m_axi_card_mem1_awlock       => m_axi_card_mem1_awlock,
+    m_axi_card_mem1_awprot       => m_axi_card_mem1_awprot,
+    m_axi_card_mem1_awqos        => m_axi_card_mem1_awqos,
+    m_axi_card_mem1_awready      => m_axi_card_mem1_awready,
+    m_axi_card_mem1_awregion     => m_axi_card_mem1_awregion,
+    m_axi_card_mem1_awsize       => m_axi_card_mem1_awsize,
+    m_axi_card_mem1_awuser       => m_axi_card_mem1_awuser,
+    m_axi_card_mem1_awvalid      => m_axi_card_mem1_awvalid,
+    m_axi_card_mem1_bid          => m_axi_card_mem1_bid(0 DOWNTO 0),--SR# 10394170
+    m_axi_card_mem1_bready       => m_axi_card_mem1_bready,
+    m_axi_card_mem1_bresp        => m_axi_card_mem1_bresp,
+    m_axi_card_mem1_buser        => m_axi_card_mem1_buser,
+    m_axi_card_mem1_bvalid       => m_axi_card_mem1_bvalid,
+    m_axi_card_mem1_rdata        => m_axi_card_mem1_rdata,
+    m_axi_card_mem1_rid          => m_axi_card_mem1_rid(0 DOWNTO 0),--SR# 10394170
+    m_axi_card_mem1_rlast        => m_axi_card_mem1_rlast,
+    m_axi_card_mem1_rready       => m_axi_card_mem1_rready,
+    m_axi_card_mem1_rresp        => m_axi_card_mem1_rresp,
+    m_axi_card_mem1_ruser        => m_axi_card_mem1_ruser,
+    m_axi_card_mem1_rvalid       => m_axi_card_mem1_rvalid,
+    m_axi_card_mem1_wdata        => m_axi_card_mem1_wdata,
+    m_axi_card_mem1_wid          => open,
+    m_axi_card_mem1_wlast        => m_axi_card_mem1_wlast,
+    m_axi_card_mem1_wready       => m_axi_card_mem1_wready,
+    m_axi_card_mem1_wstrb        => m_axi_card_mem1_wstrb,
+    m_axi_card_mem1_wuser        => m_axi_card_mem1_wuser,
+    m_axi_card_mem1_wvalid       => m_axi_card_mem1_wvalid,
+
 #endif
 #ifdef CONFIG_ENABLE_NVME
     m_axi_nvme_araddr            => m_axi_nvme_araddr,

@@ -39,6 +39,7 @@ extern "C" {
 #define SNAP_ADDRTYPE_CARD_DRAM		0x0001 /* card specific */
 #define SNAP_ADDRTYPE_NVME		0x0002 /* card specific */
 #define SNAP_ADDRTYPE_zzz		0x0003 /* ? */
+#define SNAP_ADDRTYPE_CARD_DRAM2	0x0004 /* card specific for the second ddr channel*/
 
 #define SNAP_ADDRFLAG_END		0x0001 /* last element in the list */
 #define SNAP_ADDRFLAG_ADDR		0x0002 /* this one is an address */

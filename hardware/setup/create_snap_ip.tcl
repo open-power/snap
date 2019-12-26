@@ -24,6 +24,7 @@ set fpga_card    $::env(FPGACARD)
 set ip_dir       $root_dir/ip
 
 set sdram_used   $::env(SDRAM_USED)
+set sdram_channels $::env(SDRAM_CHANNELS)
 set bram_used    $::env(BRAM_USED)
 set nvme_used    $::env(NVME_USED)
 set log_dir      $::env(LOGS_DIR)
@@ -464,14 +465,14 @@ if { $create_ddr4_s241 == "TRUE" } {
   export_ip_user_files -of_objects             [get_files $ip_dir/ddr4sdram/ddr4sdram.xci] -no_script -force  >> $log_file
   export_simulation -of_objects [get_files $ip_dir/ddr4sdram/ddr4sdram.xci] -directory $ip_dir/ip_user_files/sim_scripts -force >> $log_file
 
-  #DDR4 create ddr4sdramm example design
+  #DDR4 create ddr4sdram example design
   puts "                        generating ddr4sdram example design"
   open_example_project -in_process -force -dir $ip_dir     [get_ips ddr4sdram] >> $log_file
 }
-#DDR4 create ddr4sdramm with ECC (U200)
+#DDR4 create ddr4sdram with ECC (U200)
 if { $create_ddr4_u200 == "TRUE" } {
-  puts "                        generating IP ddr4sdram for $fpga_card"
-  create_ip -name ddr4 -vendor xilinx.com -library ip -version 2.* -module_name ddr4sdram -dir $ip_dir >> $log_file
+  puts "                        generating IP ddr4sdram_c0 for $fpga_card"
+  create_ip -name ddr4 -vendor xilinx.com -library ip -version 2.* -module_name ddr4sdram_c0 -dir $ip_dir >> $log_file
   set_property -dict [list                                                                    \
    CONFIG.C0.BANK_GROUP_WIDTH {2} \
    CONFIG.C0.CKE_WIDTH {1} \
@@ -493,18 +494,55 @@ if { $create_ddr4_u200 == "TRUE" } {
    CONFIG.C0.DDR4_TimePeriod {833} \
    CONFIG.C0.DDR4_isCustom {false} \
    CONFIG.C0.ODT_WIDTH {1} \
-   CONFIG.C0_CLOCK_BOARD_INTERFACE {default_300mhz_clk1} \
-   CONFIG.C0_DDR4_BOARD_INTERFACE {ddr4_sdram_c1} \
-                     ] [get_ips ddr4sdram] >> $log_file
-  set_property generate_synth_checkpoint false [get_files $ip_dir/ddr4sdram/ddr4sdram.xci]
-  generate_target {instantiation_template}     [get_files $ip_dir/ddr4sdram/ddr4sdram.xci] >> $log_file
-  generate_target all                          [get_files $ip_dir/ddr4sdram/ddr4sdram.xci] >> $log_file
-  export_ip_user_files -of_objects             [get_files $ip_dir/ddr4sdram/ddr4sdram.xci] -no_script -force  >> $log_file
-  export_simulation -of_objects [get_files $ip_dir/ddr4sdram/ddr4sdram.xci] -directory $ip_dir/ip_user_files/sim_scripts -force >> $log_file
+   CONFIG.C0_CLOCK_BOARD_INTERFACE {default_300mhz_clk0} \
+   CONFIG.C0_DDR4_BOARD_INTERFACE {ddr4_sdram_c0} \
+                     ] [get_ips ddr4sdram_c0] >> $log_file
+  set_property generate_synth_checkpoint false [get_files $ip_dir/ddr4sdram_c0/ddr4sdram_c0.xci]
+  generate_target {instantiation_template}     [get_files $ip_dir/ddr4sdram_c0/ddr4sdram_c0.xci] >> $log_file
+  generate_target all                          [get_files $ip_dir/ddr4sdram_c0/ddr4sdram_c0.xci] >> $log_file
+  export_ip_user_files -of_objects             [get_files $ip_dir/ddr4sdram_c0/ddr4sdram_c0.xci] -no_script -force  >> $log_file
+  export_simulation -of_objects [get_files $ip_dir/ddr4sdram_c0/ddr4sdram_c0.xci] -directory $ip_dir/ip_user_files/sim_scripts -force >> $log_file
 
-  #DDR4 create ddr4sdramm example design
-  puts "                        generating ddr4sdram example design"
-  open_example_project -in_process -force -dir $ip_dir     [get_ips ddr4sdram] >> $log_file
+  #DDR4 create ddr4sdram_c0 example design
+  puts "                        generating ddr4sdram_c0 example design"
+  open_example_project -in_process -force -dir $ip_dir     [get_ips ddr4sdram_c0] >> $log_file
+
+  # Add another channel C1
+  # The only difference is C0_CLOCK_BOARD_INTERFACE and C0_DDR4_BOARD_INTERFACE
+  if { $sdram_channels == "2"} {
+    puts "                        generating IP ddr4sdram_c1 for $fpga_card"
+    create_ip -name ddr4 -vendor xilinx.com -library ip -version 2.* -module_name ddr4sdram_c1 -dir $ip_dir >> $log_file
+    set_property -dict [list                                                                    \
+     CONFIG.C0.BANK_GROUP_WIDTH {2} \
+     CONFIG.C0.CKE_WIDTH {1} \
+     CONFIG.C0.CS_WIDTH {1} \
+     CONFIG.C0.ControllerType {DDR4_SDRAM} \
+     CONFIG.C0.DDR4_AxiAddressWidth {34} \
+     CONFIG.C0.DDR4_AxiDataWidth {512} \
+     CONFIG.C0.DDR4_AxiSelection {true} \
+     CONFIG.C0.DDR4_CLKOUT0_DIVIDE {5} \
+     CONFIG.C0.DDR4_CasLatency {17} \
+     CONFIG.C0.DDR4_CasWriteLatency {12} \
+     CONFIG.C0.DDR4_CustomParts {no_file_loaded} \
+     CONFIG.C0.DDR4_DataMask {NONE} \
+     CONFIG.C0.DDR4_DataWidth {72} \
+     CONFIG.C0.DDR4_Ecc {true} \
+     CONFIG.C0.DDR4_InputClockPeriod {3332} \
+     CONFIG.C0.DDR4_MemoryPart {MTA18ASF2G72PZ-2G3} \
+     CONFIG.C0.DDR4_MemoryType {RDIMMs} \
+     CONFIG.C0.DDR4_TimePeriod {833} \
+     CONFIG.C0.DDR4_isCustom {false} \
+     CONFIG.C0.ODT_WIDTH {1} \
+     CONFIG.C0_CLOCK_BOARD_INTERFACE {default_300mhz_clk1} \
+     CONFIG.C0_DDR4_BOARD_INTERFACE {ddr4_sdram_c1} \
+                       ] [get_ips ddr4sdram_c1] >> $log_file
+    set_property generate_synth_checkpoint false [get_files $ip_dir/ddr4sdram_c1/ddr4sdram_c1.xci]
+    generate_target {instantiation_template}     [get_files $ip_dir/ddr4sdram_c1/ddr4sdram_c1.xci] >> $log_file
+    generate_target all                          [get_files $ip_dir/ddr4sdram_c1/ddr4sdram_c1.xci] >> $log_file
+    export_ip_user_files -of_objects             [get_files $ip_dir/ddr4sdram_c1/ddr4sdram_c1.xci] -no_script -force  >> $log_file
+    export_simulation -of_objects [get_files $ip_dir/ddr4sdram_c1/ddr4sdram_c1.xci] -directory $ip_dir/ip_user_files/sim_scripts -force >> $log_file
+
+  }
 }
 #DDR4 create ddr4sdramm with ECC (S121B)
 if { $create_ddr4_s121b == "TRUE" } {

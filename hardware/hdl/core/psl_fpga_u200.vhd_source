@@ -45,6 +45,26 @@ ENTITY psl_fpga IS
     c0_ddr4_act_n             : OUT   STD_LOGIC;
     c0_ddr4_ck_c              : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
     c0_ddr4_ck_t              : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
+
+    -- DDR4 SDRAM Interface
+    c1_ddr4_sys_clk_p         : IN    STD_LOGIC;
+    c1_ddr4_sys_clk_n         : IN    STD_LOGIC;
+    c1_ddr4_adr               : OUT   STD_LOGIC_VECTOR(16 DOWNTO 0);
+    c1_ddr4_ba                : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);
+    c1_ddr4_cke               : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
+    c1_ddr4_cs_n              : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
+    c1_ddr4_parity            : OUT   STD_LOGIC;
+    --c1_ddr4_dm_dbi_n          : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);
+    c1_ddr4_dq                : INOUT STD_LOGIC_VECTOR(71 DOWNTO 0);
+    c1_ddr4_dqs_c             : INOUT STD_LOGIC_VECTOR(17 DOWNTO 0);
+    c1_ddr4_dqs_t             : INOUT STD_LOGIC_VECTOR(17 DOWNTO 0);
+    c1_ddr4_odt               : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
+    c1_ddr4_bg                : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);
+    c1_ddr4_reset_n           : OUT   STD_LOGIC;
+    c1_ddr4_act_n             : OUT   STD_LOGIC;
+    c1_ddr4_ck_c              : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
+    c1_ddr4_ck_t              : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
+
 #endif
 
     -- CAPI PSL Interface
@@ -213,6 +233,27 @@ Component psl_accel
     c0_ddr4_ck_c                        : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
     c0_ddr4_ck_t                        : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
 -- TODO:    c0_ddr4_ten                         : OUT   STD_LOGIC;
+
+-- TODO:    dbg_bus                             : OUT   STD_LOGIC_VECTOR(511 DOWNTO 0);
+    c1_sys_clk_p                        : IN    STD_LOGIC;
+    c1_sys_clk_n                        : IN    STD_LOGIC;
+    c1_ddr4_adr                         : OUT   STD_LOGIC_VECTOR(16 DOWNTO 0);
+    c1_ddr4_ba                          : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);
+    c1_ddr4_cke                         : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
+    c1_ddr4_cs_n                        : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
+    c1_ddr4_parity 			: OUT   STD_LOGIC;
+    --c1_ddr4_dm_dbi_n                    : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);
+    c1_ddr4_dq                          : INOUT STD_LOGIC_VECTOR(71 DOWNTO 0);
+    c1_ddr4_dqs_c                       : INOUT STD_LOGIC_VECTOR(17 DOWNTO 0);
+    c1_ddr4_dqs_t                       : INOUT STD_LOGIC_VECTOR(17 DOWNTO 0);
+    c1_ddr4_odt                         : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
+    c1_ddr4_bg                          : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);
+    c1_ddr4_reset_n                     : OUT   STD_LOGIC;
+    c1_ddr4_act_n                       : OUT   STD_LOGIC;
+    c1_ddr4_ck_c                        : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
+    c1_ddr4_ck_t                        : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
+-- TODO:    c1_ddr4_ten                         : OUT   STD_LOGIC;
+
 #endif
 
     -- Parity Enable output and 250MHz Clock input
@@ -477,6 +518,25 @@ BEGIN
       c0_ddr4_act_n                     => c0_ddr4_act_n,
       c0_ddr4_ck_c                      => c0_ddr4_ck_c,
       c0_ddr4_ck_t                      => c0_ddr4_ck_t,
+
+      c1_sys_clk_p                      => c1_ddr4_sys_clk_p,
+      c1_sys_clk_n                      => c1_ddr4_sys_clk_n,
+      c1_ddr4_adr                       => c1_ddr4_adr,
+      c1_ddr4_ba                        => c1_ddr4_ba,
+      c1_ddr4_cke                       => c1_ddr4_cke,
+      c1_ddr4_cs_n                      => c1_ddr4_cs_n,
+      c1_ddr4_parity  		 	=> c1_ddr4_parity,
+      --c1_ddr4_dm_dbi_n                  => c1_ddr4_dm_dbi_n,
+      c1_ddr4_dq                        => c1_ddr4_dq,
+      c1_ddr4_dqs_c                     => c1_ddr4_dqs_c,
+      c1_ddr4_dqs_t                     => c1_ddr4_dqs_t,
+      c1_ddr4_odt                       => c1_ddr4_odt,
+      c1_ddr4_bg                        => c1_ddr4_bg,
+      c1_ddr4_reset_n                   => c1_ddr4_reset_n,
+      c1_ddr4_act_n                     => c1_ddr4_act_n,
+      c1_ddr4_ck_c                      => c1_ddr4_ck_c,
+      c1_ddr4_ck_t                      => c1_ddr4_ck_t,
+
 #endif
 
       -- CAPI PSL Interface
