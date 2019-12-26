@@ -84,6 +84,7 @@ ENTITY action_wrapper IS
     m_axi_card_mem0_wuser      : OUT STD_LOGIC_VECTOR ( C_M_AXI_CARD_MEM0_WUSER_WIDTH-1 DOWNTO 0 );
     m_axi_card_mem0_wvalid     : OUT STD_LOGIC;
 
+#ifdef CONFIG_TWO_DDR_CHANNEL
     --
     -- AXI DDR Interface
     m_axi_card_mem1_araddr     : OUT STD_LOGIC_VECTOR ( C_M_AXI_CARD_MEM0_ADDR_WIDTH-1 DOWNTO 0 );
@@ -130,7 +131,7 @@ ENTITY action_wrapper IS
     m_axi_card_mem1_wstrb      : OUT STD_LOGIC_VECTOR ( (C_M_AXI_CARD_MEM0_DATA_WIDTH/8)-1 DOWNTO 0 );
     m_axi_card_mem1_wuser      : OUT STD_LOGIC_VECTOR ( C_M_AXI_CARD_MEM0_WUSER_WIDTH-1 DOWNTO 0 );
     m_axi_card_mem1_wvalid     : OUT STD_LOGIC;
-
+#endif
 #endif
 #ifdef CONFIG_ENABLE_NVME
     --
@@ -271,6 +272,7 @@ ARCHITECTURE STRUCTURE OF action_wrapper IS
       C_M_AXI_CARD_MEM0_RUSER_WIDTH    : integer;
       C_M_AXI_CARD_MEM0_BUSER_WIDTH    : integer;
 
+#ifdef CONFIG_TWO_DDR_CHANNEL
       -- Parameters for Axi Master Bus Interface AXI_CARD_MEM0 : to DDR memory
       C_M_AXI_CARD_MEM1_ID_WIDTH       : integer;
       C_M_AXI_CARD_MEM1_ADDR_WIDTH     : integer;
@@ -280,7 +282,7 @@ ARCHITECTURE STRUCTURE OF action_wrapper IS
       C_M_AXI_CARD_MEM1_WUSER_WIDTH    : integer;
       C_M_AXI_CARD_MEM1_RUSER_WIDTH    : integer;
       C_M_AXI_CARD_MEM1_BUSER_WIDTH    : integer;
-
+#endif
 #endif
 #ifdef CONFIG_ENABLE_NVME
       -- Parameters for Axi Master Bus Interface AXI_NVME : to NVME
@@ -361,6 +363,7 @@ ARCHITECTURE STRUCTURE OF action_wrapper IS
       m_axi_card_mem0_wid        : OUT STD_LOGIC_VECTOR (C_M_AXI_CARD_MEM0_ID_WIDTH-1 DOWNTO 0);
       m_axi_card_mem0_wuser      : OUT STD_LOGIC_VECTOR(C_M_AXI_CARD_MEM0_WUSER_WIDTH-1 DOWNTO 0);
 
+#ifdef CONFIG_TWO_DDR_CHANNEL
       m_axi_card_mem1_awaddr     : OUT STD_LOGIC_VECTOR(C_M_AXI_CARD_MEM0_ADDR_WIDTH-1 DOWNTO 0);
       m_axi_card_mem1_awlen      : OUT STD_LOGIC_VECTOR(7 DOWNTO 0);
       m_axi_card_mem1_awsize     : OUT STD_LOGIC_VECTOR(2 DOWNTO 0);
@@ -406,7 +409,7 @@ ARCHITECTURE STRUCTURE OF action_wrapper IS
       m_axi_card_mem1_ruser      : IN  STD_LOGIC_VECTOR(C_M_AXI_CARD_MEM0_RUSER_WIDTH-1 DOWNTO 0);
       m_axi_card_mem1_wid        : OUT STD_LOGIC_VECTOR (C_M_AXI_CARD_MEM0_ID_WIDTH-1 DOWNTO 0);
       m_axi_card_mem1_wuser      : OUT STD_LOGIC_VECTOR(C_M_AXI_CARD_MEM0_WUSER_WIDTH-1 DOWNTO 0);
-
+#endif
 #endif
 #ifdef CONFIG_ENABLE_NVME
      --
@@ -543,6 +546,7 @@ BEGIN
     C_M_AXI_CARD_MEM0_RUSER_WIDTH    => C_M_AXI_CARD_MEM0_RUSER_WIDTH,
     C_M_AXI_CARD_MEM0_BUSER_WIDTH    => C_M_AXI_CARD_MEM0_BUSER_WIDTH,
 
+#ifdef CONFIG_TWO_DDR_CHANNEL
     -- Parameters for Axi Master Bus Interface AXI_CARD_MEM0 : to DDR memory
     C_M_AXI_CARD_MEM1_ID_WIDTH       => 1, --C_M_AXI_CARD_MEM0_ID_WIDTH, --SR# 10394170
     C_M_AXI_CARD_MEM1_ADDR_WIDTH     => C_M_AXI_CARD_MEM0_ADDR_WIDTH,
@@ -552,7 +556,7 @@ BEGIN
     C_M_AXI_CARD_MEM1_WUSER_WIDTH    => C_M_AXI_CARD_MEM0_WUSER_WIDTH,
     C_M_AXI_CARD_MEM1_RUSER_WIDTH    => C_M_AXI_CARD_MEM0_RUSER_WIDTH,
     C_M_AXI_CARD_MEM1_BUSER_WIDTH    => C_M_AXI_CARD_MEM0_BUSER_WIDTH,
-
+#endif
 #endif
 #ifdef CONFIG_ENABLE_NVME
     -- Parameters for Axi Master Bus Interface AXI_NVME : to NVME
@@ -629,6 +633,7 @@ BEGIN
     m_axi_card_mem0_wuser        => m_axi_card_mem0_wuser,
     m_axi_card_mem0_wvalid       => m_axi_card_mem0_wvalid,
 
+#ifdef CONFIG_TWO_DDR_CHANNEL
     m_axi_card_mem1_araddr       => m_axi_card_mem1_araddr,
     m_axi_card_mem1_arburst      => m_axi_card_mem1_arburst,
     m_axi_card_mem1_arcache      => m_axi_card_mem1_arcache,
@@ -674,7 +679,7 @@ BEGIN
     m_axi_card_mem1_wstrb        => m_axi_card_mem1_wstrb,
     m_axi_card_mem1_wuser        => m_axi_card_mem1_wuser,
     m_axi_card_mem1_wvalid       => m_axi_card_mem1_wvalid,
-
+#endif
 #endif
 #ifdef CONFIG_ENABLE_NVME
     m_axi_nvme_araddr            => m_axi_nvme_araddr,

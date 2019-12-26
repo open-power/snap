@@ -1119,6 +1119,7 @@ module top (
   wire  [17:0]  c0_ddr4_dqs_t;
   //wire		c0_ddr4_parity;
 
+#ifdef CONFIG_TWO_DDR_CHANNEL
   wire          c1_ddr4_act_n;
   wire  [16:0]  c1_ddr4_adr;
   wire  [1:0]   c1_ddr4_ba;
@@ -1133,7 +1134,7 @@ module top (
   wire  [17:0]  c1_ddr4_dqs_c;
   wire  [17:0]  c1_ddr4_dqs_t;
   //wire		c1_ddr4_parity;
-
+#endif
 #else
   // DDR4 Signals
   wire          c0_ddr4_act_n;
@@ -1282,6 +1283,7 @@ module top (
 //    .ah_jyield(ah_jyield),    - mcp004 does not seem to have this port
     .ah_tbreq(ah_tbreq),
     .ah_paren(ah_paren),
+//-------------------------------------------------------
 #ifdef CONFIG_ENABLE_DDR3
     // DDR3
     .c0_sys_clk_p           (sys_clk_p),
@@ -1303,7 +1305,7 @@ module top (
     .c0_ddr3_dqs_n          (c0_ddr3_dqs_n),
 #endif
 #ifdef CONFIG_ENABLE_DDR4
-#ifdef CONFIG_U200
+
     // DDR4
     .c0_sys_clk_p           (sys_clk_p),
     .c0_sys_clk_n           (~sys_clk_p),
@@ -1321,6 +1323,7 @@ module top (
     .c0_ddr4_dqs_c          (c0_ddr4_dqs_c),
     .c0_ddr4_dqs_t          (c0_ddr4_dqs_t),
 
+#ifdef CONFIG_TWO_DDR_CHANNEL
     .c1_sys_clk_p           (sys_clk_p),
     .c1_sys_clk_n           (~sys_clk_p),
     .c1_ddr4_act_n          (c1_ddr4_act_n),
@@ -1336,28 +1339,10 @@ module top (
     .c1_ddr4_dq             (c1_ddr4_dq),
     .c1_ddr4_dqs_c          (c1_ddr4_dqs_c),
     .c1_ddr4_dqs_t          (c1_ddr4_dqs_t),
+#endif
+#endif
 
-#else
-//#ifdef CONFIG_ENABLE_DDR4
-    // DDR4
-    .c0_sys_clk_p           (sys_clk_p),
-    .c0_sys_clk_n           (~sys_clk_p),
-    .c0_ddr4_act_n          (c0_ddr4_act_n),
-    .c0_ddr4_adr            (c0_ddr4_adr),
-    .c0_ddr4_ba             (c0_ddr4_ba),
-    .c0_ddr4_bg             (c0_ddr4_bg),
-    .c0_ddr4_cke            (c0_ddr4_cke),
-    .c0_ddr4_odt            (c0_ddr4_odt),
-    .c0_ddr4_cs_n           (c0_ddr4_cs_n),
-    .c0_ddr4_ck_t           (c0_ddr4_ck_t),
-    .c0_ddr4_ck_c           (c0_ddr4_ck_c),
-    .c0_ddr4_reset_n        (c0_ddr4_reset_n),
-    .c0_ddr4_dm_dbi_n       (c0_ddr4_dm_dbi_n),
-    .c0_ddr4_dq             (c0_ddr4_dq),
-    .c0_ddr4_dqs_c          (c0_ddr4_dqs_c),
-    .c0_ddr4_dqs_t          (c0_ddr4_dqs_t),
-#endif
-#endif
+//-------------------------------------------------------
 #ifdef CONFIG_ENABLE_NVME
     // NVME
     .nvme_reset_n           (sys_reset_n_q),
@@ -1525,6 +1510,7 @@ module top (
     .c0_ddr4_dqs_c          (c0_ddr4_dqs_c),
     .c0_ddr4_dqs_t          (c0_ddr4_dqs_t)
     );
+#ifdef CONFIG_TWO_DDR_CHANNEL
   ddr4_dimm_u200 ddr4_dimm_u200_c1 (
     .sys_reset              (~sys_reset_n_q),
     .c0_ddr4_act_n          (c1_ddr4_act_n),
@@ -1541,7 +1527,7 @@ module top (
     .c0_ddr4_dqs_c          (c1_ddr4_dqs_c),
     .c0_ddr4_dqs_t          (c1_ddr4_dqs_t)
     );
-
+#endif
 #else
   ddr4_dimm ddr4_dimm (
     .sys_reset              (~sys_reset_n_q),

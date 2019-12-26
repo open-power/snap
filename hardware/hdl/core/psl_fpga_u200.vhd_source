@@ -46,6 +46,7 @@ ENTITY psl_fpga IS
     c0_ddr4_ck_c              : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
     c0_ddr4_ck_t              : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
 
+#ifdef CONFIG_TWO_DDR_CHANNEL
     -- DDR4 SDRAM Interface
     c1_ddr4_sys_clk_p         : IN    STD_LOGIC;
     c1_ddr4_sys_clk_n         : IN    STD_LOGIC;
@@ -64,7 +65,7 @@ ENTITY psl_fpga IS
     c1_ddr4_act_n             : OUT   STD_LOGIC;
     c1_ddr4_ck_c              : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
     c1_ddr4_ck_t              : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
-
+#endif
 #endif
 
     -- CAPI PSL Interface
@@ -234,6 +235,7 @@ Component psl_accel
     c0_ddr4_ck_t                        : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
 -- TODO:    c0_ddr4_ten                         : OUT   STD_LOGIC;
 
+#ifdef CONFIG_TWO_DDR_CHANNEL
 -- TODO:    dbg_bus                             : OUT   STD_LOGIC_VECTOR(511 DOWNTO 0);
     c1_sys_clk_p                        : IN    STD_LOGIC;
     c1_sys_clk_n                        : IN    STD_LOGIC;
@@ -253,7 +255,7 @@ Component psl_accel
     c1_ddr4_ck_c                        : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
     c1_ddr4_ck_t                        : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
 -- TODO:    c1_ddr4_ten                         : OUT   STD_LOGIC;
-
+#endif
 #endif
 
     -- Parity Enable output and 250MHz Clock input
@@ -507,7 +509,7 @@ BEGIN
       c0_ddr4_ba                        => c0_ddr4_ba,
       c0_ddr4_cke                       => c0_ddr4_cke,
       c0_ddr4_cs_n                      => c0_ddr4_cs_n,
-      c0_ddr4_parity  		 	=> c0_ddr4_parity,
+      c0_ddr4_parity                    => c0_ddr4_parity,
       --c0_ddr4_dm_dbi_n                  => c0_ddr4_dm_dbi_n,
       c0_ddr4_dq                        => c0_ddr4_dq,
       c0_ddr4_dqs_c                     => c0_ddr4_dqs_c,
@@ -519,13 +521,14 @@ BEGIN
       c0_ddr4_ck_c                      => c0_ddr4_ck_c,
       c0_ddr4_ck_t                      => c0_ddr4_ck_t,
 
+#ifdef CONFIG_TWO_DDR_CHANNEL
       c1_sys_clk_p                      => c1_ddr4_sys_clk_p,
       c1_sys_clk_n                      => c1_ddr4_sys_clk_n,
       c1_ddr4_adr                       => c1_ddr4_adr,
       c1_ddr4_ba                        => c1_ddr4_ba,
       c1_ddr4_cke                       => c1_ddr4_cke,
       c1_ddr4_cs_n                      => c1_ddr4_cs_n,
-      c1_ddr4_parity  		 	=> c1_ddr4_parity,
+      c1_ddr4_parity                    => c1_ddr4_parity,
       --c1_ddr4_dm_dbi_n                  => c1_ddr4_dm_dbi_n,
       c1_ddr4_dq                        => c1_ddr4_dq,
       c1_ddr4_dqs_c                     => c1_ddr4_dqs_c,
@@ -536,7 +539,7 @@ BEGIN
       c1_ddr4_act_n                     => c1_ddr4_act_n,
       c1_ddr4_ck_c                      => c1_ddr4_ck_c,
       c1_ddr4_ck_t                      => c1_ddr4_ck_t,
-
+#endif
 #endif
 
       -- CAPI PSL Interface

@@ -201,6 +201,7 @@ ENTITY psl_accel IS
        c0_ddr4_ck_t                     : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
     -- TODO:    c0_ddr4_ten                         : OUT   STD_LOGIC;
 
+#ifdef CONFIG_TWO_DDR_CHANNEL
     -----------------------------------
     -- The second DDR channel
     -----------------------------------
@@ -222,7 +223,7 @@ ENTITY psl_accel IS
        c1_ddr4_ck_c                     : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
        c1_ddr4_ck_t                     : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
     -- TODO:    c1_ddr4_ten                         : OUT   STD_LOGIC;
-
+#endif
 #endif
 
 
@@ -394,6 +395,7 @@ ARCHITECTURE psl_accel OF psl_accel IS
       m_axi_card_mem0_wuser   : OUT STD_LOGIC_VECTOR ( C_AXI_CARD_MEM0_WUSER_WIDTH-1 DOWNTO 0 );
       m_axi_card_mem0_wvalid  : OUT STD_LOGIC;
 
+#ifdef CONFIG_TWO_DDR_CHANNEL
       -- AXI SDRAM Interface
       m_axi_card_mem1_araddr  : OUT STD_LOGIC_VECTOR ( C_AXI_CARD_MEM0_ADDR_WIDTH-1 DOWNTO 0 );
       m_axi_card_mem1_arburst : OUT STD_LOGIC_VECTOR ( 1 DOWNTO 0 );
@@ -439,7 +441,7 @@ ARCHITECTURE psl_accel OF psl_accel IS
       m_axi_card_mem1_wstrb   : OUT STD_LOGIC_VECTOR ( (C_AXI_CARD_MEM0_DATA_WIDTH/8)-1 DOWNTO 0 );
       m_axi_card_mem1_wuser   : OUT STD_LOGIC_VECTOR ( C_AXI_CARD_MEM0_WUSER_WIDTH-1 DOWNTO 0 );
       m_axi_card_mem1_wvalid  : OUT STD_LOGIC;
-
+#endif
 #endif
       --
       -- AXI Control Register Interface
@@ -1269,6 +1271,7 @@ BEGIN
       m_axi_card_mem0_wuser                => OPEN,
       m_axi_card_mem0_wvalid               => act_axi_card_mem0_wvalid,
 
+#ifdef CONFIG_TWO_DDR_CHANNEL
       -- AXI DDR Interface
       m_axi_card_mem1_araddr               => act_axi_card_mem1_araddr,
       m_axi_card_mem1_arburst              => act_axi_card_mem1_arburst,
@@ -1314,7 +1317,7 @@ BEGIN
       m_axi_card_mem1_wstrb                => act_axi_card_mem1_wstrb,
       m_axi_card_mem1_wuser                => OPEN,
       m_axi_card_mem1_wvalid               => act_axi_card_mem1_wvalid,
-
+#endif
 #endif
       --
       -- AXI Control Register Interface
@@ -1397,7 +1400,7 @@ BEGIN
   sdram0_axi_ctrl_araddr    <= (OTHERS => '0');
   sdram0_axi_ctrl_rready    <= '0';
 
-
+#ifdef CONFIG_TWO_DDR_CHANNEL
   sdram1_axi_ctrl_awvalid   <= '0';
   sdram1_axi_ctrl_awaddr    <= (OTHERS => '0');
   sdram1_axi_ctrl_wvalid    <= '0';
@@ -1406,20 +1409,24 @@ BEGIN
   sdram1_axi_ctrl_arvalid   <= '0';
   sdram1_axi_ctrl_araddr    <= (OTHERS => '0');
   sdram1_axi_ctrl_rready    <= '0';
-  
+#endif
 #endif
 
 #if defined(CONFIG_ENABLE_DDRI) && !defined(CONFIG_ENABLE_BRAM)
   sdram0_axi_clk   <=     sdram0_ui_clk;
   sdram0_axi_rst_n <= NOT sdram0_ui_clk_sync_rst;
+#ifdef CONFIG_TWO_DDR_CHANNEL
   sdram1_axi_clk   <=     sdram1_ui_clk;
   sdram1_axi_rst_n <= NOT sdram1_ui_clk_sync_rst;
+#endif
 #endif
 #ifdef CONFIG_ENABLE_BRAM
   sdram0_axi_clk   <=     pci_clock_125MHz;
   sdram0_axi_rst_n <= NOT sdram_reset_q;
+#ifdef CONFIG_TWO_DDR_CHANNEL
   sdram1_axi_clk   <=     pci_clock_125MHz;
   sdram1_axi_rst_n <= NOT sdram_reset_q;
+#endif
 #endif
 
 
@@ -1513,7 +1520,7 @@ BEGIN
       m_axi_wstrb     => sdram0_axi_wstrb,
       m_axi_wvalid    => sdram0_axi_wvalid
     );
-
+#ifdef CONFIG_TWO_DDR_CHANNEL
   axi_clock_converter_i1 : axi_clock_converter
     PORT MAP (
       s_axi_aclk      => ha_pclock,
@@ -1603,7 +1610,7 @@ BEGIN
       m_axi_wstrb     => sdram1_axi_wstrb,
       m_axi_wvalid    => sdram1_axi_wvalid
     );
-
+#endif
 #endif
 
 
@@ -1681,7 +1688,7 @@ BEGIN
       s_axi_wvalid   => sdram0_axi_wvalid
     );
 
-
+#ifdef CONFIG_TWO_DDR_CHANNEL
   //Emulate the second channel
   sdram1_axi_araddr_s(31 DOWNTO 0) <= '0' & sdram1_axi_araddr(31 DOWNTO 1);
   sdram1_axi_awaddr_s(31 DOWNTO 0) <= '0' & sdram1_axi_awaddr(31 DOWNTO 1);
@@ -1755,7 +1762,7 @@ BEGIN
       s_axi_wstrb    => sdram1_axi_wstrb((C_AXI_CARD_MEM0_DATA_WIDTH/8)-1 DOWNTO (C_AXI_CARD_MEM0_DATA_WIDTH/16)),
       s_axi_wvalid   => sdram1_axi_wvalid
     );
-
+#endif
 #endif
 
 #ifdef CONFIG_ENABLE_DDR4
@@ -1841,6 +1848,7 @@ BEGIN
       addn_ui_clkout1            => addn_c0_ui_clkout1,
       sys_rst                    => sdram_reset_q
     );
+#ifdef CONFIG_TWO_DDR_CHANNEL
   ddr4sdram_bank1 : ddr4sdram_c1
     PORT MAP (
       c0_init_calib_complete     => sdram1_init_calib_complete,
@@ -1923,7 +1931,7 @@ BEGIN
       addn_ui_clkout1            => addn_c1_ui_clkout1,
       sys_rst                    => sdram_reset_q
     );
-
+#endif
 #endif
 
 END psl_accel;

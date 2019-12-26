@@ -35,7 +35,7 @@ int verbose_flag = 0;
 
 static const char *version = GIT_VERSION;
 
-static const char *mem_tab[] = { "HOST_DRAM", "CARD_DRAM", "CARD_DRAM2", "TYPE_NVME", "FPGA_BRAM"};
+static const char *mem_tab[] = { "HOST_DRAM", "CARD_DRAM", "TYPE_NVME", "FPGA_BRAM", "CARD_DRAM2"};
 
 /*
  * @brief	prints valid command line options
@@ -155,7 +155,7 @@ int main(int argc, char *argv[])
 	const char *output = NULL;
 	unsigned long timeout = 10;
 	unsigned int mode = 0x0;
-	const char *space = "CARD_RAM";
+	const char *space = "CARD_DRAM";
 	struct timeval etime, stime;
 	ssize_t size = 1024 * 1024;
 	uint8_t *ibuff = NULL, *obuff = NULL;
@@ -214,7 +214,7 @@ int main(int argc, char *argv[])
 			space = optarg;
 			if (strcmp(space, "CARD_DRAM") == 0)
 				type_in = SNAP_ADDRTYPE_CARD_DRAM;
-			if (strcmp(space, "CARD_DRAM2") == 0)
+			else if (strcmp(space, "CARD_DRAM2") == 0)
 				type_in = SNAP_ADDRTYPE_CARD_DRAM2;
 			else if (strcmp(space, "HOST_DRAM") == 0)
 				type_in = SNAP_ADDRTYPE_HOST_DRAM;
@@ -231,7 +231,7 @@ int main(int argc, char *argv[])
 			space = optarg;
 			if (strcmp(space, "CARD_DRAM") == 0)
 				type_out = SNAP_ADDRTYPE_CARD_DRAM;
-			if (strcmp(space, "CARD_DRAM2") == 0)
+			else if (strcmp(space, "CARD_DRAM2") == 0)
 				type_out = SNAP_ADDRTYPE_CARD_DRAM2;
 			else if (strcmp(space, "HOST_DRAM") == 0)
 				type_out = SNAP_ADDRTYPE_HOST_DRAM;
@@ -332,8 +332,8 @@ int main(int argc, char *argv[])
 	       "  mode:        %08x\n",
 	       input  ? input  : "unknown",
 	       output ? output : "unknown",
-	       type_in,  mem_tab[type_in%4],  (long long)addr_in,
-	       type_out, mem_tab[type_out%4], (long long)addr_out,
+	       type_in,  mem_tab[type_in%5],  (long long)addr_in,
+	       type_out, mem_tab[type_out%5], (long long)addr_out,
 	       size, mode);
 
 	snprintf(device, sizeof(device)-1, "/dev/cxl/afu%d.0s", card_no);
@@ -419,7 +419,7 @@ int main(int argc, char *argv[])
 	mib_sec = (diff_usec == 0) ? 0.0 : (double)size / diff_usec;
 
 	fprintf(stdout, "memcopy of %lld bytes took %lld usec @ %.3f MiB/sec (from %s to %s)\n",
-		(long long)size, (long long)diff_usec, mib_sec, mem_tab[type_in%4], mem_tab[type_out%4]);
+		(long long)size, (long long)diff_usec, mib_sec, mem_tab[type_in%5], mem_tab[type_out%5]);
         fprintf(stdout, "This time represents the register transfer time + memcopy action time\n");       
 
 	snap_detach_action(action);
