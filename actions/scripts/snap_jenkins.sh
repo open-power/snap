@@ -107,8 +107,14 @@ function test_all_actions() # $1 = card, $2 = accel
 		*"10141008") # HLS Hello World
 			cmd="./actions/hls_helloworld/tests/test_0x10141008.sh"
 		;;
+		*"10141009") # HLS Latency Eval
+			cmd="./actions/hls_latency_eval/tests/test_0x10141009.sh"
+		;;
 		*"1014100b") # HLS Decimal multiplication
 			cmd="./actions/hls_decimal_mult/tests/test_0x1014100B.sh"
+		;;
+		*"1014100c") # HLS Scatter Gather
+			cmd="./actions/hls_scatter_gather/tests/test_0x1014100C.sh"
 		;;
 		*"1014100e") # HLS Vector generator
 			cmd="./actions/hls_vector_generator/tests/test_0x1014100E.sh"
@@ -134,6 +140,8 @@ function test_all_actions() # $1 = card, $2 = accel
 				echo "       Missing File: $cmd"
 				RC=99
 			fi
+		else
+			RC=99
 		fi
 	done
 	echo "$0 return code is : RC=$RC"
