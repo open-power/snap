@@ -19,23 +19,15 @@
 ////////////////////////////////////////////////////////////////////////////
 
 `timescale 1ps/1ps
-`define DDR4_8G_X4 
-`define DDR4_833_Timing
-//`define MODEL_DEBUG_MEMORY
-//`define MODEL_DEBUG_CMDS
-`define SILENT              // Added define SILENT to avoid timeset setting display messages in transcript
-`define FIXED_2400
 
-`include "arch_package.sv"
-`include "proj_package.sv"
-`include "interface.sv"
-`include "ddr4_model.sv"
-
-//The XILINX Simulator could not handle tran
-module own_tran(in1, in1);
-  inout in1;
+`ifdef XILINX_SIMULATOR
+module short(in1, in1);
+inout in1;
 endmodule
+`endif
 
+
+/////////////////////////////////////////////////////
 module ddr4_dimm_u200
 (
   input             sys_reset,
@@ -53,96 +45,126 @@ module ddr4_dimm_u200
   inout  [17:0]      c0_ddr4_dqs_t,
   inout  [17:0]      c0_ddr4_dqs_c
 );
-  
-  ////////////////////////////////////////////////////////////////////////////
-  // model enable logic
-  ////////////////////////////////////////////////////////////////////////////
-  bit  en_model;
-  tri  model_enable = en_model;
 
-  initial begin
-    en_model = 1'b0;
-    wait (sys_reset == 1'b1);
-    #5ns en_model = 1'b1;
-  end
+/////////////////////////////////////////////////////
+
+  localparam ADDR_WIDTH                    = 17;
+  localparam DQ_WIDTH                      = 72;
+  localparam DQS_WIDTH                     = 18;
+  localparam DM_WIDTH                      = 9;
+  localparam DRAM_WIDTH                    = 4;
+  localparam tCK                           = 833 ; //DDR4 interface clock period in ps
+  localparam real SYSCLK_PERIOD            = tCK; 
+  localparam NUM_PHYSICAL_PARTS = (DQ_WIDTH/DRAM_WIDTH) ;
+  localparam           CLAMSHELL_PARTS = (NUM_PHYSICAL_PARTS/2);
+  localparam           ODD_PARTS = ((CLAMSHELL_PARTS*2) < NUM_PHYSICAL_PARTS) ? 1 : 0;
+  parameter RANK_WIDTH                       = 1;
+  parameter CS_WIDTH                       = 1;
+  parameter ODT_WIDTH                      = 1;
+  parameter CA_MIRROR                      = "OFF";
+
+
+  localparam MRS                           = 3'b000;
+  localparam REF                           = 3'b001;
+  localparam PRE                           = 3'b010;
+  localparam ACT                           = 3'b011;
+  localparam WR                            = 3'b100;
+  localparam RD                            = 3'b101;
+  localparam ZQC                           = 3'b110;
+  localparam NOP                           = 3'b111;
+  //Added to support RDIMM wrapper
+  localparam ODT_WIDTH_RDIMM   = 1;
+  localparam CKE_WIDTH_RDIMM   = 1;
+  localparam CS_WIDTH_RDIMM   = 1;
+  localparam RANK_WIDTH_RDIMM   = 1;
+  localparam RDIMM_SLOTS   = 1;
+  localparam BANK_WIDTH_RDIMM = 2;
+  localparam BANK_GROUP_WIDTH_RDIMM     = 2;
+
+    localparam DM_DBI                        = "NONE";
+  localparam DM_WIDTH_RDIMM                  = 18;
    
-  ////////////////////////////////////////////////////////////////////////////
-  // address handling
-  ////////////////////////////////////////////////////////////////////////////
-  reg [16:0] c0_ddr4_adr_int;
-   
-  generate
-    always @(*) begin
-      if (c0_ddr4_act_n)
-        if ((c0_ddr4_adr[16:14] == 3'b100) ||   // write request 
-            (c0_ddr4_adr[16:14] == 3'b101))    // read request
-          c0_ddr4_adr_int = c0_ddr4_adr & 17'h1C7FF;
-        else
-          c0_ddr4_adr_int = c0_ddr4_adr;	
-      else
-        c0_ddr4_adr_int = c0_ddr4_adr;
-    end 
-  endgenerate
+  localparam MEM_PART_WIDTH       = "x4";
+  localparam REG_CTRL             = "ON";
 
-  ////////////////////////////////////////////////////////////////////////////
-  // Semptian NSA121B DDR4 Bank configuration:
-  //  1 Ranks
-  //  8+1 Chips each 8Gb => 8GB + ECC   
-  //////////////////////////////////////////////////////////////////////////// 
-  localparam PHYS_PARTS  = 18;   
-  genvar     i;
-  genvar     s;
-  
-  generate
-    begin: mem
-      // ddr4 interface description 
-      DDR4_if #(.CONFIGURED_DQ_BITS (4)) iDDR4[0:17]();
+  import arch_package::*;
+  parameter UTYPE_density CONFIGURED_DENSITY = _8G;
 
-      // ddr4 model
-      for (i = 0; i < PHYS_PARTS; i++) begin:sodimm
-        ddr4_model  #
-        (
-          .CONFIGURED_DQ_BITS (4),
-          .CONFIGURED_DENSITY (_8G)
-         )  ddr4_model(
-           .model_enable (model_enable),
-	     .iDDR4 (iDDR4[i])
-         );
-      end
+  // Input clock is assumed to be equal to the memory clock frequency
+  // User should change the parameter as necessary if a different input
+  // clock frequency is used
+  localparam real CLKIN_PERIOD_NS = 3332 / 1000.0;
 
-      // inoutput to iDDR4 connection
-      // DQ INOUT
-      for (i = 0; i < PHYS_PARTS; i++) begin
-        for (s = 0; s < 4; s++) begin
-            own_tran tran_dq(iDDR4[i].DQ[s], c0_ddr4_dq[s+i*4]);
-	end
-      end
+   wire                  c0_ddr4_parity;
 
-      // DQS and DM INOUT
-      for (i = 0; i < PHYS_PARTS; i++) begin
-        own_tran tran_dqs_t0 (iDDR4[i].DQS_t, c0_ddr4_dqs_t[i]);
-        own_tran tran_dqs_c0 (iDDR4[i].DQS_c, c0_ddr4_dqs_c[i]);
-        //own_tran tran_dm_n0  (iDDR4[i].DM_n , c0_ddr4_dm_dbi_n[i]);
-      end
-  
-      // input to iDDR4 connection
-      for (i = 0; i < PHYS_PARTS; i++) begin
-        assign iDDR4[i].CK        = {c0_ddr4_ck_t, c0_ddr4_ck_c};
-        assign iDDR4[i].ACT_n     = c0_ddr4_act_n;
-        assign iDDR4[i].RAS_n_A16 = c0_ddr4_adr_int[16];
-        assign iDDR4[i].CAS_n_A15 = c0_ddr4_adr_int[15];
-        assign iDDR4[i].WE_n_A14  = c0_ddr4_adr_int[14];
-        assign iDDR4[i].CKE       = c0_ddr4_cke[0];
-        assign iDDR4[i].ODT       = c0_ddr4_odt[0];
-        assign iDDR4[i].PARITY    = 1'b0;
-        assign iDDR4[i].PWR       = 1'b1;
-        assign iDDR4[i].RESET_n   = c0_ddr4_reset_n;
-        assign iDDR4[i].BG        = c0_ddr4_bg;
-        assign iDDR4[i].BA        = c0_ddr4_ba;
-        assign iDDR4[i].ADDR_17   = 1'b0;
-        assign iDDR4[i].ADDR      = c0_ddr4_adr_int[13:0];
-        assign iDDR4[i].CS_n      = c0_ddr4_cs_n[0];
-      end
+  //===========================================================================
+  //                         Memory Model instantiation
+  //===========================================================================
+genvar rdimm_x;
+			      
+generate
+  for(rdimm_x=0; rdimm_x<RDIMM_SLOTS; rdimm_x=rdimm_x+1)
+    begin: instance_of_rdimm_slots
+ddr4_rdimm_wrapper #(
+             .MC_DQ_WIDTH(DQ_WIDTH),
+             .MC_DQS_BITS(DQS_WIDTH),
+             .MC_DM_WIDTH(DM_WIDTH_RDIMM),
+             .MC_CKE_NUM(CKE_WIDTH_RDIMM),
+             .MC_ODT_WIDTH(ODT_WIDTH_RDIMM),
+             .MC_ABITS(ADDR_WIDTH),
+             .MC_BANK_WIDTH(BANK_WIDTH_RDIMM),
+             .MC_BANK_GROUP(BANK_GROUP_WIDTH_RDIMM),
+             .MC_CS_NUM(CS_WIDTH_RDIMM),
+             .MC_RANKS_NUM(RANK_WIDTH_RDIMM),
+             .NUM_PHYSICAL_PARTS(NUM_PHYSICAL_PARTS),
+             .CALIB_EN("NO"),
+             .tCK(tCK),
+             .tPDM(),
+             .MIN_TOTAL_R2R_DELAY(),
+             .MAX_TOTAL_R2R_DELAY(),
+             .TOTAL_FBT_DELAY(),
+             .MEM_PART_WIDTH(MEM_PART_WIDTH),
+             .MC_CA_MIRROR(CA_MIRROR),
+            // .SDRAM("DDR4"),
+   `ifdef SAMSUNG
+             .DDR_SIM_MODEL("SAMSUNG"),
+
+   `else         
+             .DDR_SIM_MODEL("MICRON"),
+   `endif
+             .DM_DBI(DM_DBI),
+             .MC_REG_CTRL(REG_CTRL),
+             .DIMM_MODEL ("RDIMM"),
+             .RDIMM_SLOTS (RDIMM_SLOTS),
+             .CONFIGURED_DENSITY (CONFIGURED_DENSITY)
+                     )
+   u_ddr4_rdimm_wrapper  (
+                .ddr4_act_n(c0_ddr4_act_n), // input
+                .ddr4_addr(c0_ddr4_adr), // input
+                .ddr4_ba(c0_ddr4_ba), // input
+                .ddr4_bg(c0_ddr4_bg), // input
+                .ddr4_par(c0_ddr4_parity), // input
+                .ddr4_cke(c0_ddr4_cke[CKE_WIDTH_RDIMM-1:0]), // input
+                .ddr4_odt(c0_ddr4_odt[ODT_WIDTH_RDIMM-1:0]), // input
+                .ddr4_cs_n(c0_ddr4_cs_n[CS_WIDTH_RDIMM-1:0]), // input
+                .ddr4_ck_t(c0_ddr4_ck_t), // input
+                .ddr4_ck_c(c0_ddr4_ck_c), // input
+                .ddr4_reset_n(c0_ddr4_reset_n), // input
+                .ddr4_dm_dbi_n       (),
+                .ddr4_dq(c0_ddr4_dq), // inout
+                .ddr4_dqs_t(c0_ddr4_dqs_t), // inout
+                .ddr4_dqs_c(c0_ddr4_dqs_c), // inout
+        .ddr4_alert_n(), // inout
+        .initDone(c0_init_calib_complete), // inout
+                .scl(), // input
+        .sa0(), // input
+        .sa1(), // input
+        .sa2(), // input
+                .sda(), // inout
+        .bfunc(), // input
+        .vddspd() // input
+        );
     end
-  endgenerate
+    endgenerate
+
 endmodule
