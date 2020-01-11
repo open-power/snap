@@ -23,7 +23,7 @@
 extern "C" {
 #endif
 
-#define MEMCOPY_ACTION_TYPE 0x10141000
+#define MEMCOPY_ACTION_TYPE 0x10141010
 
 typedef struct memcopy_job {
 	struct snap_addr in;	/* input data */
