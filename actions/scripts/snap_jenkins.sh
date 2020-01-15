@@ -125,6 +125,7 @@ function test_all_actions() # $1 = card, $2 = accel
 		*)
 			echo "Error: Action: $action is not valid !"
 			run_test=0
+			RC=99
 		esac
 
 		# Check run_test flag and check if test case is there
@@ -140,8 +141,6 @@ function test_all_actions() # $1 = card, $2 = accel
 				echo "       Missing File: $cmd"
 				RC=99
 			fi
-		else
-			RC=99
 		fi
 	done
 	echo "$0 return code is : RC=$RC"
