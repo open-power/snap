@@ -19,9 +19,9 @@
 ############################################################################
 
 #Constraint HBM logic near the STACK 0 (LEFT)
-create_pblock hbm_pblock_SLACK0
-resize_pblock hbm_pblock_SLACK0 -add CLOCKREGION_X0Y0:CLOCKREGION_X3Y0
-add_cells_to_pblock hbm_pblock_SLACK0 [get_cells [list a0/hbm_top_wrapper_i]]
+#create_pblock hbm_pblock_SLACK0
+#resize_pblock hbm_pblock_SLACK0 -add CLOCKREGION_X0Y0:CLOCKREGION_X3Y0
+#add_cells_to_pblock hbm_pblock_SLACK0 [get_cells [list a0/hbm_top_wrapper_i]]
 
 set_false_path -through [get_pins a0/hbm_top_wrapper_i/hbm_top_i/hbm/inst/ONE_STACK.u_hbm_top/ONE_STACK_HBM.hbm_one_stack_intf/HBM_SNGLBLI_INTF_APB_INST/PCLK]
 set_false_path -through [get_pins a0/action_reset_n_*/*]
