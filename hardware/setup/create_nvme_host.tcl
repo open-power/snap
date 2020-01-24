@@ -342,6 +342,29 @@ connect_bd_intf_net -intf_net axi_pcie3usp_0_pcie_mgt [get_bd_intf_ports pcie_rc
 connect_bd_intf_net -intf_net axi_pcie3usp_1_pcie_mgt [get_bd_intf_ports pcie_rc1] [get_bd_intf_pins axi_pcie3usp_1/pcie_mgt]			       >> $log_file
 connect_bd_intf_net -intf_net nvme_host_wrap_0_pcie_m_axi [get_bd_intf_pins axi_interconnect_1/S00_AXI] [get_bd_intf_pins nvme_host_wrap_0/pcie_m_axi] >> $log_file
 
+#overwrite addr MSB by setting them to 0
+set ip_vlnv {xilinx.com:ip:xlconstant:*}
+set ip_name {zero_inst}
+set cell [create_bd_cell -type ip -vlnv $ip_vlnv $ip_name]
+set_property -dict { \
+  CONFIG.CONST_VAL {0} \
+  CONFIG.CONST_WIDTH {4} \
+} $cell
+create_bd_cell -type ip -vlnv xilinx.com:ip:xlconcat:2.1 xlconcat_0
+set_property -dict [list CONFIG.IN0_WIDTH.VALUE_SRC USER CONFIG.IN1_WIDTH.VALUE_SRC USER] [get_bd_cells xlconcat_0]
+set_property -dict [list CONFIG.IN0_WIDTH {28} CONFIG.IN1_WIDTH {4}] [get_bd_cells xlconcat_0]
+connect_bd_net [get_bd_pins zero_inst/dout] [get_bd_pins xlconcat_0/In1]
+connect_bd_net [get_bd_pins axi_interconnect_0/M01_AXI_araddr] [get_bd_pins xlconcat_0/In0]
+connect_bd_net [get_bd_pins xlconcat_0/dout] [get_bd_pins axi_pcie3usp_0/s_axil_araddr]
+
+create_bd_cell -type ip -vlnv xilinx.com:ip:xlconcat:2.1 xlconcat_1
+set_property -dict [list CONFIG.IN0_WIDTH.VALUE_SRC USER CONFIG.IN1_WIDTH.VALUE_SRC USER] [get_bd_cells xlconcat_1]
+set_property -dict [list CONFIG.IN0_WIDTH {28} CONFIG.IN1_WIDTH {4}] [get_bd_cells xlconcat_1]
+connect_bd_net [get_bd_pins zero_inst/dout] [get_bd_pins xlconcat_1/In1]
+connect_bd_net [get_bd_pins axi_interconnect_0/M01_AXI_awaddr] [get_bd_pins xlconcat_1/In0]
+connect_bd_net [get_bd_pins xlconcat_1/dout] [get_bd_pins axi_pcie3usp_0/s_axil_awaddr]
+
+
 
 # Create port connections
 connect_bd_net -net NVME_S_ACLK_1 [get_bd_ports NVME_S_ACLK] [get_bd_pins axi_interconnect_0/ACLK] [get_bd_pins axi_interconnect_0/S00_ACLK] [get_bd_pins axi_interconnect_0/M00_ACLK] [get_bd_pins nvme_host_wrap_0/axi_aclk] [get_bd_pins axi_interconnect_1/ACLK] [get_bd_pins axi_interconnect_1/S00_ACLK] [get_bd_pins axi_interconnect_2/ACLK] [get_bd_pins axi_interconnect_2/M00_ACLK] [get_bd_pins axi_interconnect_2/M01_ACLK] [get_bd_ports ddr_aclk] >> $log_file
