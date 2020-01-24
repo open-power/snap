@@ -381,6 +381,16 @@ choice
         select ENABLE_HLS_SUPPORT
         select DISABLE_SDRAM_AND_BRAM
         select DISABLE_NVME
+
+   config HLS_IMAGE_FILTER
+                bool "HLS Image filtering example"
+        help
+            This example is written in C and compiled with HLS
+        select ENABLE_HLS_SUPPORT
+        select DISABLE_SDRAM_AND_BRAM
+        select DISABLE_NVME
+
+
 endchoice
 
 config ENABLE_HLS_SUPPORT
