@@ -119,8 +119,8 @@ function detect_snap_cards() {
                                 echo -e " Sub device   is                                                : ${check_sub}"
 				echo -e " Image loaded is self defined as                                : ${image_loaded}"
 				echo -e " Next image to be loaded at next reset (load_image_on_perst) is : ${load_image_on_perst}"
-				echo -e " Card PCI location is                                           : ${pci::-1}"
-                                echo -e " Card second PCI location is                                    : ${pci_bis}"
+				echo -e " Hardware Card PCI location is                                  : ${pci::-1}"
+                                echo -e " Virtual  Card PCI location is                                  : ${pci_bis}"
 				echo -e " Card PCI physical slot is                                      : ${slot}"
 			else
 				echo -n "${card} "
