@@ -109,6 +109,7 @@ function detect_snap_cards() {
 				load_image_on_perst=`cat /sys/class/cxl/card${card}/load_image_on_perst`
 				pci=`ls -lhaF //sys/class/cxl/card${card}/device | awk -F"../../../" '{print $2}'`
 				slot=`cat /sys/firmware/opal/msglog | grep SLOT | grep ${pci::-9} | tail -1 | cut -d = -f 2`
+				pci_bis=`cd /sys/class/cxl/card${card}/device/pci*; ls -d *:*
 
 				echo -e ""
 				echo -e "$card_name card has been detected in card position: ${card}"
@@ -119,6 +120,7 @@ function detect_snap_cards() {
 				echo -e " Image loaded is self defined as                                : ${image_loaded}"
 				echo -e " Next image to be loaded at next reset (load_image_on_perst) is : ${load_image_on_perst}"
 				echo -e " Card PCI location is                                           : ${pci::-1}"
+                                echo -e " Card second PCI location is                                    : ${pci_bis}"
 				echo -e " Card PCI physical slot is                                      : ${slot}"
 			else
 				echo -n "${card} "
