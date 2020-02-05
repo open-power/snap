@@ -241,6 +241,8 @@ while [ -z "$SETUP_DONE" ]; do
     AR='${SNAP_ROOT}/actions/hls_vector_generator'
   elif [ -n "$HLS_PARALLEL_MEMCPY" ]; then
     AR='${SNAP_ROOT}/actions/hls_parallel_memcpy'
+  elif [ -n "$HLS_RX100G" ]; then
+    AR='${SNAP_ROOT}/actions/hls_rx100G'
   elif [ -n "$HLS_HBM_MEMCOPY" ]; then
     AR='${SNAP_ROOT}/actions/hls_hbm_memcopy'
   fi
@@ -376,6 +378,17 @@ while [ -z "$SETUP_DONE" ]; do
     fi
   fi
 
+  # Note: HBM is defined via snap_config
+  if [ "$HBM_USED" == "TRUE" ] && [ "$BRAM_USED" == "TRUE" ]; then
+    echo "===== HBM  setup===================================="
+      SETUP_INFO="$SETUP_INFO\n### INFO ### Setting of HBM is NOT with real HBM!"
+  fi
+
+  # Note: ETHERNET_USED is defined via snap_config
+  if [ "$ETHERNET_USED" == "TRUE" ] && [ "$ETH_LOOP_BACK" == "TRUE" ]; then
+    echo "=====Ethernet setup===================================="
+      SETUP_INFO="$SETUP_INFO\n### INFO ### Setting of ETHERNET is a loopback with NO MAC"
+  fi
 
   ####### Print warning messages and create $snap_env_sh
   echo -e "======================================================="
