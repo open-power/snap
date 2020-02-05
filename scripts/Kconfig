@@ -269,6 +269,7 @@ choice
 		select ENABLE_HLS_SUPPORT
 		select DISABLE_SDRAM_AND_BRAM
 		select DISABLE_NVME
+		select DISABLE_ETHERNET
 
 	config HLS_NVME_MEMCOPY
 		bool "HLS NVMe Memcopy"
@@ -485,7 +486,7 @@ config ENABLE_BRAM
 config REPLACE_HBM_BY_BRAM
 	bool
 	prompt "Replace HBM by 32K BRAM (mandatory when simulating with xsim)"
-	depends on AD9H3
+	depends on (AD9H3 && ENABLE_HBM)
 	help
 	  This is a development option. The AXI attached on-FPGA HBM will be replaced by 32K URAM.
 
@@ -548,17 +549,21 @@ config NVME_USED
 
 config ENABLE_ETHERNET
 	bool "Enable Ethernet support"
-    default N
-	depends on AD9H3
+	default N
+	depends on ( AD9H3 && !DISABLE_ETHERNET )
 	help
 	  This option controls the instantiation of an Ethernet IP 
 	  together with the AXI interfaces for MMIO control and action access.
+
+config DISABLE_ETHERNET
+        bool
+        default n
 
 config ENABLE_ETH_LOOP_BACK
          bool "Ethernet loopback in the action wrapper (removes ETH IP)"
          default "TRUE"  if  ENABLE_SIMU_WO_ETH
          default "FALSE" if !ENABLE_SIMU_WO_ETH
-         depends on AD9H3
+         depends on (AD9H3 && ENABLE_ETHERNET)
          help
            This option prevent the instantiation of an Ethernet IP
            Instead it shortens the action ethernet AXI out interface to ethernet input interface.
