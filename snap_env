@@ -380,13 +380,13 @@ while [ -z "$SETUP_DONE" ]; do
 
   # Note: HBM is defined via snap_config
   if [ "$HBM_USED" == "TRUE" ] && [ "$BRAM_USED" == "TRUE" ]; then
-    echo "===== HBM  setup===================================="
+    #echo "=====HBM setup========================================="
       SETUP_INFO="$SETUP_INFO\n### INFO ### Setting of HBM is NOT with real HBM!"
   fi
 
   # Note: ETHERNET_USED is defined via snap_config
   if [ "$ETHERNET_USED" == "TRUE" ] && [ "$ETH_LOOP_BACK" == "TRUE" ]; then
-    echo "=====Ethernet setup===================================="
+    #echo "=====Ethernet setup===================================="
       SETUP_INFO="$SETUP_INFO\n### INFO ### Setting of ETHERNET is a loopback with NO MAC"
   fi
 

@@ -1206,7 +1206,7 @@ module top (
      refclk_nvme_p = !refclk_nvme_p; #(10.0ns / 2); // a line can not start with "#", because SNAP is unsing the C preprocessor
   end
 #endif
-#if defined(ENABLE_ETHERNET) && !defined(ENABLE_ETH_LOOP_BACK)
+#if defined(CONFIG_ENABLE_ETHERNET) && !defined(CONFIG_ENABLE_ETH_LOOP_BACK)
   wire  eth_rc0_rxtxp;
   wire  eth_rc0_rxtxn;
   wire  eth_rc1_rxtxp;
@@ -1215,8 +1215,7 @@ module top (
   wire  eth_rc2_rxtxn;
   wire  eth_rc3_rxtxp;
   wire  eth_rc3_rxtxn;
-#endif
-#if defined(ENABLE_ETHERNET) && !defined(ENABLE_ETH_LOOP_BACK)
+
   // ETHERNET Reference Clock generation
   reg initclk_eth_p;
   reg refclk_eth_p;
@@ -1378,7 +1377,7 @@ module top (
     .pcie_rc1_txn(pcie_rc1_txn),
     .pcie_rc1_txp(pcie_rc1_txp),
 #endif
-#if defined(ENABLE_ETHERNET) && !defined(ENABLE_ETH_LOOP_BACK)
+#if defined(CONFIG_ENABLE_ETHERNET) && !defined(CONFIG_ENABLE_ETH_LOOP_BACK)
 //    .init_clk_n(initclk_eth_p),
 //    .init_clk_p(~initclk_eth_p),
     .gt_ref_clk_n(refclk_eth_p),

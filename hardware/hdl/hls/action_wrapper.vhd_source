@@ -1516,14 +1516,15 @@ BEGIN
 -- Enable ethernet with loopback
     din_eth_TDATA                => dwrap_eth_TDATA, 
     din_eth_TVALID               => dwrap_eth_TVALID,  
-    din_eth_TREADY               => dwrap_eth_TREADY, 
+    din_eth_TREADY               => open, 
     din_eth_TKEEP                => dwrap_eth_TKEEP,
     din_eth_TUSER                => dwrap_eth_TUSER,
     din_eth_TLAST(0)             => dwrap_eth_TLAST(0),
 
     dout_eth_TDATA               => dwrap_eth_TDATA, 
     dout_eth_TVALID              => dwrap_eth_TVALID,  
-    dout_eth_TREADY              => dwrap_eth_TREADY, 
+-- Force the TREADY signal to 1 to mimic the mac
+    dout_eth_TREADY              => '1', 
     dout_eth_TKEEP               => dwrap_eth_TKEEP,
     dout_eth_TUSER               => dwrap_eth_TUSER,
     dout_eth_TLAST(0)            => dwrap_eth_TLAST(0),
