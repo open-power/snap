@@ -398,6 +398,17 @@ choice
         select ENABLE_HLS_SUPPORT
         select DISABLE_SDRAM_AND_BRAM
         select DISABLE_NVME
+
+    config HLS_RX100G
+		bool "HLS 100G receiver"
+        help
+            This example is written in C and compiled with HLS
+        select ENABLE_HLS_SUPPORT
+        select ENABLE_ETHERNET
+        select FORCE_HBM
+        select DISABLE_SDRAM_AND_BRAM
+        select DISABLE_NVME
+	select ENABLE_SIMU_WO_ETH 
 endchoice
 
 config ENABLE_HLS_SUPPORT
@@ -442,21 +453,22 @@ config ENABLE_SDRAM
 
 config FORCE_HBM
 	bool
-	default y
-	depends on (HLS_HBM_MEMCOPY && AD9H3)
+	default n
+	depends on AD9H3
 	select ENABLE_HBM
 
 config ENABLE_HBM
 	bool
 	prompt "Enable HBM"
-	depends on (HLS_HBM_MEMCOPY && AD9H3)
+        default N
+	depends on (AD9H3)
 	help
 	  This option enables the on-card HBM on AD9H3 card.
 
 config HBM_USED
 	string
-	default "TRUE"  if (AD9H3 && HLS_HBM_MEMCOPY)
-	default "FALSE" if ! (AD9H3 && HLS_HBM_MEMCOPY)
+	default "TRUE"  if ENABLE_HBM
+	default "FALSE" if !ENABLE_HBM
 
 config SDRAM_USED
 	string
@@ -473,7 +485,7 @@ config ENABLE_BRAM
 config REPLACE_HBM_BY_BRAM
 	bool
 	prompt "Replace HBM by 32K BRAM (mandatory when simulating with xsim)"
-	depends on (AD9H3 && HLS_HBM_MEMCOPY)
+	depends on AD9H3
 	help
 	  This is a development option. The AXI attached on-FPGA HBM will be replaced by 32K URAM.
 
@@ -533,6 +545,34 @@ config NVME_USED
 	string
 	default "TRUE"  if ENABLE_NVME
 	default "FALSE" if ! ENABLE_NVME
+
+config ENABLE_ETHERNET
+	bool "Enable Ethernet support"
+    default N
+	depends on AD9H3
+	help
+	  This option controls the instantiation of an Ethernet IP 
+	  together with the AXI interfaces for MMIO control and action access.
+
+config ENABLE_ETH_LOOP_BACK
+         bool "Ethernet loopback in the action wrapper (removes ETH IP)"
+         default "TRUE"  if  ENABLE_SIMU_WO_ETH
+         default "FALSE" if !ENABLE_SIMU_WO_ETH
+         depends on AD9H3
+         help
+           This option prevent the instantiation of an Ethernet IP
+           Instead it shortens the action ethernet AXI out interface to ethernet input interface.
+
+config ETH_LOOP_BACK
+	string
+	default "TRUE"  if  ENABLE_ETH_LOOP_BACK
+	default "FALSE" if !ENABLE_ETH_LOOP_BACK
+
+config ETHERNET_USED
+	string
+	default "TRUE"  if  ENABLE_ETHERNET
+	default "FALSE" if !ENABLE_ETHERNET
+
 
 choice
 	bool "Simulator"

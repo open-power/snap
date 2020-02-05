@@ -2,6 +2,7 @@
 ############################################################################
 ##
 ## Copyright 2016-2019 International Business Machines
+## Copyright 2019 Filip Leonarski, Paul Scherrer Institute
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
 ## you may not use this file except in compliance with the License.
@@ -33,6 +34,8 @@ set action_dir     $::env(ACTION_ROOT)
 set action_hw_dir  $action_dir/hw
 set action_ip_dir  $action_dir/ip/action_ip_prj/action_ip_prj.srcs/sources_1/ip
 set action_tcl     [exec find $action_hw_dir -name tcl -type d]
+set eth_used       $::env(ETHERNET_USED)
+set eth_loop_back  $::env(ETH_LOOP_BACK)
 set nvme_used      $::env(NVME_USED)
 set hbm_used       $::env(HBM_USED)
 set bram_used      $::env(BRAM_USED)
@@ -235,13 +238,44 @@ foreach ip_xci [glob -nocomplain -dir $action_ip_dir */*.xci] {
   export_ip_user_files -of_objects  [get_files "$ip_xci"] -no_script -sync -force >> $log_file
 }
 
+# Add Ethernet IP
+if { $eth_used == TRUE } {
+  if { $eth_loop_back == TRUE } {
+    puts "                        adding Ethernet loop back  (no MAC)"
+  } else {
+    puts "                        adding Ethernet block design"
+    set_property  ip_repo_paths [concat [get_property ip_repo_paths [current_project]] $ip_dir] [current_project] >> $log_file
+    update_ip_catalog -rebuild -scan_changes >> $log_file
+  
+    # Commented below line for make model, uncomment for make image
+    add_files -norecurse  $ip_dir/eth_100G/eth_100G.srcs/sources_1/bd/eth_100G/eth_100G.bd  >> $log_file
+    export_ip_user_files -of_objects  [get_files  $ip_dir/eth_100G/eth_100G.srcs/sources_1/bd/eth_100G/eth_100G.bd] -no_script -sync -force -quiet >> $log_file
+    generate_target -force all [get_files $ip_dir/eth_100G/eth_100G.srcs/sources_1/bd/eth_100G/eth_100G.bd] >> $log_file
+  
+    create_ip_run [get_files -of_objects [get_fileset sources_1] $ip_dir/eth_100G/eth_100G.srcs/sources_1/bd/eth_100G/eth_100G.bd] >> $log_file
+  
+    launch_runs eth_100G_cmac_usplus_0_0_synth_1 >> $log_file
+    launch_runs eth_100G_axis_data_fifo_0_0_synth_1 >> $log_file
+    launch_runs eth_100G_util_vector_logic_0_0_synth_1 >> $log_file
+    launch_runs eth_100G_axis_clock_converter_tx_0_0_synth_1 >> $log_file
+    
+    wait_on_run eth_100G_cmac_usplus_0_0_synth_1 >> $log_file
+    wait_on_run eth_100G_axis_data_fifo_0_0_synth_1 >> $log_file
+    wait_on_run eth_100G_util_vector_logic_0_0_synth_1 >> $log_file
+    wait_on_run eth_100G_axis_clock_converter_tx_0_0_synth_1 >> $log_file
+  }
+
+}
+
 #============
 # Add HBM
 if { $hbm_used == TRUE } {
-  puts "                        adding HBM block design"
   add_files -norecurse $ip_dir/hbm/hbm.srcs/sources_1/bd/hbm_top/hdl/hbm_top_wrapper.vhd >> $log_file
-  if { $bram_used != TRUE } {
+  if { $bram_used == TRUE } {
+    puts "                        adding HBM-like block design (BRAM)"
+  } else {
     # if BRAM model used replacing HBM do not add specific hbm init files
+    puts "                        adding HBM block design"
     puts "                        adding HBM initialization files "
     add_files -norecurse $hbm_ip_dir/hbm_top_hbm_0/hdl/rtl/xpm_internal_config_file_1.mem
     add_files -norecurse $hbm_ip_dir/hbm_top_hbm_0/hdl/rtl/xpm_internal_config_file_0.mem
@@ -296,7 +330,8 @@ if { $nvme_used == TRUE } {
 # Add CAPI board support
 if { ($capi_ver == "capi20") && [file exists $capi_bsp_dir/capi_bsp_wrap.xcix] } {
   puts "                        importing CAPI BSP (xcix)"
-  set_property ip_repo_paths "[file normalize $capi_bsp_dir]" [current_project] >> $log_file
+  #set_property ip_repo_paths "[file normalize $capi_bsp_dir]" [current_project] >> $log_file
+  set_property ip_repo_paths [concat [get_property ip_repo_paths [current_project]] [file normalize $capi_bsp_dir]] [current_project] >> $log_file
   update_ip_catalog >> $log_file
 
   add_files -norecurse                  $capi_bsp_dir/capi_bsp_wrap.xcix -force >> $log_file
@@ -347,6 +382,9 @@ if { $fpga_card == "ADKU3" } {
   if { $sdram_used == "TRUE" } {
     add_files -fileset constrs_1 -norecurse $root_dir/setup/AD9V3/snap_ddr4_b0pins.xdc
     set_property used_in_synthesis false [get_files $root_dir/setup/AD9V3/snap_ddr4_b0pins.xdc]
+  } elseif { $eth_used == "TRUE" } {
+    add_files -fileset constrs_1 -norecurse $root_dir/setup/AD9V3/snap_eth0_pins.xdc
+    set_property used_in_synthesis false [get_files $root_dir/setup/AD9V3/snap_eth0_pins.xdc]
   }
 } elseif { ($fpga_card == "RCXVUP") } {
   if { $sdram_used == "TRUE" } {
@@ -373,6 +411,10 @@ if { $fpga_card == "ADKU3" } {
     add_files -fileset constrs_1 -norecurse  $root_dir/setup/N250S/snap_nvme.xdc
   }
 } elseif { ($fpga_card == "AD9H3") } {
+    if { $eth_used == "TRUE" } {
+      add_files -fileset constrs_1 -norecurse $root_dir/setup/AD9H3/snap_qsfpdd_pins.xdc
+      set_property used_in_synthesis false [get_files $root_dir/setup/AD9H3/snap_qsfpdd_pins.xdc]
+    }
     #cirumventing unconnected clock for hbm Xilinx AR#72607
     add_files -fileset constrs_1 -norecurse  $root_dir/setup/AD9H3/AR72607.xdc
 #    set_property used_in_synthesis false [get_files $root_dir/setup/AD9H3/AR72607.xdc]

@@ -43,7 +43,7 @@ set bd_name  hbm_top
 #   --> follow HBM names <--
 # _______________________________________________________________________________
 #CHANGE_HBM_INTERFACES_NUMBER
-set  HBM_MEM_NUM 2
+set  HBM_MEM_NUM 8
 
 # Create HBM project
 create_project   $prj_name $root_dir/ip/hbm -part $fpga_part -force >> $log_file

@@ -43,7 +43,7 @@ set bd_name  hbm_top
 #   --> follow HBM names <--
 # _______________________________________________________________________________
 #CHANGE_HBM_INTERFACES_NUMBER
-set  HBM_MEM_NUM 2
+set  HBM_MEM_NUM 8
 
 # Create HBM project
 create_project   $prj_name $root_dir/ip/hbm -part $fpga_part -force >> $log_file
@@ -135,17 +135,6 @@ set cell [create_bd_cell -quiet -type ip -vlnv {xilinx.com:ip:hbm:*} hbm]
 # The reference clock provided to HBM is at 100MHz (output of refclk_bufg_div3)
 # and HBM IP logic generates internally the 800MHz which HBM operates at
 #(params provided by AlphaData)
-#Setting for ES chips: HBM_REF_CLK=100MHz => HBM Mem freq=800MHz
-#set_property -dict [list  \
-#  CONFIG.USER_HBM_DENSITY {4GB}  \
-#  CONFIG.USER_HBM_STACK {1}  \
-#  CONFIG.USER_AUTO_POPULATE {no}  \
-#  CONFIG.USER_SWITCH_ENABLE_00 {FALSE}  \
-#  CONFIG.USER_HBM_TCK_0 {800} \
-#  CONFIG.HBM_MMCM_FBOUT_MULT0 {112} \
-#  CONFIG.USER_APB_PCLK_0 {75} \
-#  CONFIG.USER_TEMP_POLL_CNT_0 {75000} \
-#] $cell >> $log_file
 
 #Setting for Production chips: HBM_REF_CLK=300MHz => HBM Mem freq=900MHz
 set_property -dict [list                               \
@@ -185,20 +174,12 @@ set_property -dict [list                               \
 #  CONFIG.USER_MC_ENABLE_00 {TRUE}    => enable/disable the MC
 #  CONFIG.USER_SAXI_00 {true}         => enable/disable each of the AXI interface/HBM memory
 set_property -dict [list \
-  CONFIG.USER_MEMORY_DISPLAY {512}  \
+  CONFIG.USER_MEMORY_DISPLAY {2048}  \
   CONFIG.USER_CLK_SEL_LIST0 {AXI_00_ACLK}  \
   CONFIG.USER_MC_ENABLE_00 {TRUE}  \
-  CONFIG.USER_SAXI_00 {true}  \
-  CONFIG.USER_SAXI_01 {true}  \
-  CONFIG.USER_MC_ENABLE_01 {FALSE}  \
-  CONFIG.USER_SAXI_02 {false}  \
-  CONFIG.USER_SAXI_03 {false}  \
-  CONFIG.USER_MC_ENABLE_02 {FALSE}  \
-  CONFIG.USER_SAXI_04 {false}  \
-  CONFIG.USER_SAXI_05 {false}  \
-  CONFIG.USER_MC_ENABLE_03 {FALSE}  \
-  CONFIG.USER_SAXI_06 {false}  \
-  CONFIG.USER_SAXI_07 {false}  \
+  CONFIG.USER_MC_ENABLE_01 {TRUE}  \
+  CONFIG.USER_MC_ENABLE_02 {TRUE}  \
+  CONFIG.USER_MC_ENABLE_03 {TRUE}  \
   CONFIG.USER_MC_ENABLE_04 {FALSE}  \
   CONFIG.USER_MC_ENABLE_05 {FALSE}  \
   CONFIG.USER_MC_ENABLE_06 {FALSE}  \
