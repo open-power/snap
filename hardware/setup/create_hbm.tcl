@@ -79,16 +79,13 @@ create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant:1.1 constant_22_zero
 set_property -dict [list CONFIG.CONST_WIDTH {22} CONFIG.CONST_VAL {0}] [get_bd_cells constant_22_zero]
 
 create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant:1.1 constant_32_zero
-set_property -dict [list CONFIG.CONST_WIDTH {22} CONFIG.CONST_VAL {0}] [get_bd_cells constant_32_zero]
+set_property -dict [list CONFIG.CONST_WIDTH {32} CONFIG.CONST_VAL {0}] [get_bd_cells constant_32_zero]
 
 
 #====================
 #create the buffer to propagate the clocks
 create_bd_cell -type ip -vlnv xilinx.com:ip:util_ds_buf:2.1 refclk_ibufds_inst
 set_property -dict [list CONFIG.C_BUF_TYPE {IBUFDS}] [get_bd_cells refclk_ibufds_inst]
-
-create_bd_cell -type ip -vlnv xilinx.com:ip:util_ds_buf:2.1 refclk_bufg_inst
-set_property -dict [list CONFIG.C_BUF_TYPE {BUFG}] [get_bd_cells refclk_bufg_inst]
 
 #====================
 #create the clocks and the reset signals for the design
@@ -121,9 +118,7 @@ if { ($vivadoVer >= "2019.2")} {
 }
 connect_bd_net [get_bd_ports refclk300_p] [get_bd_pins refclk_ibufds_inst/IBUF_DS_P] >> $log_file
 connect_bd_net [get_bd_ports refclk300_n] [get_bd_pins refclk_ibufds_inst/IBUF_DS_N] >> $log_file
-connect_bd_net [get_bd_pins refclk_ibufds_inst/IBUF_OUT] [get_bd_pins refclk_bufg_inst/BUFG_I]
 
-#connect_bd_net [get_bd_pins refclk_ibufds_inst/IBUF_OUT] [get_bd_pins refclk_bufg_div3/BUFGCE_I]
 connect_bd_net [get_bd_pins refclk_ibufds_inst/IBUF_OUT] [get_bd_pins refclk_bufg_div4/BUFGCE_I]
 
 
@@ -143,17 +138,42 @@ set_property -dict [list                               \
   CONFIG.USER_AUTO_POPULATE {yes}                      \
   CONFIG.USER_SWITCH_ENABLE_00 {FALSE}                 \
   CONFIG.USER_APB_PCLK_0 {75}                          \
-  CONFIG.USER_HBM_REF_CLK_0 {300}                      \
-  CONFIG.USER_HBM_REF_CLK_PS_0 {1666.67}               \
-  CONFIG.USER_HBM_REF_CLK_XDC_0 {3.33}                 \
-  CONFIG.USER_HBM_FBDIV_0 {12}                         \
-  CONFIG.USER_HBM_CP_0 {3}                             \
-  CONFIG.USER_HBM_RES_0 {1}                            \
-  CONFIG.USER_HBM_LOCK_REF_DLY_0 {13}                  \
-  CONFIG.USER_HBM_LOCK_FB_DLY_0 {13}                   \
-  CONFIG.USER_HBM_HEX_CP_RES_0 {0x00001300}            \
-  CONFIG.USER_HBM_HEX_LOCK_FB_REF_DLY_0 {0x00000d0d}   \
-  CONFIG.USER_HBM_HEX_FBDIV_CLKOUTDIV_0 {0x00000302}   \
+  CONFIG.USER_HBM_REF_CLK_0 {250}                      \
+  CONFIG.USER_HBM_REF_CLK_PS_0 {2000.00}               \
+  CONFIG.USER_HBM_REF_CLK_XDC_0 {4.00}                 \
+  CONFIG.USER_HBM_FBDIV_0 {14}                         \
+  CONFIG.USER_HBM_CP_0 {4}                             \
+  CONFIG.USER_HBM_RES_0 {14}                           \
+  CONFIG.USER_HBM_LOCK_REF_DLY_0 {15}                  \
+  CONFIG.USER_HBM_LOCK_FB_DLY_0 {15}                   \
+  CONFIG.USER_HBM_HEX_CP_RES_0 {0x0000E400}            \
+  CONFIG.USER_HBM_HEX_LOCK_FB_REF_DLY_0 {0x00000f0f}   \
+  CONFIG.USER_HBM_HEX_FBDIV_CLKOUTDIV_0 {0x00000382}   \
+  CONFIG.USER_HBM_TCK_0 {875}                          \
+  CONFIG.USER_HBM_TCK_0_PERIOD {1.142857142857143}     \
+  CONFIG.USER_tRC_0 {0x2A}                             \
+  CONFIG.USER_tRAS_0 {0x1D}                            \
+  CONFIG.USER_tRCDRD_0 {0xD}                           \
+  CONFIG.USER_tRCDWR_0 {0x9}                           \
+  CONFIG.USER_tRRDL_0 {0x4}                            \
+  CONFIG.USER_tRRDS_0 {0x4}                            \
+  CONFIG.USER_tFAW_0 {0xE}                             \
+  CONFIG.USER_tRP_0 {0xD}                              \
+  CONFIG.USER_tWR_0 {0xF}                              \
+  CONFIG.USER_tXP_0 {0x7}                              \
+  CONFIG.USER_tRFC_0 {0xE4}                            \
+  CONFIG.USER_tRFCSB_0 {0x8C}                          \
+  CONFIG.USER_tRREFD_0 {0x7}                           \
+  CONFIG.USER_HBM_REF_OUT_CLK_0 {1750}                 \
+  CONFIG.USER_MC0_REF_CMD_PERIOD {0x0D54}              \
+  CONFIG.USER_MC1_REF_CMD_PERIOD {0x0D54}              \
+  CONFIG.USER_MC2_REF_CMD_PERIOD {0x0D54}              \
+  CONFIG.USER_MC3_REF_CMD_PERIOD {0x0D54}              \
+  CONFIG.USER_MC4_REF_CMD_PERIOD {0x0D54}              \
+  CONFIG.USER_MC5_REF_CMD_PERIOD {0x0D54}              \
+  CONFIG.USER_MC6_REF_CMD_PERIOD {0x0D54}              \
+  CONFIG.USER_MC7_REF_CMD_PERIOD {0x0D54}              \
+  CONFIG.USER_DFI_CLK0_FREQ {437.500}                  \
 ] $cell >> $log_file
   
 #===============================================================================
@@ -206,26 +226,12 @@ connect_bd_net [get_bd_pins ARESETN] [get_bd_pins hbm/APB_0_PRESET_N]
 #--------------------- start loop ------------------
 for {set i 0} {$i < $HBM_MEM_NUM} {incr i} {
 
-  #create the axi_clock_converters for each of the HBM interfaces
-  # Input AXI clock ifrom action is 250MHz and Output AXI clock used by HBM is 300MHz
-  #CONFIG.ADDR_WIDTH {17} \ for simu
-  create_bd_cell -type ip -vlnv xilinx.com:ip:axi_clock_converter:2.1 axi_clock_converter_$i
-  set_property -dict [list  \
-     CONFIG.DATA_WIDTH.VALUE_SRC USER \
-     CONFIG.DATA_WIDTH {512} \
-     CONFIG.ADDR_WIDTH {64} \
-     ] [get_bd_cells axi_clock_converter_$i]
-
-  #create the axi 512 to 256 converters
-  set cell [create_bd_cell -type ip -vlnv {xilinx.com:ip:axi_dwidth_converter:*} axi_512_to_256_$i]
+  #create the axi4 to axi3 converters
+  set cell [create_bd_cell -type ip -vlnv {xilinx.com:ip:axi_protocol_converter:*} axi4_to_axi3_$i]
   set_property -dict {      \
-    CONFIG.ADDR_WIDTH.VALUE_SRC PROPAGATED \
-    CONFIG.SI_DATA_WIDTH {512}    \
-    CONFIG.MI_DATA_WIDTH {256}    \
+    CONFIG.ADDR_WIDTH {64}        \
   } $cell
   
-  #create the axi4 to axi3 converters
-  create_bd_cell -type ip -vlnv {xilinx.com:ip:axi_protocol_converter:*} axi4_to_axi3_$i >> $log_file
 
   #create the ports
   create_bd_intf_port -mode Slave -vlnv xilinx.com:interface:aximm_rtl:1.0 S_AXI_p$i\_HBM
@@ -234,43 +240,30 @@ for {set i 0} {$i < $HBM_MEM_NUM} {incr i} {
       CONFIG.NUM_WRITE_OUTSTANDING {2}       \
       CONFIG.NUM_READ_OUTSTANDING {2}        \
       CONFIG.FREQ_HZ {250000000}             \
-      CONFIG.DATA_WIDTH {512}                \
+      CONFIG.DATA_WIDTH {256}                \
   ] [get_bd_intf_ports S_AXI_p$i\_HBM]
-  connect_bd_intf_net [get_bd_intf_ports S_AXI_p$i\_HBM] [get_bd_intf_pins axi_clock_converter_$i/S_AXI]
+  connect_bd_intf_net [get_bd_intf_ports S_AXI_p$i\_HBM] [get_bd_intf_pins axi4_to_axi3_$i/S_AXI]
 
-  connect_bd_net [get_bd_pins ARESETN] [get_bd_pins axi_clock_converter_$i/m_axi_aresetn]
-  connect_bd_net [get_bd_pins ARESETN] [get_bd_pins axi_clock_converter_$i/s_axi_aresetn]
-  
   if { ($vivadoVer >= "2019.2")} {
     set port [create_bd_port -dir I -type clk -freq_hz 250000000 S_AXI_p$i\_HBM_ACLK]
   } else {
     set port [create_bd_port -dir I -type clk S_AXI_p$i\_HBM_ACLK]
     set_property {CONFIG.FREQ_HZ} {250000000} $port
   }
-  connect_bd_net $port [get_bd_pins axi_clock_converter_$i/s_axi_aclk]
-  
-  connect_bd_net [get_bd_pins axi_clock_converter_$i/m_axi_aclk] [get_bd_pins refclk_bufg_inst/BUFG_O]
-
-  #connect axi_clock_converter to axi_512_to_256  
-  connect_bd_net [get_bd_pins ARESETN] [get_bd_pins axi_512_to_256_$i/s_axi_aresetn]
-  connect_bd_net [get_bd_pins refclk_bufg_inst/BUFG_O] [get_bd_pins axi_512_to_256_$i/s_axi_aclk]
-  connect_bd_intf_net [get_bd_intf_pins axi_clock_converter_$i/M_AXI] [get_bd_intf_pins axi_512_to_256_$i/S_AXI]
-
-  #connect axi_512_to_256 to axi4_to_axi3
+  connect_bd_net $port [get_bd_pins axi4_to_axi3_$i/aclk]
   connect_bd_net [get_bd_pins ARESETN] [get_bd_pins axi4_to_axi3_$i/aresetn]
-  connect_bd_net [get_bd_pins refclk_bufg_inst/BUFG_O] [get_bd_pins axi4_to_axi3_$i/aclk]
-  connect_bd_intf_net [get_bd_intf_pins axi_512_to_256_$i/M_AXI] [get_bd_intf_pins axi4_to_axi3_$i/S_AXI]
+  
   
   
   #connect axi4_to_axi3 to hbm
   #Manage 1 vs 2 digits
   if { $i < 10} {
     connect_bd_net [get_bd_pins ARESETN] [get_bd_pins hbm/AXI_0$i\_ARESET_N]
-    connect_bd_net [get_bd_pins refclk_bufg_inst/BUFG_O] [get_bd_pins hbm/AXI_0$i\_ACLK]
+    connect_bd_net [get_bd_pins axi4_to_axi3_$i/aclk] [get_bd_pins hbm/AXI_0$i\_ACLK]
     connect_bd_intf_net [get_bd_intf_pins axi4_to_axi3_$i/M_AXI] [get_bd_intf_pins hbm/SAXI_0$i]
   } else {
     connect_bd_net [get_bd_pins ARESETN] [get_bd_pins hbm/AXI_$i\_ARESET_N]
-    connect_bd_net [get_bd_pins refclk_bufg_inst/BUFG_O] [get_bd_pins hbm/AXI_$i\_ACLK]
+    connect_bd_net [get_bd_pins axi4_to_axi3_$i/aclk] [get_bd_pins hbm/AXI_$i\_ACLK]
     connect_bd_intf_net [get_bd_intf_pins axi4_to_axi3_$i/M_AXI] [get_bd_intf_pins hbm/SAXI_$i]
   }
 }
@@ -280,6 +273,7 @@ for {set i 0} {$i < $HBM_MEM_NUM} {incr i} {
 assign_bd_address >> $log_file
 
 regenerate_bd_layout
+#comment following line if you want to debug this file
 validate_bd_design >> $log_file
 save_bd_design >> $log_file
 #return $bd
@@ -289,6 +283,7 @@ save_bd_design >> $log_file
 # It is important that this are Verilog files and set the synth_checkpoint_mode to None (Global synthesis) before generating targets
 puts "                        generating HBM output products"
 set_property synth_checkpoint_mode None [get_files  $root_dir/ip/hbm/hbm.srcs/sources_1/bd/hbm_top/hbm_top.bd] >> $log_file
+#comment following line if you want to debug this file
 generate_target all                     [get_files  $root_dir/ip/hbm/hbm.srcs/sources_1/bd/hbm_top/hbm_top.bd] >> $log_file
 
 make_wrapper -files [get_files $root_dir/ip/hbm/hbm.srcs/sources_1/bd/hbm_top/hbm_top.bd] -top
