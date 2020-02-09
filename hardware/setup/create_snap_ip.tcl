@@ -35,6 +35,9 @@ create_project snap_ip_project $ip_dir/snap_ip_project -force -part $fpga_part -
 if { $fpga_card eq "U200" } {
   set_property board_part xilinx.com:au200:part0:1.0 [current_project]
 }
+if { $fpga_card eq "U50" } {
+  set_property board_part xilinx.com:au50:part0:1.0 [current_project]
+}
 # Project IP Settings
 # General
 set_property target_language VHDL [current_project]
@@ -138,7 +141,7 @@ export_simulation -of_objects [get_files $ip_dir/fifo_4x512/fifo_4x512.xci] -dir
 # SDRAM_USED=TRUE   8GB Semptian  S241    DDR4 RAM MT40A1G8WE-075E (8Bb, x8)
 # SDRAM_USED=TRUE   8GB AlphaData 9V3     DDR4 RAM CUSTOM_DBI_K4A8G085WB-RC (8Gb, x8)
 # SDRAM_USED=TRUE   8GB ReflexCES VUP     DDR4 RAM MT40A512M16HA-075E (8Gb, x16)
-# NOTE AD9H3 has no DDR attached, uses HBM instead
+# NOTE AD9H3 has no DDR attached, uses HBM instead. Same for U50
 set create_clock_conv   FALSE
 set create_interconnect FALSE
 set create_bram         FALSE
@@ -150,6 +153,7 @@ set create_ddr4_rcxvup  FALSE
 set create_ddr4_fx609   FALSE
 set create_ddr4_s241    FALSE
 set create_ddr4_u200    FALSE
+set create_ddr4_u50    FALSE
 set create_ddr4_ad9v3   FALSE
 
 if { $fpga_card == "ADKU3" } {
@@ -208,6 +212,15 @@ if { $fpga_card == "ADKU3" } {
     set create_clock_conv   TRUE
     set create_ddr4_u200   TRUE
   }
+} elseif { $fpga_card == "U50" } {
+  if { $bram_used == "TRUE" } {
+    set create_clock_conv   TRUE
+    set create_bram        TRUE
+  } elseif { $sdram_used == "TRUE" } {
+    set create_clock_conv   TRUE
+    set create_ddr4_u50   TRUE
+  }
+
 } elseif { ($fpga_card == "N250S") || ($fpga_card == "N250SP") } {
   if { $bram_used == "TRUE" } {
     if { $nvme_used == "TRUE" } {
@@ -239,8 +252,8 @@ if { $create_clock_conv == "TRUE" } {
   puts "                        generating IP axi_clock_converter"
   create_ip -name axi_clock_converter -vendor xilinx.com -library ip -version 2.1 -module_name axi_clock_converter -dir $ip_dir  >> $log_file
 
-  if { ($sdram_used == "TRUE") && ( $fpga_card == "ADKU3" || $fpga_card == "S121B" || $fpga_card == "AD8K5" || $fpga_card == "S241"|| $fpga_card == "U200"|| $fpga_card == "AD9V3") } {
-	if { $fpga_card == "U200" } {
+  if { ($sdram_used == "TRUE") && ( $fpga_card == "ADKU3" || $fpga_card == "S121B" || $fpga_card == "AD8K5" || $fpga_card == "S241"|| $fpga_card == "U200"|| $fpga_card == "U50" || $fpga_card == "AD9V3") } {
+	if { $fpga_card == "U200" || $fpga_card == "U50"} {
 	    set_property -dict [list CONFIG.ADDR_WIDTH {34} CONFIG.DATA_WIDTH {512} CONFIG.ID_WIDTH {4}] [get_ips axi_clock_converter]
 	} else {
     	    set_property -dict [list CONFIG.ADDR_WIDTH {33} CONFIG.DATA_WIDTH {512} CONFIG.ID_WIDTH {4}] [get_ips axi_clock_converter]
@@ -470,6 +483,43 @@ if { $create_ddr4_s241 == "TRUE" } {
 }
 #DDR4 create ddr4sdramm with ECC (U200)
 if { $create_ddr4_u200 == "TRUE" } {
+  puts "                        generating IP ddr4sdram for $fpga_card"
+  create_ip -name ddr4 -vendor xilinx.com -library ip -version 2.* -module_name ddr4sdram -dir $ip_dir >> $log_file
+  set_property -dict [list                                                                    \
+   CONFIG.C0.BANK_GROUP_WIDTH {2} \
+   CONFIG.C0.CKE_WIDTH {1} \
+   CONFIG.C0.CS_WIDTH {1} \
+   CONFIG.C0.ControllerType {DDR4_SDRAM} \
+   CONFIG.C0.DDR4_AxiAddressWidth {34} \
+   CONFIG.C0.DDR4_AxiDataWidth {512} \
+   CONFIG.C0.DDR4_AxiSelection {true} \
+   CONFIG.C0.DDR4_CLKOUT0_DIVIDE {5} \
+   CONFIG.C0.DDR4_CasLatency {17} \
+   CONFIG.C0.DDR4_CasWriteLatency {12} \
+   CONFIG.C0.DDR4_CustomParts {no_file_loaded} \
+   CONFIG.C0.DDR4_DataMask {NONE} \
+   CONFIG.C0.DDR4_DataWidth {72} \
+   CONFIG.C0.DDR4_Ecc {true} \
+   CONFIG.C0.DDR4_InputClockPeriod {3332} \
+   CONFIG.C0.DDR4_MemoryPart {MTA18ASF2G72PZ-2G3} \
+   CONFIG.C0.DDR4_MemoryType {RDIMMs} \
+   CONFIG.C0.DDR4_TimePeriod {833} \
+   CONFIG.C0.DDR4_isCustom {false} \
+   CONFIG.C0.ODT_WIDTH {1} \
+   CONFIG.C0_CLOCK_BOARD_INTERFACE {default_300mhz_clk1} \
+   CONFIG.C0_DDR4_BOARD_INTERFACE {ddr4_sdram_c1} \
+                     ] [get_ips ddr4sdram] >> $log_file
+  set_property generate_synth_checkpoint false [get_files $ip_dir/ddr4sdram/ddr4sdram.xci]
+  generate_target {instantiation_template}     [get_files $ip_dir/ddr4sdram/ddr4sdram.xci] >> $log_file
+  generate_target all                          [get_files $ip_dir/ddr4sdram/ddr4sdram.xci] >> $log_file
+  export_ip_user_files -of_objects             [get_files $ip_dir/ddr4sdram/ddr4sdram.xci] -no_script -force  >> $log_file
+  export_simulation -of_objects [get_files $ip_dir/ddr4sdram/ddr4sdram.xci] -directory $ip_dir/ip_user_files/sim_scripts -force >> $log_file
+
+  #DDR4 create ddr4sdramm example design
+  puts "                        generating ddr4sdram example design"
+  open_example_project -in_process -force -dir $ip_dir     [get_ips ddr4sdram] >> $log_file
+}
+if { $create_ddr4_u50 == "TRUE" } {
   puts "                        generating IP ddr4sdram for $fpga_card"
   create_ip -name ddr4 -vendor xilinx.com -library ip -version 2.* -module_name ddr4sdram -dir $ip_dir >> $log_file
   set_property -dict [list                                                                    \

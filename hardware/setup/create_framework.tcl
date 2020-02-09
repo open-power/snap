@@ -70,6 +70,10 @@ if { $fpga_card eq "U200" } {
   set_property board_part xilinx.com:au200:part0:1.0 [current_project]
 }
 
+if { $fpga_card eq "U50" } {
+  set_property board_part xilinx.com:au50:part0:1.0 [current_project]
+}
+
 # Project Settings
 # General
 puts "                        setting up project settings"
@@ -197,7 +201,7 @@ if { $simulator != "nosim" } {
     add_files    -fileset sim_1 -norecurse -scan_for_includes $sim_dir/core/ddr4_dimm_s121b.sv  >> $log_file
     set_property used_in_synthesis false           [get_files $sim_dir/core/ddr4_dimm_s121b.sv]
   }
-  # NOTE AD9H3 has no DDR attached, uses HBM instead
+  # NOTE AD9H3 has no DDR attached, uses HBM instead. Same for U50
 }
 
 # Add IP

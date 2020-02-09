@@ -67,6 +67,11 @@ elif [ "$FPGACARD" == "AD9H3"  ]; then
   DMA_XFER_SIZE="x\"6\""
   CARD_TYPE="x\"16\""
 fi
+elif [ "$FPGACARD" == "U50"  ]; then
+  DMA_XFER_SIZE="x\"6\""
+  CARD_TYPE="x\"17\""
+fi
+
 if [ "${BRAM_USED^^}" == "TRUE" ]; then
   SDRAM_SIZE="x\"0001\""
 fi
