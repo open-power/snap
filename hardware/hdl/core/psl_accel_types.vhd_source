@@ -108,7 +108,12 @@ PACKAGE psl_accel_types IS
 
      -- Parameters for HBM ports
      --CHANGE_HBM_INTERFACES_NUMBER
-    CONSTANT C_AXI_CARD_HBM_ADDR_WIDTH   : INTEGER := 64; --64 for real - 16 for simu
+    CONSTANT C_AXI_CARD_HBM_ADDR_WIDTH   : INTEGER := 64; --64 for real - 15 for simu
+#ifdef CONFIG_REPLACE_HBM_BY_BRAM
+    CONSTANT C_AXI_CARD_HBM_SIM_ADDR_WIDTH   : INTEGER := 15; --64 for real - 15 for simu
+#else
+    CONSTANT C_AXI_CARD_HBM_SIM_ADDR_WIDTH   : INTEGER := 64; --64 for real - 15 for simu
+#endif
     CONSTANT C_AXI_CARD_HBM_ID_WIDTH     : INTEGER := 1;
     CONSTANT C_AXI_CARD_HBM_AWUSER_WIDTH : INTEGER := 1;
     CONSTANT C_AXI_CARD_HBM_DATA_WIDTH   : INTEGER := 256;

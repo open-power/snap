@@ -900,25 +900,30 @@ SIGNAL tmp_sdram_axi_bid              : STD_LOGIC_VECTOR (5 downto 0);
 --CHANGE_HBM_INTERFACES_NUMBER
 -- copy/paste these 36 signals for a new AXI interface
     S_AXI_p0_HBM_ACLK : in STD_LOGIC;
-    S_AXI_p0_HBM_araddr : in STD_LOGIC_VECTOR ( C_M_AXI_CARD_HBM_ADDR_WIDTH-1 downto 0 );
+    S_AXI_p0_HBM_araddr : in STD_LOGIC_VECTOR ( C_M_AXI_CARD_HBM_SIM_ADDR_WIDTH-1 downto 0 );
     S_AXI_p0_HBM_arburst : in STD_LOGIC_VECTOR ( 1 downto 0 );
     S_AXI_p0_HBM_arcache : in STD_LOGIC_VECTOR ( 3 downto 0 );
     S_AXI_p0_HBM_arlen : in STD_LOGIC_VECTOR ( 7 downto 0 );
+#ifdef CONFIG_REPLACE_HBM_BY_BRAM
+    S_AXI_p0_HBM_arlock : in STD_LOGIC;
+    S_AXI_p0_HBM_awlock : in STD_LOGIC;
+#else
     S_AXI_p0_HBM_arlock : in STD_LOGIC_VECTOR ( 0 to 0 );
-    S_AXI_p0_HBM_arprot : in STD_LOGIC_VECTOR ( 2 downto 0 );
+    S_AXI_p0_HBM_awlock : in STD_LOGIC_VECTOR ( 0 to 0 );
     S_AXI_p0_HBM_arqos : in STD_LOGIC_VECTOR ( 3 downto 0 );
+    S_AXI_p0_HBM_awqos : in STD_LOGIC_VECTOR ( 3 downto 0 );
     S_AXI_p0_HBM_arregion : in STD_LOGIC_VECTOR ( 3 downto 0 );
+    S_AXI_p0_HBM_awregion : in STD_LOGIC_VECTOR ( 3 downto 0 );
+#endif
+    S_AXI_p0_HBM_arprot : in STD_LOGIC_VECTOR ( 2 downto 0 );
     S_AXI_p0_HBM_arready : out STD_LOGIC;
     S_AXI_p0_HBM_arsize : in STD_LOGIC_VECTOR ( 2 downto 0 );
     S_AXI_p0_HBM_arvalid : in STD_LOGIC;
-    S_AXI_p0_HBM_awaddr : in STD_LOGIC_VECTOR ( C_M_AXI_CARD_HBM_ADDR_WIDTH-1 downto 0 );
+    S_AXI_p0_HBM_awaddr : in STD_LOGIC_VECTOR ( C_M_AXI_CARD_HBM_SIM_ADDR_WIDTH-1 downto 0 );
     S_AXI_p0_HBM_awburst : in STD_LOGIC_VECTOR ( 1 downto 0 );
     S_AXI_p0_HBM_awcache : in STD_LOGIC_VECTOR ( 3 downto 0 );
     S_AXI_p0_HBM_awlen : in STD_LOGIC_VECTOR ( 7 downto 0 );
-    S_AXI_p0_HBM_awlock : in STD_LOGIC_VECTOR ( 0 to 0 );
     S_AXI_p0_HBM_awprot : in STD_LOGIC_VECTOR ( 2 downto 0 );
-    S_AXI_p0_HBM_awqos : in STD_LOGIC_VECTOR ( 3 downto 0 );
-    S_AXI_p0_HBM_awregion : in STD_LOGIC_VECTOR ( 3 downto 0 );
     S_AXI_p0_HBM_awready : out STD_LOGIC;
     S_AXI_p0_HBM_awsize : in STD_LOGIC_VECTOR ( 2 downto 0 );
     S_AXI_p0_HBM_awvalid : in STD_LOGIC;
@@ -937,25 +942,30 @@ SIGNAL tmp_sdram_axi_bid              : STD_LOGIC_VECTOR (5 downto 0);
     S_AXI_p0_HBM_wvalid : in STD_LOGIC;
 
     S_AXI_p1_HBM_ACLK : in STD_LOGIC;
-    S_AXI_p1_HBM_araddr : in STD_LOGIC_VECTOR ( C_M_AXI_CARD_HBM_ADDR_WIDTH-1 downto 0 );
+    S_AXI_p1_HBM_araddr : in STD_LOGIC_VECTOR ( C_M_AXI_CARD_HBM_SIM_ADDR_WIDTH-1 downto 0 );
     S_AXI_p1_HBM_arburst : in STD_LOGIC_VECTOR ( 1 downto 0 );
     S_AXI_p1_HBM_arcache : in STD_LOGIC_VECTOR ( 3 downto 0 );
     S_AXI_p1_HBM_arlen : in STD_LOGIC_VECTOR ( 7 downto 0 );
+#ifdef CONFIG_REPLACE_HBM_BY_BRAM
+    S_AXI_p1_HBM_awlock : in STD_LOGIC;
+    S_AXI_p1_HBM_arlock : in STD_LOGIC;
+#else
     S_AXI_p1_HBM_arlock : in STD_LOGIC_VECTOR ( 0 to 0 );
-    S_AXI_p1_HBM_arprot : in STD_LOGIC_VECTOR ( 2 downto 0 );
+    S_AXI_p1_HBM_awlock : in STD_LOGIC_VECTOR ( 0 to 0 );
     S_AXI_p1_HBM_arqos : in STD_LOGIC_VECTOR ( 3 downto 0 );
+    S_AXI_p1_HBM_awqos : in STD_LOGIC_VECTOR ( 3 downto 0 );
     S_AXI_p1_HBM_arregion : in STD_LOGIC_VECTOR ( 3 downto 0 );
+    S_AXI_p1_HBM_awregion : in STD_LOGIC_VECTOR ( 3 downto 0 );
+#endif
+    S_AXI_p1_HBM_arprot : in STD_LOGIC_VECTOR ( 2 downto 0 );
     S_AXI_p1_HBM_arready : out STD_LOGIC;
     S_AXI_p1_HBM_arsize : in STD_LOGIC_VECTOR ( 2 downto 0 );
     S_AXI_p1_HBM_arvalid : in STD_LOGIC;
-    S_AXI_p1_HBM_awaddr : in STD_LOGIC_VECTOR ( C_M_AXI_CARD_HBM_ADDR_WIDTH-1 downto 0 );
+    S_AXI_p1_HBM_awaddr : in STD_LOGIC_VECTOR ( C_M_AXI_CARD_HBM_SIM_ADDR_WIDTH-1 downto 0 );
     S_AXI_p1_HBM_awburst : in STD_LOGIC_VECTOR ( 1 downto 0 );
     S_AXI_p1_HBM_awcache : in STD_LOGIC_VECTOR ( 3 downto 0 );
     S_AXI_p1_HBM_awlen : in STD_LOGIC_VECTOR ( 7 downto 0 );
-    S_AXI_p1_HBM_awlock : in STD_LOGIC_VECTOR ( 0 to 0 );
     S_AXI_p1_HBM_awprot : in STD_LOGIC_VECTOR ( 2 downto 0 );
-    S_AXI_p1_HBM_awqos : in STD_LOGIC_VECTOR ( 3 downto 0 );
-    S_AXI_p1_HBM_awregion : in STD_LOGIC_VECTOR ( 3 downto 0 );
     S_AXI_p1_HBM_awready : out STD_LOGIC;
     S_AXI_p1_HBM_awsize : in STD_LOGIC_VECTOR ( 2 downto 0 );
     S_AXI_p1_HBM_awvalid : in STD_LOGIC;
@@ -974,25 +984,30 @@ SIGNAL tmp_sdram_axi_bid              : STD_LOGIC_VECTOR (5 downto 0);
     S_AXI_p1_HBM_wvalid : in STD_LOGIC;
 --
     S_AXI_p2_HBM_ACLK : in STD_LOGIC;
-    S_AXI_p2_HBM_araddr : in STD_LOGIC_VECTOR ( C_M_AXI_CARD_HBM_ADDR_WIDTH-1 downto 0 );
+    S_AXI_p2_HBM_araddr : in STD_LOGIC_VECTOR ( C_M_AXI_CARD_HBM_SIM_ADDR_WIDTH-1 downto 0 );
     S_AXI_p2_HBM_arburst : in STD_LOGIC_VECTOR ( 1 downto 0 );
     S_AXI_p2_HBM_arcache : in STD_LOGIC_VECTOR ( 3 downto 0 );
     S_AXI_p2_HBM_arlen : in STD_LOGIC_VECTOR ( 7 downto 0 );
+#ifdef CONFIG_REPLACE_HBM_BY_BRAM
+    S_AXI_p2_HBM_arlock : in STD_LOGIC;
+    S_AXI_p2_HBM_awlock : in STD_LOGIC;
+#else
     S_AXI_p2_HBM_arlock : in STD_LOGIC_VECTOR ( 0 to 0 );
-    S_AXI_p2_HBM_arprot : in STD_LOGIC_VECTOR ( 2 downto 0 );
+    S_AXI_p2_HBM_awlock : in STD_LOGIC_VECTOR ( 0 to 0 );
     S_AXI_p2_HBM_arqos : in STD_LOGIC_VECTOR ( 3 downto 0 );
+    S_AXI_p2_HBM_awqos : in STD_LOGIC_VECTOR ( 3 downto 0 );
     S_AXI_p2_HBM_arregion : in STD_LOGIC_VECTOR ( 3 downto 0 );
+    S_AXI_p2_HBM_awregion : in STD_LOGIC_VECTOR ( 3 downto 0 );
+#endif
+    S_AXI_p2_HBM_arprot : in STD_LOGIC_VECTOR ( 2 downto 0 );
     S_AXI_p2_HBM_arready : out STD_LOGIC;
     S_AXI_p2_HBM_arsize : in STD_LOGIC_VECTOR ( 2 downto 0 );
     S_AXI_p2_HBM_arvalid : in STD_LOGIC;
-    S_AXI_p2_HBM_awaddr : in STD_LOGIC_VECTOR ( C_M_AXI_CARD_HBM_ADDR_WIDTH-1 downto 0 );
+    S_AXI_p2_HBM_awaddr : in STD_LOGIC_VECTOR ( C_M_AXI_CARD_HBM_SIM_ADDR_WIDTH-1 downto 0 );
     S_AXI_p2_HBM_awburst : in STD_LOGIC_VECTOR ( 1 downto 0 );
     S_AXI_p2_HBM_awcache : in STD_LOGIC_VECTOR ( 3 downto 0 );
     S_AXI_p2_HBM_awlen : in STD_LOGIC_VECTOR ( 7 downto 0 );
-    S_AXI_p2_HBM_awlock : in STD_LOGIC_VECTOR ( 0 to 0 );
     S_AXI_p2_HBM_awprot : in STD_LOGIC_VECTOR ( 2 downto 0 );
-    S_AXI_p2_HBM_awqos : in STD_LOGIC_VECTOR ( 3 downto 0 );
-    S_AXI_p2_HBM_awregion : in STD_LOGIC_VECTOR ( 3 downto 0 );
     S_AXI_p2_HBM_awready : out STD_LOGIC;
     S_AXI_p2_HBM_awsize : in STD_LOGIC_VECTOR ( 2 downto 0 );
     S_AXI_p2_HBM_awvalid : in STD_LOGIC;
@@ -1011,25 +1026,30 @@ SIGNAL tmp_sdram_axi_bid              : STD_LOGIC_VECTOR (5 downto 0);
     S_AXI_p2_HBM_wvalid : in STD_LOGIC;
 --
     S_AXI_p3_HBM_ACLK : in STD_LOGIC;
-    S_AXI_p3_HBM_araddr : in STD_LOGIC_VECTOR ( C_M_AXI_CARD_HBM_ADDR_WIDTH-1 downto 0 );
+    S_AXI_p3_HBM_araddr : in STD_LOGIC_VECTOR ( C_M_AXI_CARD_HBM_SIM_ADDR_WIDTH-1 downto 0 );
     S_AXI_p3_HBM_arburst : in STD_LOGIC_VECTOR ( 1 downto 0 );
     S_AXI_p3_HBM_arcache : in STD_LOGIC_VECTOR ( 3 downto 0 );
     S_AXI_p3_HBM_arlen : in STD_LOGIC_VECTOR ( 7 downto 0 );
+#ifdef CONFIG_REPLACE_HBM_BY_BRAM
+    S_AXI_p3_HBM_arlock : in STD_LOGIC;
+    S_AXI_p3_HBM_awlock : in STD_LOGIC;
+#else
     S_AXI_p3_HBM_arlock : in STD_LOGIC_VECTOR ( 0 to 0 );
-    S_AXI_p3_HBM_arprot : in STD_LOGIC_VECTOR ( 2 downto 0 );
+    S_AXI_p3_HBM_awlock : in STD_LOGIC_VECTOR ( 0 to 0 );
     S_AXI_p3_HBM_arqos : in STD_LOGIC_VECTOR ( 3 downto 0 );
+    S_AXI_p3_HBM_awqos : in STD_LOGIC_VECTOR ( 3 downto 0 );
     S_AXI_p3_HBM_arregion : in STD_LOGIC_VECTOR ( 3 downto 0 );
+    S_AXI_p3_HBM_awregion : in STD_LOGIC_VECTOR ( 3 downto 0 );
+#endif
+    S_AXI_p3_HBM_arprot : in STD_LOGIC_VECTOR ( 2 downto 0 );
     S_AXI_p3_HBM_arready : out STD_LOGIC;
     S_AXI_p3_HBM_arsize : in STD_LOGIC_VECTOR ( 2 downto 0 );
     S_AXI_p3_HBM_arvalid : in STD_LOGIC;
-    S_AXI_p3_HBM_awaddr : in STD_LOGIC_VECTOR ( C_M_AXI_CARD_HBM_ADDR_WIDTH-1 downto 0 );
+    S_AXI_p3_HBM_awaddr : in STD_LOGIC_VECTOR ( C_M_AXI_CARD_HBM_SIM_ADDR_WIDTH-1 downto 0 );
     S_AXI_p3_HBM_awburst : in STD_LOGIC_VECTOR ( 1 downto 0 );
     S_AXI_p3_HBM_awcache : in STD_LOGIC_VECTOR ( 3 downto 0 );
     S_AXI_p3_HBM_awlen : in STD_LOGIC_VECTOR ( 7 downto 0 );
-    S_AXI_p3_HBM_awlock : in STD_LOGIC_VECTOR ( 0 to 0 );
     S_AXI_p3_HBM_awprot : in STD_LOGIC_VECTOR ( 2 downto 0 );
-    S_AXI_p3_HBM_awqos : in STD_LOGIC_VECTOR ( 3 downto 0 );
-    S_AXI_p3_HBM_awregion : in STD_LOGIC_VECTOR ( 3 downto 0 );
     S_AXI_p3_HBM_awready : out STD_LOGIC;
     S_AXI_p3_HBM_awsize : in STD_LOGIC_VECTOR ( 2 downto 0 );
     S_AXI_p3_HBM_awvalid : in STD_LOGIC;
@@ -1048,25 +1068,30 @@ SIGNAL tmp_sdram_axi_bid              : STD_LOGIC_VECTOR (5 downto 0);
     S_AXI_p3_HBM_wvalid : in STD_LOGIC;
 --
     S_AXI_p4_HBM_ACLK : in STD_LOGIC;
-    S_AXI_p4_HBM_araddr : in STD_LOGIC_VECTOR ( C_M_AXI_CARD_HBM_ADDR_WIDTH-1 downto 0 );
+    S_AXI_p4_HBM_araddr : in STD_LOGIC_VECTOR ( C_M_AXI_CARD_HBM_SIM_ADDR_WIDTH-1 downto 0 );
     S_AXI_p4_HBM_arburst : in STD_LOGIC_VECTOR ( 1 downto 0 );
     S_AXI_p4_HBM_arcache : in STD_LOGIC_VECTOR ( 3 downto 0 );
     S_AXI_p4_HBM_arlen : in STD_LOGIC_VECTOR ( 7 downto 0 );
+#ifdef CONFIG_REPLACE_HBM_BY_BRAM
+    S_AXI_p4_HBM_arlock : in STD_LOGIC;
+    S_AXI_p4_HBM_awlock : in STD_LOGIC;
+#else
     S_AXI_p4_HBM_arlock : in STD_LOGIC_VECTOR ( 0 to 0 );
-    S_AXI_p4_HBM_arprot : in STD_LOGIC_VECTOR ( 2 downto 0 );
+    S_AXI_p4_HBM_awlock : in STD_LOGIC_VECTOR ( 0 to 0 );
     S_AXI_p4_HBM_arqos : in STD_LOGIC_VECTOR ( 3 downto 0 );
+    S_AXI_p4_HBM_awqos : in STD_LOGIC_VECTOR ( 3 downto 0 );
     S_AXI_p4_HBM_arregion : in STD_LOGIC_VECTOR ( 3 downto 0 );
+    S_AXI_p4_HBM_awregion : in STD_LOGIC_VECTOR ( 3 downto 0 );
+#endif
+    S_AXI_p4_HBM_arprot : in STD_LOGIC_VECTOR ( 2 downto 0 );
     S_AXI_p4_HBM_arready : out STD_LOGIC;
     S_AXI_p4_HBM_arsize : in STD_LOGIC_VECTOR ( 2 downto 0 );
     S_AXI_p4_HBM_arvalid : in STD_LOGIC;
-    S_AXI_p4_HBM_awaddr : in STD_LOGIC_VECTOR ( C_M_AXI_CARD_HBM_ADDR_WIDTH-1 downto 0 );
+    S_AXI_p4_HBM_awaddr : in STD_LOGIC_VECTOR ( C_M_AXI_CARD_HBM_SIM_ADDR_WIDTH-1 downto 0 );
     S_AXI_p4_HBM_awburst : in STD_LOGIC_VECTOR ( 1 downto 0 );
     S_AXI_p4_HBM_awcache : in STD_LOGIC_VECTOR ( 3 downto 0 );
     S_AXI_p4_HBM_awlen : in STD_LOGIC_VECTOR ( 7 downto 0 );
-    S_AXI_p4_HBM_awlock : in STD_LOGIC_VECTOR ( 0 to 0 );
     S_AXI_p4_HBM_awprot : in STD_LOGIC_VECTOR ( 2 downto 0 );
-    S_AXI_p4_HBM_awqos : in STD_LOGIC_VECTOR ( 3 downto 0 );
-    S_AXI_p4_HBM_awregion : in STD_LOGIC_VECTOR ( 3 downto 0 );
     S_AXI_p4_HBM_awready : out STD_LOGIC;
     S_AXI_p4_HBM_awsize : in STD_LOGIC_VECTOR ( 2 downto 0 );
     S_AXI_p4_HBM_awvalid : in STD_LOGIC;
@@ -1085,25 +1110,30 @@ SIGNAL tmp_sdram_axi_bid              : STD_LOGIC_VECTOR (5 downto 0);
     S_AXI_p4_HBM_wvalid : in STD_LOGIC;
 
     S_AXI_p5_HBM_ACLK : in STD_LOGIC;
-    S_AXI_p5_HBM_araddr : in STD_LOGIC_VECTOR ( C_M_AXI_CARD_HBM_ADDR_WIDTH-1 downto 0 );
+    S_AXI_p5_HBM_araddr : in STD_LOGIC_VECTOR ( C_M_AXI_CARD_HBM_SIM_ADDR_WIDTH-1 downto 0 );
     S_AXI_p5_HBM_arburst : in STD_LOGIC_VECTOR ( 1 downto 0 );
     S_AXI_p5_HBM_arcache : in STD_LOGIC_VECTOR ( 3 downto 0 );
     S_AXI_p5_HBM_arlen : in STD_LOGIC_VECTOR ( 7 downto 0 );
+#ifdef CONFIG_REPLACE_HBM_BY_BRAM
+    S_AXI_p5_HBM_arlock : in STD_LOGIC;
+    S_AXI_p5_HBM_awlock : in STD_LOGIC;
+#else
     S_AXI_p5_HBM_arlock : in STD_LOGIC_VECTOR ( 0 to 0 );
-    S_AXI_p5_HBM_arprot : in STD_LOGIC_VECTOR ( 2 downto 0 );
+    S_AXI_p5_HBM_awlock : in STD_LOGIC_VECTOR ( 0 to 0 );
     S_AXI_p5_HBM_arqos : in STD_LOGIC_VECTOR ( 3 downto 0 );
+    S_AXI_p5_HBM_awqos : in STD_LOGIC_VECTOR ( 3 downto 0 );
     S_AXI_p5_HBM_arregion : in STD_LOGIC_VECTOR ( 3 downto 0 );
+    S_AXI_p5_HBM_awregion : in STD_LOGIC_VECTOR ( 3 downto 0 );
+#endif
+    S_AXI_p5_HBM_arprot : in STD_LOGIC_VECTOR ( 2 downto 0 );
     S_AXI_p5_HBM_arready : out STD_LOGIC;
     S_AXI_p5_HBM_arsize : in STD_LOGIC_VECTOR ( 2 downto 0 );
     S_AXI_p5_HBM_arvalid : in STD_LOGIC;
-    S_AXI_p5_HBM_awaddr : in STD_LOGIC_VECTOR ( C_M_AXI_CARD_HBM_ADDR_WIDTH-1 downto 0 );
+    S_AXI_p5_HBM_awaddr : in STD_LOGIC_VECTOR ( C_M_AXI_CARD_HBM_SIM_ADDR_WIDTH-1 downto 0 );
     S_AXI_p5_HBM_awburst : in STD_LOGIC_VECTOR ( 1 downto 0 );
     S_AXI_p5_HBM_awcache : in STD_LOGIC_VECTOR ( 3 downto 0 );
     S_AXI_p5_HBM_awlen : in STD_LOGIC_VECTOR ( 7 downto 0 );
-    S_AXI_p5_HBM_awlock : in STD_LOGIC_VECTOR ( 0 to 0 );
     S_AXI_p5_HBM_awprot : in STD_LOGIC_VECTOR ( 2 downto 0 );
-    S_AXI_p5_HBM_awqos : in STD_LOGIC_VECTOR ( 3 downto 0 );
-    S_AXI_p5_HBM_awregion : in STD_LOGIC_VECTOR ( 3 downto 0 );
     S_AXI_p5_HBM_awready : out STD_LOGIC;
     S_AXI_p5_HBM_awsize : in STD_LOGIC_VECTOR ( 2 downto 0 );
     S_AXI_p5_HBM_awvalid : in STD_LOGIC;
@@ -1122,25 +1152,30 @@ SIGNAL tmp_sdram_axi_bid              : STD_LOGIC_VECTOR (5 downto 0);
     S_AXI_p5_HBM_wvalid : in STD_LOGIC;
 --
     S_AXI_p6_HBM_ACLK : in STD_LOGIC;
-    S_AXI_p6_HBM_araddr : in STD_LOGIC_VECTOR ( C_M_AXI_CARD_HBM_ADDR_WIDTH-1 downto 0 );
+    S_AXI_p6_HBM_araddr : in STD_LOGIC_VECTOR ( C_M_AXI_CARD_HBM_SIM_ADDR_WIDTH-1 downto 0 );
     S_AXI_p6_HBM_arburst : in STD_LOGIC_VECTOR ( 1 downto 0 );
     S_AXI_p6_HBM_arcache : in STD_LOGIC_VECTOR ( 3 downto 0 );
     S_AXI_p6_HBM_arlen : in STD_LOGIC_VECTOR ( 7 downto 0 );
+#ifdef CONFIG_REPLACE_HBM_BY_BRAM
+    S_AXI_p6_HBM_arlock : in STD_LOGIC;
+    S_AXI_p6_HBM_awlock : in STD_LOGIC;
+#else
     S_AXI_p6_HBM_arlock : in STD_LOGIC_VECTOR ( 0 to 0 );
-    S_AXI_p6_HBM_arprot : in STD_LOGIC_VECTOR ( 2 downto 0 );
+    S_AXI_p6_HBM_awlock : in STD_LOGIC_VECTOR ( 0 to 0 );
     S_AXI_p6_HBM_arqos : in STD_LOGIC_VECTOR ( 3 downto 0 );
+    S_AXI_p6_HBM_awqos : in STD_LOGIC_VECTOR ( 3 downto 0 );
     S_AXI_p6_HBM_arregion : in STD_LOGIC_VECTOR ( 3 downto 0 );
+    S_AXI_p6_HBM_awregion : in STD_LOGIC_VECTOR ( 3 downto 0 );
+#endif
+    S_AXI_p6_HBM_arprot : in STD_LOGIC_VECTOR ( 2 downto 0 );
     S_AXI_p6_HBM_arready : out STD_LOGIC;
     S_AXI_p6_HBM_arsize : in STD_LOGIC_VECTOR ( 2 downto 0 );
     S_AXI_p6_HBM_arvalid : in STD_LOGIC;
-    S_AXI_p6_HBM_awaddr : in STD_LOGIC_VECTOR ( C_M_AXI_CARD_HBM_ADDR_WIDTH-1 downto 0 );
+    S_AXI_p6_HBM_awaddr : in STD_LOGIC_VECTOR ( C_M_AXI_CARD_HBM_SIM_ADDR_WIDTH-1 downto 0 );
     S_AXI_p6_HBM_awburst : in STD_LOGIC_VECTOR ( 1 downto 0 );
     S_AXI_p6_HBM_awcache : in STD_LOGIC_VECTOR ( 3 downto 0 );
     S_AXI_p6_HBM_awlen : in STD_LOGIC_VECTOR ( 7 downto 0 );
-    S_AXI_p6_HBM_awlock : in STD_LOGIC_VECTOR ( 0 to 0 );
     S_AXI_p6_HBM_awprot : in STD_LOGIC_VECTOR ( 2 downto 0 );
-    S_AXI_p6_HBM_awqos : in STD_LOGIC_VECTOR ( 3 downto 0 );
-    S_AXI_p6_HBM_awregion : in STD_LOGIC_VECTOR ( 3 downto 0 );
     S_AXI_p6_HBM_awready : out STD_LOGIC;
     S_AXI_p6_HBM_awsize : in STD_LOGIC_VECTOR ( 2 downto 0 );
     S_AXI_p6_HBM_awvalid : in STD_LOGIC;
@@ -1159,25 +1194,30 @@ SIGNAL tmp_sdram_axi_bid              : STD_LOGIC_VECTOR (5 downto 0);
     S_AXI_p6_HBM_wvalid : in STD_LOGIC;
 --
     S_AXI_p7_HBM_ACLK : in STD_LOGIC;
-    S_AXI_p7_HBM_araddr : in STD_LOGIC_VECTOR ( C_M_AXI_CARD_HBM_ADDR_WIDTH-1 downto 0 );
+    S_AXI_p7_HBM_araddr : in STD_LOGIC_VECTOR ( C_M_AXI_CARD_HBM_SIM_ADDR_WIDTH-1 downto 0 );
     S_AXI_p7_HBM_arburst : in STD_LOGIC_VECTOR ( 1 downto 0 );
     S_AXI_p7_HBM_arcache : in STD_LOGIC_VECTOR ( 3 downto 0 );
     S_AXI_p7_HBM_arlen : in STD_LOGIC_VECTOR ( 7 downto 0 );
+#ifdef CONFIG_REPLACE_HBM_BY_BRAM
+    S_AXI_p7_HBM_arlock : in STD_LOGIC;
+    S_AXI_p7_HBM_awlock : in STD_LOGIC;
+#else
     S_AXI_p7_HBM_arlock : in STD_LOGIC_VECTOR ( 0 to 0 );
-    S_AXI_p7_HBM_arprot : in STD_LOGIC_VECTOR ( 2 downto 0 );
+    S_AXI_p7_HBM_awlock : in STD_LOGIC_VECTOR ( 0 to 0 );
     S_AXI_p7_HBM_arqos : in STD_LOGIC_VECTOR ( 3 downto 0 );
+    S_AXI_p7_HBM_awqos : in STD_LOGIC_VECTOR ( 3 downto 0 );
     S_AXI_p7_HBM_arregion : in STD_LOGIC_VECTOR ( 3 downto 0 );
+    S_AXI_p7_HBM_awregion : in STD_LOGIC_VECTOR ( 3 downto 0 );
+#endif
+    S_AXI_p7_HBM_arprot : in STD_LOGIC_VECTOR ( 2 downto 0 );
     S_AXI_p7_HBM_arready : out STD_LOGIC;
     S_AXI_p7_HBM_arsize : in STD_LOGIC_VECTOR ( 2 downto 0 );
     S_AXI_p7_HBM_arvalid : in STD_LOGIC;
-    S_AXI_p7_HBM_awaddr : in STD_LOGIC_VECTOR ( C_M_AXI_CARD_HBM_ADDR_WIDTH-1 downto 0 );
+    S_AXI_p7_HBM_awaddr : in STD_LOGIC_VECTOR ( C_M_AXI_CARD_HBM_SIM_ADDR_WIDTH-1 downto 0 );
     S_AXI_p7_HBM_awburst : in STD_LOGIC_VECTOR ( 1 downto 0 );
     S_AXI_p7_HBM_awcache : in STD_LOGIC_VECTOR ( 3 downto 0 );
     S_AXI_p7_HBM_awlen : in STD_LOGIC_VECTOR ( 7 downto 0 );
-    S_AXI_p7_HBM_awlock : in STD_LOGIC_VECTOR ( 0 to 0 );
     S_AXI_p7_HBM_awprot : in STD_LOGIC_VECTOR ( 2 downto 0 );
-    S_AXI_p7_HBM_awqos : in STD_LOGIC_VECTOR ( 3 downto 0 );
-    S_AXI_p7_HBM_awregion : in STD_LOGIC_VECTOR ( 3 downto 0 );
     S_AXI_p7_HBM_awready : out STD_LOGIC;
     S_AXI_p7_HBM_awsize : in STD_LOGIC_VECTOR ( 2 downto 0 );
     S_AXI_p7_HBM_awvalid : in STD_LOGIC;
@@ -2283,26 +2323,31 @@ BEGIN
 --CHANGE_HBM_INTERFACES_NUMBER
 -- copy/paste these 36 signals for a new AXI interface
     S_AXI_p0_HBM_ACLK         => ha_pclock, -- 250MHz clock 
-    S_AXI_p0_HBM_araddr         => m_axi_card_hbm_p0_araddr,
+    S_AXI_p0_HBM_araddr         => m_axi_card_hbm_p0_araddr( C_M_AXI_CARD_HBM_SIM_ADDR_WIDTH-1 downto 0 ),
     S_AXI_p0_HBM_arburst        => m_axi_card_hbm_p0_arburst,
     S_AXI_p0_HBM_arcache        => m_axi_card_hbm_p0_arcache,
     S_AXI_p0_HBM_arlen          => m_axi_card_hbm_p0_arlen,
-    S_AXI_p0_HBM_arlock         => m_axi_card_hbm_p0_arlock_01,
     S_AXI_p0_HBM_arprot         => m_axi_card_hbm_p0_arprot,
+#ifdef CONFIG_REPLACE_HBM_BY_BRAM
+    S_AXI_p0_HBM_arlock         => m_axi_card_hbm_p0_arlock_01(0),
+    S_AXI_p0_HBM_awlock         => m_axi_card_hbm_p0_awlock_01(0),
+#else
+    S_AXI_p0_HBM_arlock         => m_axi_card_hbm_p0_arlock_01,
+    S_AXI_p0_HBM_awlock         => m_axi_card_hbm_p0_awlock_01,
     S_AXI_p0_HBM_arqos          => m_axi_card_hbm_p0_arqos,
-    S_AXI_p0_HBM_arready        => m_axi_card_hbm_p0_arready,
+    S_AXI_p0_HBM_awqos          => m_axi_card_hbm_p0_awqos,
     S_AXI_p0_HBM_arregion       => m_axi_card_hbm_p0_arregion,
+    S_AXI_p0_HBM_awregion       => m_axi_card_hbm_p0_awregion,
+#endif
+    S_AXI_p0_HBM_arready        => m_axi_card_hbm_p0_arready,
     S_AXI_p0_HBM_arsize         => m_axi_card_hbm_p0_arsize,
     S_AXI_p0_HBM_arvalid        => m_axi_card_hbm_p0_arvalid,
-    S_AXI_p0_HBM_awaddr         => m_axi_card_hbm_p0_awaddr,
+    S_AXI_p0_HBM_awaddr         => m_axi_card_hbm_p0_awaddr( C_M_AXI_CARD_HBM_SIM_ADDR_WIDTH-1 downto 0 ),
     S_AXI_p0_HBM_awburst        => m_axi_card_hbm_p0_awburst,
     S_AXI_p0_HBM_awcache        => m_axi_card_hbm_p0_awcache,
     S_AXI_p0_HBM_awlen          => m_axi_card_hbm_p0_awlen,
-    S_AXI_p0_HBM_awlock         => m_axi_card_hbm_p0_awlock_01,
     S_AXI_p0_HBM_awprot         => m_axi_card_hbm_p0_awprot,
-    S_AXI_p0_HBM_awqos          => m_axi_card_hbm_p0_awqos,
     S_AXI_p0_HBM_awready        => m_axi_card_hbm_p0_awready,
-    S_AXI_p0_HBM_awregion       => m_axi_card_hbm_p0_awregion,
     S_AXI_p0_HBM_awsize         => m_axi_card_hbm_p0_awsize,
     S_AXI_p0_HBM_awvalid        => m_axi_card_hbm_p0_awvalid,
     S_AXI_p0_HBM_bready         => m_axi_card_hbm_p0_bready,
@@ -2320,26 +2365,31 @@ BEGIN
     S_AXI_p0_HBM_wvalid         => m_axi_card_hbm_p0_wvalid,
 -- 
     S_AXI_p1_HBM_ACLK         => ha_pclock, -- 250MHz clock 
-    S_AXI_p1_HBM_araddr         => m_axi_card_hbm_p1_araddr,
+    S_AXI_p1_HBM_araddr         => m_axi_card_hbm_p1_araddr( C_M_AXI_CARD_HBM_SIM_ADDR_WIDTH-1 downto 0 ),
     S_AXI_p1_HBM_arburst        => m_axi_card_hbm_p1_arburst,
     S_AXI_p1_HBM_arcache        => m_axi_card_hbm_p1_arcache,
     S_AXI_p1_HBM_arlen          => m_axi_card_hbm_p1_arlen,
-    S_AXI_p1_HBM_arlock         => m_axi_card_hbm_p1_arlock_01,
     S_AXI_p1_HBM_arprot         => m_axi_card_hbm_p1_arprot,
+#ifdef CONFIG_REPLACE_HBM_BY_BRAM
+    S_AXI_p1_HBM_arlock         => m_axi_card_hbm_p1_arlock_01(0),
+    S_AXI_p1_HBM_awlock         => m_axi_card_hbm_p1_awlock_01(0),
+ #else
+    S_AXI_p1_HBM_arlock         => m_axi_card_hbm_p1_arlock_01,
+    S_AXI_p1_HBM_awlock         => m_axi_card_hbm_p1_awlock_01,
     S_AXI_p1_HBM_arqos          => m_axi_card_hbm_p1_arqos,
-    S_AXI_p1_HBM_arready        => m_axi_card_hbm_p1_arready,
+    S_AXI_p1_HBM_awqos          => m_axi_card_hbm_p1_awqos,
     S_AXI_p1_HBM_arregion       => m_axi_card_hbm_p1_arregion,
+    S_AXI_p1_HBM_awregion       => m_axi_card_hbm_p1_awregion,
+#endif
+    S_AXI_p1_HBM_arready        => m_axi_card_hbm_p1_arready,
     S_AXI_p1_HBM_arsize         => m_axi_card_hbm_p1_arsize,
     S_AXI_p1_HBM_arvalid        => m_axi_card_hbm_p1_arvalid,
-    S_AXI_p1_HBM_awaddr         => m_axi_card_hbm_p1_awaddr,
+    S_AXI_p1_HBM_awaddr         => m_axi_card_hbm_p1_awaddr( C_M_AXI_CARD_HBM_SIM_ADDR_WIDTH-1 downto 0 ),
     S_AXI_p1_HBM_awburst        => m_axi_card_hbm_p1_awburst,
     S_AXI_p1_HBM_awcache        => m_axi_card_hbm_p1_awcache,
     S_AXI_p1_HBM_awlen          => m_axi_card_hbm_p1_awlen,
-    S_AXI_p1_HBM_awlock         => m_axi_card_hbm_p1_awlock_01,
     S_AXI_p1_HBM_awprot         => m_axi_card_hbm_p1_awprot,
-    S_AXI_p1_HBM_awqos          => m_axi_card_hbm_p1_awqos,
     S_AXI_p1_HBM_awready        => m_axi_card_hbm_p1_awready,
-    S_AXI_p1_HBM_awregion       => m_axi_card_hbm_p1_awregion,
     S_AXI_p1_HBM_awsize         => m_axi_card_hbm_p1_awsize,
     S_AXI_p1_HBM_awvalid        => m_axi_card_hbm_p1_awvalid,
     S_AXI_p1_HBM_bready         => m_axi_card_hbm_p1_bready,
@@ -2357,26 +2407,31 @@ BEGIN
     S_AXI_p1_HBM_wvalid         => m_axi_card_hbm_p1_wvalid,
 -- 
     S_AXI_p2_HBM_ACLK         => ha_pclock, -- 250MHz clock 
-    S_AXI_p2_HBM_araddr         => m_axi_card_hbm_p2_araddr,
+    S_AXI_p2_HBM_araddr         => m_axi_card_hbm_p2_araddr( C_M_AXI_CARD_HBM_SIM_ADDR_WIDTH-1 downto 0 ),
     S_AXI_p2_HBM_arburst        => m_axi_card_hbm_p2_arburst,
     S_AXI_p2_HBM_arcache        => m_axi_card_hbm_p2_arcache,
     S_AXI_p2_HBM_arlen          => m_axi_card_hbm_p2_arlen,
-    S_AXI_p2_HBM_arlock         => m_axi_card_hbm_p2_arlock_01,
     S_AXI_p2_HBM_arprot         => m_axi_card_hbm_p2_arprot,
+#ifdef CONFIG_REPLACE_HBM_BY_BRAM
+    S_AXI_p2_HBM_arlock         => m_axi_card_hbm_p2_arlock_01(0),
+    S_AXI_p2_HBM_awlock         => m_axi_card_hbm_p2_awlock_01(0),
+#else
+    S_AXI_p2_HBM_arlock         => m_axi_card_hbm_p2_arlock_01,
+    S_AXI_p2_HBM_awlock         => m_axi_card_hbm_p2_awlock_01,
     S_AXI_p2_HBM_arqos          => m_axi_card_hbm_p2_arqos,
-    S_AXI_p2_HBM_arready        => m_axi_card_hbm_p2_arready,
+    S_AXI_p2_HBM_awqos          => m_axi_card_hbm_p2_awqos,
     S_AXI_p2_HBM_arregion       => m_axi_card_hbm_p2_arregion,
+    S_AXI_p2_HBM_awregion       => m_axi_card_hbm_p2_awregion,
+#endif
+    S_AXI_p2_HBM_arready        => m_axi_card_hbm_p2_arready,
     S_AXI_p2_HBM_arsize         => m_axi_card_hbm_p2_arsize,
     S_AXI_p2_HBM_arvalid        => m_axi_card_hbm_p2_arvalid,
-    S_AXI_p2_HBM_awaddr         => m_axi_card_hbm_p2_awaddr,
+    S_AXI_p2_HBM_awaddr         => m_axi_card_hbm_p2_awaddr( C_M_AXI_CARD_HBM_SIM_ADDR_WIDTH-1 downto 0 ),
     S_AXI_p2_HBM_awburst        => m_axi_card_hbm_p2_awburst,
     S_AXI_p2_HBM_awcache        => m_axi_card_hbm_p2_awcache,
     S_AXI_p2_HBM_awlen          => m_axi_card_hbm_p2_awlen,
-    S_AXI_p2_HBM_awlock         => m_axi_card_hbm_p2_awlock_01,
     S_AXI_p2_HBM_awprot         => m_axi_card_hbm_p2_awprot,
-    S_AXI_p2_HBM_awqos          => m_axi_card_hbm_p2_awqos,
     S_AXI_p2_HBM_awready        => m_axi_card_hbm_p2_awready,
-    S_AXI_p2_HBM_awregion       => m_axi_card_hbm_p2_awregion,
     S_AXI_p2_HBM_awsize         => m_axi_card_hbm_p2_awsize,
     S_AXI_p2_HBM_awvalid        => m_axi_card_hbm_p2_awvalid,
     S_AXI_p2_HBM_bready         => m_axi_card_hbm_p2_bready,
@@ -2394,26 +2449,31 @@ BEGIN
     S_AXI_p2_HBM_wvalid         => m_axi_card_hbm_p2_wvalid,
 -- 
     S_AXI_p3_HBM_ACLK         => ha_pclock, -- 250MHz clock 
-    S_AXI_p3_HBM_araddr         => m_axi_card_hbm_p3_araddr,
+    S_AXI_p3_HBM_araddr         => m_axi_card_hbm_p3_araddr( C_M_AXI_CARD_HBM_SIM_ADDR_WIDTH-1 downto 0 ),
     S_AXI_p3_HBM_arburst        => m_axi_card_hbm_p3_arburst,
     S_AXI_p3_HBM_arcache        => m_axi_card_hbm_p3_arcache,
     S_AXI_p3_HBM_arlen          => m_axi_card_hbm_p3_arlen,
-    S_AXI_p3_HBM_arlock         => m_axi_card_hbm_p3_arlock_01,
     S_AXI_p3_HBM_arprot         => m_axi_card_hbm_p3_arprot,
+#ifdef CONFIG_REPLACE_HBM_BY_BRAM
+    S_AXI_p3_HBM_arlock         => m_axi_card_hbm_p3_arlock_01(0),
+    S_AXI_p3_HBM_awlock         => m_axi_card_hbm_p3_awlock_01(0),
+#else
+    S_AXI_p3_HBM_arlock         => m_axi_card_hbm_p3_arlock_01,
+    S_AXI_p3_HBM_awlock         => m_axi_card_hbm_p3_awlock_01,
     S_AXI_p3_HBM_arqos          => m_axi_card_hbm_p3_arqos,
-    S_AXI_p3_HBM_arready        => m_axi_card_hbm_p3_arready,
+    S_AXI_p3_HBM_awqos          => m_axi_card_hbm_p3_awqos,
     S_AXI_p3_HBM_arregion       => m_axi_card_hbm_p3_arregion,
+    S_AXI_p3_HBM_awregion       => m_axi_card_hbm_p3_awregion,
+#endif
+    S_AXI_p3_HBM_arready        => m_axi_card_hbm_p3_arready,
     S_AXI_p3_HBM_arsize         => m_axi_card_hbm_p3_arsize,
     S_AXI_p3_HBM_arvalid        => m_axi_card_hbm_p3_arvalid,
-    S_AXI_p3_HBM_awaddr         => m_axi_card_hbm_p3_awaddr,
+    S_AXI_p3_HBM_awaddr         => m_axi_card_hbm_p3_awaddr( C_M_AXI_CARD_HBM_SIM_ADDR_WIDTH-1 downto 0 ),
     S_AXI_p3_HBM_awburst        => m_axi_card_hbm_p3_awburst,
     S_AXI_p3_HBM_awcache        => m_axi_card_hbm_p3_awcache,
     S_AXI_p3_HBM_awlen          => m_axi_card_hbm_p3_awlen,
-    S_AXI_p3_HBM_awlock         => m_axi_card_hbm_p3_awlock_01,
     S_AXI_p3_HBM_awprot         => m_axi_card_hbm_p3_awprot,
-    S_AXI_p3_HBM_awqos          => m_axi_card_hbm_p3_awqos,
     S_AXI_p3_HBM_awready        => m_axi_card_hbm_p3_awready,
-    S_AXI_p3_HBM_awregion       => m_axi_card_hbm_p3_awregion,
     S_AXI_p3_HBM_awsize         => m_axi_card_hbm_p3_awsize,
     S_AXI_p3_HBM_awvalid        => m_axi_card_hbm_p3_awvalid,
     S_AXI_p3_HBM_bready         => m_axi_card_hbm_p3_bready,
@@ -2431,26 +2491,31 @@ BEGIN
     S_AXI_p3_HBM_wvalid         => m_axi_card_hbm_p3_wvalid,
 -- 
     S_AXI_p4_HBM_ACLK         => ha_pclock, -- 250MHz clock 
-    S_AXI_p4_HBM_araddr         => m_axi_card_hbm_p4_araddr,
+    S_AXI_p4_HBM_araddr         => m_axi_card_hbm_p4_araddr( C_M_AXI_CARD_HBM_SIM_ADDR_WIDTH-1 downto 0 ),
     S_AXI_p4_HBM_arburst        => m_axi_card_hbm_p4_arburst,
     S_AXI_p4_HBM_arcache        => m_axi_card_hbm_p4_arcache,
     S_AXI_p4_HBM_arlen          => m_axi_card_hbm_p4_arlen,
-    S_AXI_p4_HBM_arlock         => m_axi_card_hbm_p4_arlock_01,
     S_AXI_p4_HBM_arprot         => m_axi_card_hbm_p4_arprot,
+#ifdef CONFIG_REPLACE_HBM_BY_BRAM
+    S_AXI_p4_HBM_arlock         => m_axi_card_hbm_p4_arlock_01(0),
+    S_AXI_p4_HBM_awlock         => m_axi_card_hbm_p4_awlock_01(0),
+#else
+    S_AXI_p4_HBM_arlock         => m_axi_card_hbm_p4_arlock_01,
+    S_AXI_p4_HBM_awlock         => m_axi_card_hbm_p4_awlock_01,
     S_AXI_p4_HBM_arqos          => m_axi_card_hbm_p4_arqos,
-    S_AXI_p4_HBM_arready        => m_axi_card_hbm_p4_arready,
+    S_AXI_p4_HBM_awqos          => m_axi_card_hbm_p4_awqos,
     S_AXI_p4_HBM_arregion       => m_axi_card_hbm_p4_arregion,
+    S_AXI_p4_HBM_awregion       => m_axi_card_hbm_p4_awregion,
+#endif
+    S_AXI_p4_HBM_arready        => m_axi_card_hbm_p4_arready,
     S_AXI_p4_HBM_arsize         => m_axi_card_hbm_p4_arsize,
     S_AXI_p4_HBM_arvalid        => m_axi_card_hbm_p4_arvalid,
-    S_AXI_p4_HBM_awaddr         => m_axi_card_hbm_p4_awaddr,
+    S_AXI_p4_HBM_awaddr         => m_axi_card_hbm_p4_awaddr( C_M_AXI_CARD_HBM_SIM_ADDR_WIDTH-1 downto 0 ),
     S_AXI_p4_HBM_awburst        => m_axi_card_hbm_p4_awburst,
     S_AXI_p4_HBM_awcache        => m_axi_card_hbm_p4_awcache,
     S_AXI_p4_HBM_awlen          => m_axi_card_hbm_p4_awlen,
-    S_AXI_p4_HBM_awlock         => m_axi_card_hbm_p4_awlock_01,
     S_AXI_p4_HBM_awprot         => m_axi_card_hbm_p4_awprot,
-    S_AXI_p4_HBM_awqos          => m_axi_card_hbm_p4_awqos,
     S_AXI_p4_HBM_awready        => m_axi_card_hbm_p4_awready,
-    S_AXI_p4_HBM_awregion       => m_axi_card_hbm_p4_awregion,
     S_AXI_p4_HBM_awsize         => m_axi_card_hbm_p4_awsize,
     S_AXI_p4_HBM_awvalid        => m_axi_card_hbm_p4_awvalid,
     S_AXI_p4_HBM_bready         => m_axi_card_hbm_p4_bready,
@@ -2468,26 +2533,31 @@ BEGIN
     S_AXI_p4_HBM_wvalid         => m_axi_card_hbm_p4_wvalid,
 -- 
     S_AXI_p5_HBM_ACLK         => ha_pclock, -- 250MHz clock 
-    S_AXI_p5_HBM_araddr         => m_axi_card_hbm_p5_araddr,
+    S_AXI_p5_HBM_araddr         => m_axi_card_hbm_p5_araddr( C_M_AXI_CARD_HBM_SIM_ADDR_WIDTH-1 downto 0 ),
     S_AXI_p5_HBM_arburst        => m_axi_card_hbm_p5_arburst,
     S_AXI_p5_HBM_arcache        => m_axi_card_hbm_p5_arcache,
     S_AXI_p5_HBM_arlen          => m_axi_card_hbm_p5_arlen,
-    S_AXI_p5_HBM_arlock         => m_axi_card_hbm_p5_arlock_01,
     S_AXI_p5_HBM_arprot         => m_axi_card_hbm_p5_arprot,
+#ifdef CONFIG_REPLACE_HBM_BY_BRAM
+    S_AXI_p5_HBM_arlock         => m_axi_card_hbm_p5_arlock_01(0),
+    S_AXI_p5_HBM_awlock         => m_axi_card_hbm_p5_awlock_01(0),
+#else
+    S_AXI_p5_HBM_arlock         => m_axi_card_hbm_p5_arlock_01,
+    S_AXI_p5_HBM_awlock         => m_axi_card_hbm_p5_awlock_01,
     S_AXI_p5_HBM_arqos          => m_axi_card_hbm_p5_arqos,
-    S_AXI_p5_HBM_arready        => m_axi_card_hbm_p5_arready,
+    S_AXI_p5_HBM_awqos          => m_axi_card_hbm_p5_awqos,
     S_AXI_p5_HBM_arregion       => m_axi_card_hbm_p5_arregion,
+    S_AXI_p5_HBM_awregion       => m_axi_card_hbm_p5_awregion,
+#endif
+    S_AXI_p5_HBM_arready        => m_axi_card_hbm_p5_arready,
     S_AXI_p5_HBM_arsize         => m_axi_card_hbm_p5_arsize,
     S_AXI_p5_HBM_arvalid        => m_axi_card_hbm_p5_arvalid,
-    S_AXI_p5_HBM_awaddr         => m_axi_card_hbm_p5_awaddr,
+    S_AXI_p5_HBM_awaddr         => m_axi_card_hbm_p5_awaddr( C_M_AXI_CARD_HBM_SIM_ADDR_WIDTH-1 downto 0 ),
     S_AXI_p5_HBM_awburst        => m_axi_card_hbm_p5_awburst,
     S_AXI_p5_HBM_awcache        => m_axi_card_hbm_p5_awcache,
     S_AXI_p5_HBM_awlen          => m_axi_card_hbm_p5_awlen,
-    S_AXI_p5_HBM_awlock         => m_axi_card_hbm_p5_awlock_01,
     S_AXI_p5_HBM_awprot         => m_axi_card_hbm_p5_awprot,
-    S_AXI_p5_HBM_awqos          => m_axi_card_hbm_p5_awqos,
     S_AXI_p5_HBM_awready        => m_axi_card_hbm_p5_awready,
-    S_AXI_p5_HBM_awregion       => m_axi_card_hbm_p5_awregion,
     S_AXI_p5_HBM_awsize         => m_axi_card_hbm_p5_awsize,
     S_AXI_p5_HBM_awvalid        => m_axi_card_hbm_p5_awvalid,
     S_AXI_p5_HBM_bready         => m_axi_card_hbm_p5_bready,
@@ -2505,26 +2575,31 @@ BEGIN
     S_AXI_p5_HBM_wvalid         => m_axi_card_hbm_p5_wvalid,
 -- 
     S_AXI_p6_HBM_ACLK         => ha_pclock, -- 250MHz clock 
-    S_AXI_p6_HBM_araddr         => m_axi_card_hbm_p6_araddr,
+    S_AXI_p6_HBM_araddr         => m_axi_card_hbm_p6_araddr( C_M_AXI_CARD_HBM_SIM_ADDR_WIDTH-1 downto 0 ),
     S_AXI_p6_HBM_arburst        => m_axi_card_hbm_p6_arburst,
     S_AXI_p6_HBM_arcache        => m_axi_card_hbm_p6_arcache,
     S_AXI_p6_HBM_arlen          => m_axi_card_hbm_p6_arlen,
-    S_AXI_p6_HBM_arlock         => m_axi_card_hbm_p6_arlock_01,
     S_AXI_p6_HBM_arprot         => m_axi_card_hbm_p6_arprot,
+#ifdef CONFIG_REPLACE_HBM_BY_BRAM
+    S_AXI_p6_HBM_arlock         => m_axi_card_hbm_p6_arlock_01(0),
+    S_AXI_p6_HBM_awlock         => m_axi_card_hbm_p6_awlock_01(0),
+#else
+    S_AXI_p6_HBM_arlock         => m_axi_card_hbm_p6_arlock_01,
+    S_AXI_p6_HBM_awlock         => m_axi_card_hbm_p6_awlock_01,
     S_AXI_p6_HBM_arqos          => m_axi_card_hbm_p6_arqos,
-    S_AXI_p6_HBM_arready        => m_axi_card_hbm_p6_arready,
+    S_AXI_p6_HBM_awqos          => m_axi_card_hbm_p6_awqos,
     S_AXI_p6_HBM_arregion       => m_axi_card_hbm_p6_arregion,
+    S_AXI_p6_HBM_awregion       => m_axi_card_hbm_p6_awregion,
+#endif
+    S_AXI_p6_HBM_arready        => m_axi_card_hbm_p6_arready,
     S_AXI_p6_HBM_arsize         => m_axi_card_hbm_p6_arsize,
     S_AXI_p6_HBM_arvalid        => m_axi_card_hbm_p6_arvalid,
-    S_AXI_p6_HBM_awaddr         => m_axi_card_hbm_p6_awaddr,
+    S_AXI_p6_HBM_awaddr         => m_axi_card_hbm_p6_awaddr( C_M_AXI_CARD_HBM_SIM_ADDR_WIDTH-1 downto 0 ),
     S_AXI_p6_HBM_awburst        => m_axi_card_hbm_p6_awburst,
     S_AXI_p6_HBM_awcache        => m_axi_card_hbm_p6_awcache,
     S_AXI_p6_HBM_awlen          => m_axi_card_hbm_p6_awlen,
-    S_AXI_p6_HBM_awlock         => m_axi_card_hbm_p6_awlock_01,
     S_AXI_p6_HBM_awprot         => m_axi_card_hbm_p6_awprot,
-    S_AXI_p6_HBM_awqos          => m_axi_card_hbm_p6_awqos,
     S_AXI_p6_HBM_awready        => m_axi_card_hbm_p6_awready,
-    S_AXI_p6_HBM_awregion       => m_axi_card_hbm_p6_awregion,
     S_AXI_p6_HBM_awsize         => m_axi_card_hbm_p6_awsize,
     S_AXI_p6_HBM_awvalid        => m_axi_card_hbm_p6_awvalid,
     S_AXI_p6_HBM_bready         => m_axi_card_hbm_p6_bready,
@@ -2542,26 +2617,31 @@ BEGIN
     S_AXI_p6_HBM_wvalid         => m_axi_card_hbm_p6_wvalid,
 -- 
     S_AXI_p7_HBM_ACLK         => ha_pclock, -- 250MHz clock 
-    S_AXI_p7_HBM_araddr         => m_axi_card_hbm_p7_araddr,
+    S_AXI_p7_HBM_araddr         => m_axi_card_hbm_p7_araddr( C_M_AXI_CARD_HBM_SIM_ADDR_WIDTH-1 downto 0 ),
     S_AXI_p7_HBM_arburst        => m_axi_card_hbm_p7_arburst,
     S_AXI_p7_HBM_arcache        => m_axi_card_hbm_p7_arcache,
     S_AXI_p7_HBM_arlen          => m_axi_card_hbm_p7_arlen,
-    S_AXI_p7_HBM_arlock         => m_axi_card_hbm_p7_arlock_01,
     S_AXI_p7_HBM_arprot         => m_axi_card_hbm_p7_arprot,
+#ifdef CONFIG_REPLACE_HBM_BY_BRAM
+    S_AXI_p7_HBM_arlock         => m_axi_card_hbm_p7_arlock_01(0),
+    S_AXI_p7_HBM_awlock         => m_axi_card_hbm_p7_awlock_01(0),
+#else
+    S_AXI_p7_HBM_arlock         => m_axi_card_hbm_p7_arlock_01,
+    S_AXI_p7_HBM_awlock         => m_axi_card_hbm_p7_awlock_01,
     S_AXI_p7_HBM_arqos          => m_axi_card_hbm_p7_arqos,
-    S_AXI_p7_HBM_arready        => m_axi_card_hbm_p7_arready,
+    S_AXI_p7_HBM_awqos          => m_axi_card_hbm_p7_awqos,
     S_AXI_p7_HBM_arregion       => m_axi_card_hbm_p7_arregion,
+    S_AXI_p7_HBM_awregion       => m_axi_card_hbm_p7_awregion,
+#endif
+    S_AXI_p7_HBM_arready        => m_axi_card_hbm_p7_arready,
     S_AXI_p7_HBM_arsize         => m_axi_card_hbm_p7_arsize,
     S_AXI_p7_HBM_arvalid        => m_axi_card_hbm_p7_arvalid,
-    S_AXI_p7_HBM_awaddr         => m_axi_card_hbm_p7_awaddr,
+    S_AXI_p7_HBM_awaddr         => m_axi_card_hbm_p7_awaddr( C_M_AXI_CARD_HBM_SIM_ADDR_WIDTH-1 downto 0 ),
     S_AXI_p7_HBM_awburst        => m_axi_card_hbm_p7_awburst,
     S_AXI_p7_HBM_awcache        => m_axi_card_hbm_p7_awcache,
     S_AXI_p7_HBM_awlen          => m_axi_card_hbm_p7_awlen,
-    S_AXI_p7_HBM_awlock         => m_axi_card_hbm_p7_awlock_01,
     S_AXI_p7_HBM_awprot         => m_axi_card_hbm_p7_awprot,
-    S_AXI_p7_HBM_awqos          => m_axi_card_hbm_p7_awqos,
     S_AXI_p7_HBM_awready        => m_axi_card_hbm_p7_awready,
-    S_AXI_p7_HBM_awregion       => m_axi_card_hbm_p7_awregion,
     S_AXI_p7_HBM_awsize         => m_axi_card_hbm_p7_awsize,
     S_AXI_p7_HBM_awvalid        => m_axi_card_hbm_p7_awvalid,
     S_AXI_p7_HBM_bready         => m_axi_card_hbm_p7_bready,

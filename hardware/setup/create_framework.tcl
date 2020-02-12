@@ -90,9 +90,18 @@ if { ( $simulator == "irun" ) } {
 
   if { $hbm_used == TRUE } {
     #NEW - 3 following lines to circumvent Xilinx bug when simulating HBM (PG276)
-    set_property -name {ies.simulate.ncsim.more_options} -value {+notimingcheck} -objects [get_filesets sim_1]
+    set_property -name {ies.simulate.ncsim.more_options} -value {+notimingchecks} -objects [get_filesets sim_1]
     set_property -name {ies.elaborate.ncelab.more_options} -value {-access +rwc -notimingchecks} -objects [get_filesets sim_1]
     set_property -name {ies.simulate.runtime} -value {1ms} -objects [get_filesets sim_1]
+  }
+} elseif { $simulator == "xcelium" } {
+  set_property target_simulator Xcelium [current_project]
+  set_property compxlib.ies_compiled_library_dir $::env(IES_LIBS) [current_project]
+  if { $hbm_used == TRUE } {
+    #NEW - 2 following lines to circumvent Xilinx bug when simulating HBM (PG276)
+    set_property -name {xcelium.simulate.xmsim.more_options} -value {-notimingcheck} -objects [get_filesets sim_1]
+    set_property -name {xcelium.simulate.runtime} -value {1ms} -objects [get_filesets sim_1]
+    set_property -name {xcelium.elaborate.xmelab.more_options} -value {-notimingchecks -relax} -objects [get_filesets sim_1]
   }
 } elseif { $simulator == "xsim" } {
   set_property -name {xsim.elaborate.xelab.more_options} -value {-sv_lib libdpi -sv_root .} -objects [current_fileset -simset]
