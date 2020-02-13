@@ -107,15 +107,17 @@ for {set i 0} {$i < $HBM_MEM_NUM} {incr i} {
       CONFIG.DATA_WIDTH {256}     \
       CONFIG.SINGLE_PORT_BRAM {1} \
       CONFIG.ECC_TYPE {0}         \
+      CONFIG.READ_LATENCY {6}     \
   ] [get_bd_cells axi_bram_ctrl_$i]  >> $log_file
 
   create_bd_cell -type ip -vlnv xilinx.com:ip:blk_mem_gen:8.4 blk_mem_gen_$i >> $log_file
-  set_property -dict [list                 \
-      CONFIG.PRIM_type_to_Implement {URAM} \
-      CONFIG.Assume_Synchronous_Clk {true} \
-      CONFIG.EN_SAFETY_CKT {false}         \
+  set_property -dict [list                  \
+      CONFIG.PRIM_type_to_Implement {URAM}  \
+      CONFIG.Assume_Synchronous_Clk {true}  \
+      CONFIG.EN_SAFETY_CKT {false}          \
    ] [get_bd_cells blk_mem_gen_$i]  >> $log_file
   
+
 
   #create the ports
   create_bd_intf_port -mode Slave -vlnv xilinx.com:interface:aximm_rtl:1.0 S_AXI_p$i\_HBM

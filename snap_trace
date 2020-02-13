@@ -32,7 +32,11 @@ cd hardware/sim
 if [ $simulator == "xsim" ]; then
   if [ -d "xsim" ]; then
     if [ "$capi20" == "y" ]; then
-	xsim -gui xsim/latest/top.wdb -view debug2_action_gmem_ddr4.wcfg
+      if [ "$enable_hbm" == "y" ]; then
+	  xsim -gui xsim/latest/top.wdb -view debug2_action_gmem_hbm.wcfg
+      else
+	  xsim -gui xsim/latest/top.wdb -view debug2_action_gmem_ddr4.wcfg
+      fi
     else
 	xsim -gui xsim/latest/top.wdb -view debug_action_gmem_ddr4.wcfg
     fi
