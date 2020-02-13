@@ -107,8 +107,14 @@ function test_all_actions() # $1 = card, $2 = accel
 		*"10141008") # HLS Hello World
 			cmd="./actions/hls_helloworld/tests/test_0x10141008.sh"
 		;;
+		*"10141009") # HLS Latency Eval
+			cmd="./actions/hls_latency_eval/tests/test_0x10141009.sh"
+		;;
 		*"1014100b") # HLS Decimal multiplication
 			cmd="./actions/hls_decimal_mult/tests/test_0x1014100B.sh"
+		;;
+		*"1014100c") # HLS Scatter Gather
+			cmd="./actions/hls_scatter_gather/tests/test_0x1014100C.sh"
 		;;
 		*"1014100e") # HLS Vector generator
 			cmd="./actions/hls_vector_generator/tests/test_0x1014100E.sh"
@@ -122,6 +128,7 @@ function test_all_actions() # $1 = card, $2 = accel
 		*)
 			echo "Error: Action: $action is not valid !"
 			run_test=0
+			RC=99
 		esac
 
 		# Check run_test flag and check if test case is there
@@ -176,7 +183,7 @@ function test_hard()
 	try_to_flash=0
 	while [ 1 ]; do
 		wait_flag=0
-		if [[ $accel != "AD9V3" ]] && [[ $accel != "RCXVUP" ]]; then
+		if [[ $accel != "AD9V3" ]] && [[ $accel != "RCXVUP" ]] && [[ $accel != "AD9H3" ]]; then
 		     echo "executing : sudo ./capi-flash-script.sh -f -C $card -f $IMAGE"
 		     sudo ./capi-flash-script.sh -f -C $card -f $IMAGE
 		else 
@@ -256,6 +263,7 @@ function usage() {
 	echo "        <FX609>  : Select Flyslice 609 Card"
 	echo "        <S241>   : Select Semptian NSA241 Card"
 	echo "        <AD9V3>  : Select AlphaData AD9V3 Card"
+	echo "        <AD9H3>  : Select AlphaData AD9H3 Card"
 	echo "        <ALL>    : Select ALL Cards"
 	echo "    [-F <Image>  : Set Image file for Accelerator -A"
 	echo "    [-f <Image>  : Set SPI secondary Image file for Accelerator -A"
@@ -265,12 +273,12 @@ function usage() {
 	echo "    [-h] Print this help"
 	echo "    Option -D must be set"
 	echo "    following combinations can happen"
-	echo "    1.) Option -A [N250S, N250SP, ADKU3, AD8K5, S121B, FX609, S241], AD9V3 or RCXVUP] and -F is set"
-	echo "    		[AD9V3 or RCXVUP]  and -F as well as -f are set (Their 2 SPI flashes require 2 bin files)"
+	echo "    1.) Option -A [N250S, N250SP, ADKU3, AD8K5, S121B, FX609, S241], AD9V3, AD9H3 or RCXVUP] and -F is set"
+	echo "    		[AD9V3, AD9H3 or RCXVUP]  and -F as well as -f are set (Their 2 SPI flashes require 2 bin files)"
 	echo "        for Card in all Accelerators (-A)"
 	echo "           => Image will be flashed on Card (using capi-flash-script and reset routines)"
 	echo "           => and Software Test will then run on Card"
-	echo "    2.) Option -A [N250S, N250SP, ADKU3, AD8K5, S121B, FX609, S241, AD9V3 or RCXVUP]"
+	echo "    2.) Option -A [N250S, N250SP, ADKU3, AD8K5, S121B, FX609, S241, AD9V3, AD9H3 or RCXVUP]"
 	echo "        for Card in all given Accelerators (-A)"
 	echo "           => Software Test will run on Card (using current FPGA content)"
 	echo "    3.) Option -A ALL"
@@ -286,7 +294,8 @@ function usage() {
 #
 # -------------------------------------------------------
 # version 1.1 adds SPI support for AD9V3 and RXCVUP cards
-VERSION=1.1
+# version 1.2 adds support for AD9H3 cards
+VERSION=1.2
 # --------------------------------------------------------
 PROGRAM=$0
 BINFILE=""
@@ -320,9 +329,10 @@ while getopts "D:A:F:f:C:h" opt; do
 		   [[ $accel != "FX609"  ]] &&
 		   [[ $accel != "S241"   ]] &&
 		   [[ $accel != "AD9V3"  ]] &&
+		   [[ $accel != "AD9H3"  ]] &&
 		   [[ $accel != "ALL"    ]]; then
 			echo "Error:  Option -A $OPTARG is not valid !" >&2
-			echo "Expect: [N250S N250SP ADKU3 AD8K5 S121B FX609 S241 RCXVUP AD9V3 or ALL]" >&2
+			echo "Expect: [N250S N250SP ADKU3 AD8K5 S121B FX609 S241 RCXVUP AD9V3 AD9H3 or ALL]" >&2
 			exit 1
 		fi
 		;;
@@ -350,7 +360,7 @@ echo "Testing in      : $MY_DIR"
 echo "Using Accel     : $accel"
 echo "Using Card#     : $CARD"
 echo "Using Image     : $BINFILE"
-if [[ $accel == "AD9V3" ]] || [[ $accel == "RCXVUP" ]]; then
+if [[ $accel == "AD9V3" ]] || [[ $accel == "RCXVUP" ]] || [[ $accel == "AD9H3" ]]; then
 echo "Using sec Image : $BINFILE2"
 fi
 
@@ -388,7 +398,7 @@ if [[ $accel != "ALL" ]]; then
 					exit 1;
 				fi
 				for card in $MY_CARDS ; do
-					if [[ $accel != "AD9V3" ]] && [[ $accel != "RCXVUP" ]]; then
+					if [[ $accel != "AD9V3" ]] && [[ $accel != "RCXVUP" ]] && [[ $accel != "AD9H3" ]]; then
 						test_hard $accel $card $BINFILE
 					else
 						test_hard $accel $card $BINFILE $BINFILE2
@@ -406,7 +416,7 @@ if [[ $accel != "ALL" ]]; then
                                 echo "accel       =$accel"
                                 echo "CARD        =$CARD"
 				if [ "$accel_to_use" == "$accel" ]; then
-                                        if [[ $accel != "AD9V3" ]] && [[ $accel != "RCXVUP" ]]; then
+                                        if [[ $accel != "AD9V3" ]] && [[ $accel != "RCXVUP" ]] && [[ $accel != "AD9H3" ]]; then
 						test_hard $accel $CARD $BINFILE
 					else
 						test_hard $accel $CARD $BINFILE $BINFILE2
@@ -496,7 +506,7 @@ for card in $MY_CARDS ; do
 		continue
 	fi
 	# snap_find_card also detects GZIP cards, i will skip this cards
-	if [[ $accel != "N250S" ]]  && [[ $accel != "N250SP" ]] && [[ $accel != "ADKU3" ]] && [[ $accel != "S121B" ]] && [[ $accel != "AD9V3" ]] && [[ $accel != "S241" ]] && [[ $accel != "FX609" ]] && [[ $accel != "RCXVUP" ]]; then
+	if [[ $accel != "N250S" ]]  && [[ $accel != "N250SP" ]] && [[ $accel != "ADKU3" ]] && [[ $accel != "S121B" ]] && [[ $accel != "AD9V3" ]] && [[ $accel != "S241" ]] && [[ $accel != "FX609" ]] && [[ $accel != "RCXVUP" ]] && [[ $accel != "AD9H3" ]]; then
 		echo "Invalid Accelerator $accel for Card $card, skip"
 		continue
 	fi
