@@ -14,35 +14,58 @@
  * limitations under the License.
  */
 
-/* SNAP HLS_MEMCOPY EXAMPLE */
+/* SNAP HLS_HBM_MEMCOPY EXAMPLE */
 
 #include <string.h>
 #include "ap_int.h"
 #include "hw_action_memcopy.H"
 
 //convert buffer 512b to 256b
-static void membus_to_HBMbus(snap_membus_t *data_in, snap_HBMbus_t *data_out)
+static void membus_to_HBMbus(snap_membus_t *data_in, snap_HBMbus_t *data_out,
+                             snapu64_t size_in_bytes_to_transfer)
 {
+#pragma HLS INLINE off
+        ap_int<MEMDW/2> mask_full = -1;
+        snap_membus_t mask_256 = snap_HBMbus_t(mask_full);
 
-        loop_m2d1: for(int i = 0; i < MAX_NB_OF_WORDS_READ; i++)
+        int size_in_words_512;
+        if(size_in_bytes_to_transfer %BPERDW == 0)
+                size_in_words_512 = size_in_bytes_to_transfer/BPERDW;
+        else
+                size_in_words_512 = (size_in_bytes_to_transfer/BPERDW) + 1;
+
+        mem2hbm_loop:
+        for (int k=0; k<size_in_words_512; k++) {
+            for (int j = 0; j < 2; j++) {
 #pragma HLS PIPELINE
-        {
-            data_out[ 2*i   ] = (snap_HBMbus_t) data_in[i]((BPERDW/2)-1, 0);
-            data_out[(2*i)+1] = (snap_HBMbus_t) data_in[i] (BPERDW-1, BPERDW/2);
+                data_out[k*2+j] = (snap_HBMbus_t)((data_in[k] >> j*MEMDW/2) & mask_256);
+            }
         }
+
 }
 
 //convert buffer 256b to 512b
-static void HBMbus_to_membus(snap_HBMbus_t *data_in, snap_membus_t *data_out)
+static void HBMbus_to_membus(snap_HBMbus_t *data_in, snap_membus_t *data_out,
+                             snapu64_t size_in_bytes_to_transfer)
 {
+#pragma HLS INLINE off
+        static snap_membus_t data_entry = 0;
 
-        loop_m2d1: for(int i = 0; i < MAX_NB_OF_WORDS_READ; i++)
+        int size_in_words_512;
+        if(size_in_bytes_to_transfer %BPERDW == 0)
+                size_in_words_512 = size_in_bytes_to_transfer/BPERDW;
+        else
+                size_in_words_512 = (size_in_bytes_to_transfer/BPERDW) + 1;
+
+        hbm2mem_loop:
+        for (int k=0; k<size_in_words_512; k++) {
+            for (int j = 0; j < 2; j++) {
 #pragma HLS PIPELINE
-        {
-            data_out[i]((BPERDW/2)-1, 0     ) = (snap_membus_t) data_in[ 2*i   ];
-            data_out[i](BPERDW-1, (BPERDW/2)) = (snap_membus_t) data_in[(2*i)+1];
+                data_entry |= ((snap_membus_t)(data_in[k*2+j])) << j*MEMDW/2;
+            }
+            data_out[k] = data_entry;
+            data_entry = 0;
         }
-
 }
 
 // WRITE DATA TO MEMORY
@@ -81,15 +104,15 @@ short write_burst_of_data_to_HBM(snap_HBMbus_t *d_hbm_p0,
 				 snap_HBMbus_t *d_hbm_p7,
 				 snapu16_t memory_type,
 				 snapu64_t output_address,
-				 snap_membus_t *buffer,
+				 snap_membus_t *buffer512,
 				 snapu64_t size_in_bytes_to_transfer)
 {
 
 	short rc;
-	static snap_HBMbus_t buffer256[MAX_NB_OF_WORDS_READ*2];
+	snap_HBMbus_t buffer256[MAX_NB_OF_WORDS_READ*2];
 
 	//convert buffer 512b to 256b
-	membus_to_HBMbus(buffer, buffer256);
+	membus_to_HBMbus(buffer512, buffer256, size_in_bytes_to_transfer);
 
 	switch (memory_type) {
 	case SNAP_ADDRTYPE_HBM_P0:
@@ -180,12 +203,12 @@ short read_burst_of_data_from_HBM(snap_HBMbus_t *d_hbm_p0,
 				  snap_HBMbus_t *d_hbm_p7,
 				  snapu16_t memory_type,
 				  snapu64_t input_address,
-				  snap_membus_t *buffer,
+				  snap_membus_t *buffer512,
 				  snapu64_t size_in_bytes_to_transfer)
 {
 	short rc;
         int i;
-	static snap_HBMbus_t buffer256[MAX_NB_OF_WORDS_READ*2];
+	snap_HBMbus_t buffer256[MAX_NB_OF_WORDS_READ*2];
 
 	switch (memory_type) {
 
@@ -237,7 +260,7 @@ short read_burst_of_data_from_HBM(snap_HBMbus_t *d_hbm_p0,
 	}
  
         //convert buffer 256b to 512b
-        HBMbus_to_membus(buffer256, buffer);
+        HBMbus_to_membus(buffer256, buffer512, size_in_bytes_to_transfer);
  
 	return rc;
 }
