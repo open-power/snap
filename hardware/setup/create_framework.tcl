@@ -259,19 +259,6 @@ if { $eth_used == TRUE } {
     # Commented below line for make model, uncomment for make image
     add_files -norecurse  $ip_dir/eth_100G/eth_100G.srcs/sources_1/bd/eth_100G/eth_100G.bd  >> $log_file
     export_ip_user_files -of_objects  [get_files  $ip_dir/eth_100G/eth_100G.srcs/sources_1/bd/eth_100G/eth_100G.bd] -no_script -sync -force -quiet >> $log_file
-    generate_target -force all [get_files $ip_dir/eth_100G/eth_100G.srcs/sources_1/bd/eth_100G/eth_100G.bd] >> $log_file
-  
-    create_ip_run [get_files -of_objects [get_fileset sources_1] $ip_dir/eth_100G/eth_100G.srcs/sources_1/bd/eth_100G/eth_100G.bd] >> $log_file
-  
-    launch_runs eth_100G_cmac_usplus_0_0_synth_1 >> $log_file
-    launch_runs eth_100G_axis_data_fifo_0_0_synth_1 >> $log_file
-    launch_runs eth_100G_util_vector_logic_0_0_synth_1 >> $log_file
-    launch_runs eth_100G_axis_clock_converter_tx_0_0_synth_1 >> $log_file
-    
-    wait_on_run eth_100G_cmac_usplus_0_0_synth_1 >> $log_file
-    wait_on_run eth_100G_axis_data_fifo_0_0_synth_1 >> $log_file
-    wait_on_run eth_100G_util_vector_logic_0_0_synth_1 >> $log_file
-    wait_on_run eth_100G_axis_clock_converter_tx_0_0_synth_1 >> $log_file
   }
 
 }

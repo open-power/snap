@@ -2,6 +2,7 @@
 ----------------------------------------------------------------------------
 --
 -- Copyright 2019 International Business Machines
+-- Copyright 2019 Paul Scherrer Insitute
 --
 -- Licensed under the Apache License, Version 2.0 (the "License");
 -- you may not use this file except in compliance with the License.
@@ -45,7 +46,44 @@ ENTITY psl_fpga IS
     c0_ddr4_ck_c              : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
     c0_ddr4_ck_t              : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
 #endif
-
+#if defined(CONFIG_ENABLE_ETHERNET) && !defined(CONFIG_ENABLE_ETH_LOOP_BACK)
+    gt_ref_clk_n                        : IN STD_LOGIC; 
+    gt_ref_clk_p                        : IN STD_LOGIC;
+--    gt_ref2_clk_n                       : IN STD_LOGIC; 
+--    gt_ref2_clk_p                       : IN STD_LOGIC;
+    gt_rx_gt_port_0_n                   : IN STD_LOGIC;
+    gt_rx_gt_port_0_p                   : IN STD_LOGIC;
+    gt_rx_gt_port_1_n                   : IN STD_LOGIC;
+    gt_rx_gt_port_1_p                   : IN STD_LOGIC;
+    gt_rx_gt_port_2_n                   : IN STD_LOGIC;
+    gt_rx_gt_port_2_p                   : IN STD_LOGIC;
+    gt_rx_gt_port_3_n                   : IN STD_LOGIC;
+    gt_rx_gt_port_3_p                   : IN STD_LOGIC;
+--    gt_rx_gt_port_4_n                   : IN STD_LOGIC;
+--    gt_rx_gt_port_4_p                   : IN STD_LOGIC;
+--    gt_rx_gt_port_5_n                   : IN STD_LOGIC;
+--    gt_rx_gt_port_5_p                   : IN STD_LOGIC;
+--    gt_rx_gt_port_6_n                   : IN STD_LOGIC;
+--    gt_rx_gt_port_6_p                   : IN STD_LOGIC;
+--    gt_rx_gt_port_7_n                   : IN STD_LOGIC;
+--    gt_rx_gt_port_7_p                   : IN STD_LOGIC;
+    gt_tx_gt_port_0_n                   : OUT STD_LOGIC;
+    gt_tx_gt_port_0_p                   : OUT STD_LOGIC;
+    gt_tx_gt_port_1_n                   : OUT STD_LOGIC;
+    gt_tx_gt_port_1_p                   : OUT STD_LOGIC;
+    gt_tx_gt_port_2_n                   : OUT STD_LOGIC;
+    gt_tx_gt_port_2_p                   : OUT STD_LOGIC;
+    gt_tx_gt_port_3_n                   : OUT STD_LOGIC;
+    gt_tx_gt_port_3_p                   : OUT STD_LOGIC;
+--    gt_tx_gt_port_4_n                   : OUT STD_LOGIC;
+--    gt_tx_gt_port_4_p                   : OUT STD_LOGIC;
+--    gt_tx_gt_port_5_n                   : OUT STD_LOGIC;
+--    gt_tx_gt_port_5_p                   : OUT STD_LOGIC;
+--    gt_tx_gt_port_6_n                   : OUT STD_LOGIC;
+--    gt_tx_gt_port_6_p                   : OUT STD_LOGIC;
+--    gt_tx_gt_port_7_n                   : OUT STD_LOGIC;
+--    gt_tx_gt_port_7_p                   : OUT STD_LOGIC;
+#endif
     -- CAPI PSL Interface
     --
     pci_pi_nperst0        : in    std_logic;     -- Active low reset from the PCIe reset pin of the device
@@ -217,7 +255,42 @@ Component psl_accel
     c0_ddr4_ck_t                        : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
 -- TODO:    c0_ddr4_ten                         : OUT   STD_LOGIC;
 #endif
-
+#if defined(CONFIG_ENABLE_ETHERNET) && !defined(CONFIG_ENABLE_ETH_LOOP_BACK)
+    gt_ref_clk_n                        : IN STD_LOGIC; 
+    gt_ref_clk_p                        : IN STD_LOGIC;
+    gt_rx_gt_port_0_n                   : IN STD_LOGIC;
+    gt_rx_gt_port_0_p                   : IN STD_LOGIC;
+    gt_rx_gt_port_1_n                   : IN STD_LOGIC;
+    gt_rx_gt_port_1_p                   : IN STD_LOGIC;
+    gt_rx_gt_port_2_n                   : IN STD_LOGIC;
+    gt_rx_gt_port_2_p                   : IN STD_LOGIC;
+    gt_rx_gt_port_3_n                   : IN STD_LOGIC;
+    gt_rx_gt_port_3_p                   : IN STD_LOGIC;
+--    gt_rx_gt_port_4_n                   : IN STD_LOGIC;
+--    gt_rx_gt_port_4_p                   : IN STD_LOGIC;
+--    gt_rx_gt_port_5_n                   : IN STD_LOGIC;
+--    gt_rx_gt_port_5_p                   : IN STD_LOGIC;
+--    gt_rx_gt_port_6_n                   : IN STD_LOGIC;
+--    gt_rx_gt_port_6_p                   : IN STD_LOGIC;
+--    gt_rx_gt_port_7_n                   : IN STD_LOGIC;
+--    gt_rx_gt_port_7_p                   : IN STD_LOGIC;
+    gt_tx_gt_port_0_n                   : OUT STD_LOGIC;
+    gt_tx_gt_port_0_p                   : OUT STD_LOGIC;
+    gt_tx_gt_port_1_n                   : OUT STD_LOGIC;
+    gt_tx_gt_port_1_p                   : OUT STD_LOGIC;
+    gt_tx_gt_port_2_n                   : OUT STD_LOGIC;
+    gt_tx_gt_port_2_p                   : OUT STD_LOGIC;
+    gt_tx_gt_port_3_n                   : OUT STD_LOGIC;
+    gt_tx_gt_port_3_p                   : OUT STD_LOGIC;
+--    gt_tx_gt_port_4_n                   : OUT STD_LOGIC;
+--    gt_tx_gt_port_4_p                   : OUT STD_LOGIC;
+--    gt_tx_gt_port_5_n                   : OUT STD_LOGIC;
+--    gt_tx_gt_port_5_p                   : OUT STD_LOGIC;
+--    gt_tx_gt_port_6_n                   : OUT STD_LOGIC;
+--    gt_tx_gt_port_6_p                   : OUT STD_LOGIC;
+--    gt_tx_gt_port_7_n                   : OUT STD_LOGIC;
+--    gt_tx_gt_port_7_p                   : OUT STD_LOGIC;
+#endif
     -- Parity Enable output and 250MHz Clock input
     ah_tbreq                            : OUT   STD_LOGIC;                      -- Timebase command request
     ah_paren                            : OUT   STD_LOGIC;
@@ -483,7 +556,42 @@ BEGIN
       c0_ddr4_ck_c                      => c0_ddr4_ck_c,
       c0_ddr4_ck_t                      => c0_ddr4_ck_t,
 #endif
-
+#if defined(CONFIG_ENABLE_ETHERNET) && !defined(CONFIG_ENABLE_ETH_LOOP_BACK)
+    gt_ref_clk_n                        => gt_ref_clk_n,
+    gt_ref_clk_p                        => gt_ref_clk_p,
+    gt_rx_gt_port_0_n                   => gt_rx_gt_port_0_n,
+    gt_rx_gt_port_0_p                   => gt_rx_gt_port_0_p,
+    gt_rx_gt_port_1_n                   => gt_rx_gt_port_1_n,
+    gt_rx_gt_port_1_p                   => gt_rx_gt_port_1_p,
+    gt_rx_gt_port_2_n                   => gt_rx_gt_port_2_n,
+    gt_rx_gt_port_2_p                   => gt_rx_gt_port_2_p,
+    gt_rx_gt_port_3_n                   => gt_rx_gt_port_3_n,
+    gt_rx_gt_port_3_p                   => gt_rx_gt_port_3_p,
+--    gt_rx_gt_port_4_n                   => gt_rx_gt_port_4_n,
+--    gt_rx_gt_port_4_p                   => gt_rx_gt_port_4_p,
+--    gt_rx_gt_port_5_n                   => gt_rx_gt_port_5_n,
+--    gt_rx_gt_port_5_p                   => gt_rx_gt_port_5_p,
+--    gt_rx_gt_port_6_n                   => gt_rx_gt_port_6_n,
+--    gt_rx_gt_port_6_p                   => gt_rx_gt_port_6_p,
+--    gt_rx_gt_port_7_n                   => gt_rx_gt_port_7_n,
+--    gt_rx_gt_port_7_p                   => gt_rx_gt_port_7_p,
+    gt_tx_gt_port_0_n                   => gt_tx_gt_port_0_n,
+    gt_tx_gt_port_0_p                   => gt_tx_gt_port_0_p,
+    gt_tx_gt_port_1_n                   => gt_tx_gt_port_1_n,
+    gt_tx_gt_port_1_p                   => gt_tx_gt_port_1_p,
+    gt_tx_gt_port_2_n                   => gt_tx_gt_port_2_n,
+    gt_tx_gt_port_2_p                   => gt_tx_gt_port_2_p,
+    gt_tx_gt_port_3_n                   => gt_tx_gt_port_3_n,
+    gt_tx_gt_port_3_p                   => gt_tx_gt_port_3_p,
+--    gt_tx_gt_port_4_n                   => gt_tx_gt_port_4_n,
+--    gt_tx_gt_port_4_p                   => gt_tx_gt_port_4_p,
+--    gt_tx_gt_port_5_n                   => gt_tx_gt_port_5_n,
+--    gt_tx_gt_port_5_p                   => gt_tx_gt_port_5_p,
+--    gt_tx_gt_port_6_n                   => gt_tx_gt_port_6_n,
+--    gt_tx_gt_port_6_p                   => gt_tx_gt_port_6_p,
+--    gt_tx_gt_port_7_n                   => gt_tx_gt_port_7_n,
+--    gt_tx_gt_port_7_p                   => gt_tx_gt_port_7_p,
+#endif
       -- CAPI PSL Interface
       --
       -- Accelerator Command Interface

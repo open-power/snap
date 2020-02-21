@@ -23,6 +23,11 @@ set fpga_part   $::env(FPGACHIP)
 set log_dir     $::env(LOGS_DIR)
 set log_file    $log_dir/create_hbm_host.log
 
+# user can set a specific value for the Action clock lower than the 250MHz nominal clock
+set action_clock_freq "250MHz"
+#overide default value if variable exist
+set action_clock_freq $::env(FPGA_ACTION_CLK)
+
 set prj_name hbm
 set bd_name  hbm_top
 
@@ -138,44 +143,88 @@ set_property -dict [list                               \
   CONFIG.USER_AUTO_POPULATE {yes}                      \
   CONFIG.USER_SWITCH_ENABLE_00 {FALSE}                 \
   CONFIG.USER_APB_PCLK_0 {75}                          \
-  CONFIG.USER_HBM_REF_CLK_0 {250}                      \
-  CONFIG.USER_HBM_REF_CLK_PS_0 {2000.00}               \
-  CONFIG.USER_HBM_REF_CLK_XDC_0 {4.00}                 \
-  CONFIG.USER_HBM_FBDIV_0 {14}                         \
-  CONFIG.USER_HBM_CP_0 {4}                             \
-  CONFIG.USER_HBM_RES_0 {14}                           \
-  CONFIG.USER_HBM_LOCK_REF_DLY_0 {15}                  \
-  CONFIG.USER_HBM_LOCK_FB_DLY_0 {15}                   \
-  CONFIG.USER_HBM_HEX_CP_RES_0 {0x0000E400}            \
-  CONFIG.USER_HBM_HEX_LOCK_FB_REF_DLY_0 {0x00000f0f}   \
-  CONFIG.USER_HBM_HEX_FBDIV_CLKOUTDIV_0 {0x00000382}   \
-  CONFIG.USER_HBM_TCK_0 {875}                          \
-  CONFIG.USER_HBM_TCK_0_PERIOD {1.142857142857143}     \
-  CONFIG.USER_tRC_0 {0x2A}                             \
-  CONFIG.USER_tRAS_0 {0x1D}                            \
-  CONFIG.USER_tRCDRD_0 {0xD}                           \
-  CONFIG.USER_tRCDWR_0 {0x9}                           \
-  CONFIG.USER_tRRDL_0 {0x4}                            \
-  CONFIG.USER_tRRDS_0 {0x4}                            \
-  CONFIG.USER_tFAW_0 {0xE}                             \
-  CONFIG.USER_tRP_0 {0xD}                              \
-  CONFIG.USER_tWR_0 {0xF}                              \
-  CONFIG.USER_tXP_0 {0x7}                              \
-  CONFIG.USER_tRFC_0 {0xE4}                            \
-  CONFIG.USER_tRFCSB_0 {0x8C}                          \
-  CONFIG.USER_tRREFD_0 {0x7}                           \
-  CONFIG.USER_HBM_REF_OUT_CLK_0 {1750}                 \
-  CONFIG.USER_MC0_REF_CMD_PERIOD {0x0D54}              \
-  CONFIG.USER_MC1_REF_CMD_PERIOD {0x0D54}              \
-  CONFIG.USER_MC2_REF_CMD_PERIOD {0x0D54}              \
-  CONFIG.USER_MC3_REF_CMD_PERIOD {0x0D54}              \
-  CONFIG.USER_MC4_REF_CMD_PERIOD {0x0D54}              \
-  CONFIG.USER_MC5_REF_CMD_PERIOD {0x0D54}              \
-  CONFIG.USER_MC6_REF_CMD_PERIOD {0x0D54}              \
-  CONFIG.USER_MC7_REF_CMD_PERIOD {0x0D54}              \
-  CONFIG.USER_DFI_CLK0_FREQ {437.500}                  \
-] $cell >> $log_file
-  
+  ] $cell >> $log_file
+
+if { $action_clock_freq == "225MHZ" } {
+  set_property -dict [list                               \
+    CONFIG.USER_HBM_REF_CLK_0 {225}                      \
+    CONFIG.USER_HBM_REF_CLK_PS_0 {2222.22}               \
+    CONFIG.USER_HBM_REF_CLK_XDC_0 {4.44}                 \
+    CONFIG.USER_HBM_FBDIV_0 {16}                         \
+    CONFIG.USER_HBM_CP_0 {3}                             \
+    CONFIG.USER_HBM_RES_0 {6}                            \
+    CONFIG.USER_HBM_LOCK_REF_DLY_0 {18}                  \
+    CONFIG.USER_HBM_LOCK_FB_DLY_0 {18}                   \
+    CONFIG.USER_HBM_HEX_CP_RES_0 {0x00006300}            \
+    CONFIG.USER_HBM_HEX_LOCK_FB_REF_DLY_0 {0x00001212}   \
+    CONFIG.USER_HBM_HEX_FBDIV_CLKOUTDIV_0 {0x00000402}   \
+    CONFIG.USER_HBM_TCK_0 {900}                          \
+    CONFIG.USER_HBM_TCK_0_PERIOD {1.1111111111111112}    \
+    CONFIG.USER_tRC_0 {0x2B}                             \
+    CONFIG.USER_tRAS_0 {0x1E}                            \
+    CONFIG.USER_tRCDRD_0 {0xD}                           \
+    CONFIG.USER_tRCDWR_0 {0x9}                           \
+    CONFIG.USER_tRRDL_0 {0x4}                            \
+    CONFIG.USER_tRRDS_0 {0x4}                            \
+    CONFIG.USER_tFAW_0 {0xF}                             \
+    CONFIG.USER_tRP_0 {0xD}                              \
+    CONFIG.USER_tWR_0 {0xF}                              \
+    CONFIG.USER_tXP_0 {0x7}                              \
+    CONFIG.USER_tRFC_0 {0xEA}                            \
+    CONFIG.USER_tRFCSB_0 {0x90}                          \
+    CONFIG.USER_tRREFD_0 {0x8}                           \
+    CONFIG.USER_HBM_REF_OUT_CLK_0 {1800}                 \
+    CONFIG.USER_MC0_REF_CMD_PERIOD {0x0DB6}              \
+    CONFIG.USER_MC1_REF_CMD_PERIOD {0x0DB6}              \
+    CONFIG.USER_MC2_REF_CMD_PERIOD {0x0DB6}              \
+    CONFIG.USER_MC3_REF_CMD_PERIOD {0x0DB6}              \
+    CONFIG.USER_MC4_REF_CMD_PERIOD {0x0DB6}              \
+    CONFIG.USER_MC5_REF_CMD_PERIOD {0x0DB6}              \
+    CONFIG.USER_MC6_REF_CMD_PERIOD {0x0DB6}              \
+    CONFIG.USER_MC7_REF_CMD_PERIOD {0x0DB6}              \
+    CONFIG.USER_DFI_CLK0_FREQ {450.000}                  \
+    ] $cell >> $log_file
+  } else {
+  set_property -dict [list                               \
+    CONFIG.USER_HBM_REF_CLK_0 {250}                      \
+    CONFIG.USER_HBM_REF_CLK_PS_0 {2000.00}               \
+    CONFIG.USER_HBM_REF_CLK_XDC_0 {4.00}                 \
+    CONFIG.USER_HBM_FBDIV_0 {14}                         \
+    CONFIG.USER_HBM_CP_0 {4}                             \
+    CONFIG.USER_HBM_RES_0 {14}                           \
+    CONFIG.USER_HBM_LOCK_REF_DLY_0 {15}                  \
+    CONFIG.USER_HBM_LOCK_FB_DLY_0 {15}                   \
+    CONFIG.USER_HBM_HEX_CP_RES_0 {0x0000E400}            \
+    CONFIG.USER_HBM_HEX_LOCK_FB_REF_DLY_0 {0x00000f0f}   \
+    CONFIG.USER_HBM_HEX_FBDIV_CLKOUTDIV_0 {0x00000382}   \
+    CONFIG.USER_HBM_TCK_0 {875}                          \
+    CONFIG.USER_HBM_TCK_0_PERIOD {1.142857142857143}     \
+    CONFIG.USER_tRC_0 {0x2A}                             \
+    CONFIG.USER_tRAS_0 {0x1D}                            \
+    CONFIG.USER_tRCDRD_0 {0xD}                           \
+    CONFIG.USER_tRCDWR_0 {0x9}                           \
+    CONFIG.USER_tRRDL_0 {0x4}                            \
+    CONFIG.USER_tRRDS_0 {0x4}                            \
+    CONFIG.USER_tFAW_0 {0xE}                             \
+    CONFIG.USER_tRP_0 {0xD}                              \
+    CONFIG.USER_tWR_0 {0xF}                              \
+    CONFIG.USER_tXP_0 {0x7}                              \
+    CONFIG.USER_tRFC_0 {0xE4}                            \
+    CONFIG.USER_tRFCSB_0 {0x8C}                          \
+    CONFIG.USER_tRREFD_0 {0x7}                           \
+    CONFIG.USER_HBM_REF_OUT_CLK_0 {1750}                 \
+    CONFIG.USER_MC0_REF_CMD_PERIOD {0x0D54}              \
+    CONFIG.USER_MC1_REF_CMD_PERIOD {0x0D54}              \
+    CONFIG.USER_MC2_REF_CMD_PERIOD {0x0D54}              \
+    CONFIG.USER_MC3_REF_CMD_PERIOD {0x0D54}              \
+    CONFIG.USER_MC4_REF_CMD_PERIOD {0x0D54}              \
+    CONFIG.USER_MC5_REF_CMD_PERIOD {0x0D54}              \
+    CONFIG.USER_MC6_REF_CMD_PERIOD {0x0D54}              \
+    CONFIG.USER_MC7_REF_CMD_PERIOD {0x0D54}              \
+    CONFIG.USER_DFI_CLK0_FREQ {437.500}                  \
+  ] $cell >> $log_file
+ }  
+ 
 #===============================================================================
 #== ALL PARAMETERS BELOW DEPEND ON THE NUMBER OF HBM MEMORIES YOU WANT TO USE ==
 #===============================================================================
@@ -252,16 +301,30 @@ for {set i 0} {$i < $HBM_MEM_NUM} {incr i} {
       CONFIG.CLK_DOMAIN {S_AXI_p$i\_HBM_ACLK} \
       CONFIG.NUM_WRITE_OUTSTANDING {2}       \
       CONFIG.NUM_READ_OUTSTANDING {2}        \
-      CONFIG.FREQ_HZ {250000000}             \
       CONFIG.DATA_WIDTH {256}                \
   ] [get_bd_intf_ports S_AXI_p$i\_HBM]
+
+  if { $action_clock_freq == "225MHZ" } {
+    set_property -dict [list CONFIG.FREQ_HZ {225000000}] [get_bd_intf_ports S_AXI_p$i\_HBM]
+  } else {
+    set_property -dict [list CONFIG.FREQ_HZ {250000000}] [get_bd_intf_ports S_AXI_p$i\_HBM]
+  }
   connect_bd_intf_net [get_bd_intf_ports S_AXI_p$i\_HBM] [get_bd_intf_pins axi4_to_axi3_$i/S_AXI]
 
+
   if { ($vivadoVer >= "2019.2")} {
-    set port [create_bd_port -dir I -type clk -freq_hz 250000000 S_AXI_p$i\_HBM_ACLK]
+    if { $action_clock_freq == "225MHZ" } {
+      set port [create_bd_port -dir I -type clk -freq_hz 225000000 S_AXI_p$i\_HBM_ACLK]
+    } else {
+      set port [create_bd_port -dir I -type clk -freq_hz 250000000 S_AXI_p$i\_HBM_ACLK]
+    }
   } else {
     set port [create_bd_port -dir I -type clk S_AXI_p$i\_HBM_ACLK]
-    set_property {CONFIG.FREQ_HZ} {250000000} $port
+    if { $action_clock_freq == "225MHZ" } {
+      set_property {CONFIG.FREQ_HZ} {225000000} $port
+    } else {
+      set_property {CONFIG.FREQ_HZ} {250000000} $port
+    }
   }
   connect_bd_net $port [get_bd_pins axi4_to_axi3_$i/aclk]
   connect_bd_net [get_bd_pins ARESETN] [get_bd_pins axi4_to_axi3_$i/aresetn]

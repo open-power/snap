@@ -122,12 +122,12 @@ check_snap_settings:
 	@source $(SNAP_ROOT)/snap_env $(ignore_action_root);
 	@echo "                        =============================="
 	@echo "                        hardware/Makefile called with:"
-	@echo "                        ACTION_ROOT     = $(ACTION_ROOT)"
+	@echo "                        ACTION_ROOT        = $(ACTION_ROOT)"
 	@if [ "$(CAPI_VER)" == "capi10" ]; then \
-		echo "                        PSL_DCP         = $(PSL_DCP)"; \
+		echo "                        PSL_DCP            = $(PSL_DCP)"; \
 	elif [ "$(CAPI_VER)" == "capi20" ]; then \
-		echo "                        PSL9_IP         = $(PSL9_IP_CORE)"; \
-		echo "                        FPGA ACTION CLK = $(FPGA_ACTION_CLK)"; \
+		echo "                        PSL9_IP            = $(PSL9_IP_CORE)"; \
+		echo "                        FPGA ACTION CLK    = $(FPGA_ACTION_CLK)"; \
 	fi
 	@echo "                        FPGACARD           = $(FPGACARD)"
 	@echo "                        FPGACHIP           = $(FPGACHIP)"
