@@ -25,6 +25,9 @@ set action_root   $::env(ACTION_ROOT)
 set sdram_used    $::env(SDRAM_USED)
 set nvme_used     $::env(NVME_USED)
 set bram_used     $::env(BRAM_USED)
+set hbm_used      $::env(HBM_USED)
+set eth_used      $::env(ETHERNET_USED)
+set eth_loopback  $::env(ETH_LOOP_BACK)
 set factory_image [string toupper $::env(FACTORY_IMAGE)]
 set fpgacard      $::env(FPGACARD)
 
@@ -51,15 +54,20 @@ append IMAGE_NAME [format {_%s} $ACTION_NAME]
 
 # append nvme
 append IMAGE_NAME [expr {$nvme_used == "TRUE" ? "_NVME" : ""}]
+# append ethernet
+append IMAGE_NAME [expr {($eth_used == "TRUE" && $eth_loopback == "FALSE") ? "_ETH" : ""}]
 
 # append ram_type and timing information
 if { $bram_used == "TRUE" } {
     set RAM_TYPE BRAM
 } elseif { $sdram_used == "TRUE" } {
     set RAM_TYPE SDRAM
+} elseif { $hbm_used == "TRUE" } {
+    set RAM_TYPE HBM
 } else {
     set RAM_TYPE noSDRAM
 }
+
 append IMAGE_NAME [format {_%s_%s_%s} $RAM_TYPE $fpgacard $::env(TIMING_WNS)]
 
 ##

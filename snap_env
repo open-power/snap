@@ -117,6 +117,7 @@ while [ -z "$SETUP_DONE" ]; do
       SETUP_INFO="$SETUP_INFO\n    https://github.com/open-power/snap/tree/master/hardware/README.md#power9"
     elif [ ! -e "$PSL9_IP_CORE" ]; then
       SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Path to PSL9_IP_CORE not set properly in $(basename $snap_env_sh) file."
+      SETUP_WARNING="$SETUP_WARNING\n    Please correct or remove the PSL9_IP_CORE parameter to continue the process."
       SETUP_WARNING="$SETUP_WARNING\n    It is not needed for simulation but only for building an image/FPGA."
       SETUP_WARNING="$SETUP_WARNING\n    All information how and where to get this zip file can be found at :" 
       SETUP_WARNING="$SETUP_WARNING\n    https://github.com/open-power/snap/tree/master/hardware/README.md#power9"
@@ -133,6 +134,7 @@ while [ -z "$SETUP_DONE" ]; do
       SETUP_INFO="$SETUP_INFO\n    https://github.com/open-power/snap/tree/master/hardware/README.md#power8"
     elif [ ! -e "$PSL_DCP" ]; then
       SETUP_WARNING="$SETUP_WARNING\n### WARNING ### Path to PSL_DCP not set properly in $(basename $snap_env_sh) file."
+      SETUP_WARNING="$SETUP_WARNING\n    Please correct or remove the PSL_DCP parameter to continue the process."
       SETUP_WARNING="$SETUP_WARNING\n    It is not needed for simulation but only for building an image/FPGA."
       SETUP_WARNING="$SETUP_WARNING\n    All information where to get this b_route_design.dcp file can be found at :"
       SETUP_WARNING="$SETUP_WARNING\n    https://github.com/open-power/snap/tree/master/hardware/README.md#power8"
@@ -241,6 +243,10 @@ while [ -z "$SETUP_DONE" ]; do
     AR='${SNAP_ROOT}/actions/hls_vector_generator'
   elif [ -n "$HLS_PARALLEL_MEMCPY" ]; then
     AR='${SNAP_ROOT}/actions/hls_parallel_memcpy'
+  elif [ -n "$HLS_RX100G" ]; then
+    AR='${SNAP_ROOT}/actions/hls_rx100G'
+  elif [ -n "$HLS_HBM_MEMCOPY" ]; then
+    AR='${SNAP_ROOT}/actions/hls_hbm_memcopy'
   fi
   if [ -z "$AR" ] && [ -n "$ACTION_ROOT" ]; then
     AR=$ACTION_ROOT
@@ -374,6 +380,17 @@ while [ -z "$SETUP_DONE" ]; do
     fi
   fi
 
+  # Note: HBM is defined via snap_config
+  if [ "$HBM_USED" == "TRUE" ] && [ "$BRAM_USED" == "TRUE" ]; then
+    #echo "=====HBM setup========================================="
+      SETUP_INFO="$SETUP_INFO\n### INFO ### Setting of HBM is NOT with real HBM!"
+  fi
+
+  # Note: ETHERNET_USED is defined via snap_config
+  if [ "$ETHERNET_USED" == "TRUE" ] && [ "$ETH_LOOP_BACK" == "TRUE" ]; then
+    #echo "=====Ethernet setup===================================="
+      SETUP_INFO="$SETUP_INFO\n### INFO ### Setting of ETHERNET is a loopback with NO MAC"
+  fi
 
   ####### Print warning messages and create $snap_env_sh
   echo -e "======================================================="
