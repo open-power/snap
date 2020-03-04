@@ -245,6 +245,8 @@ if { $fpga_card == "ADKU3" } {
     set create_clock_conv   TRUE
     set create_ddr4_ad9v3   TRUE
   }
+#} elseif { $fpga_card == "AD9H3" } {
+#    set create_hbm          TRUE
 }
 
 #create clock converter
@@ -252,7 +254,7 @@ if { $create_clock_conv == "TRUE" } {
   puts "                        generating IP axi_clock_converter"
   create_ip -name axi_clock_converter -vendor xilinx.com -library ip -version 2.1 -module_name axi_clock_converter -dir $ip_dir  >> $log_file
 
-  if { ($sdram_used == "TRUE") && ( $fpga_card == "ADKU3" || $fpga_card == "S121B" || $fpga_card == "AD8K5" || $fpga_card == "S241"|| $fpga_card == "U200"|| $fpga_card == "U50" || $fpga_card == "AD9V3") } {
+  if { ($sdram_used == "TRUE") && ( $fpga_card == "ADKU3" || $fpga_card == "S121B" || $fpga_card == "AD8K5" || $fpga_card == "S241"|| $fpga_card == "U200"|| $fpga_card == "U50" || $fpga_card == "AD9V3" || $fpga_card == "AD9H3") } {
 	if { $fpga_card == "U200" || $fpga_card == "U50"} {
 	    set_property -dict [list CONFIG.ADDR_WIDTH {34} CONFIG.DATA_WIDTH {512} CONFIG.ID_WIDTH {4}] [get_ips axi_clock_converter]
 	} else {
@@ -324,6 +326,75 @@ if { $create_bram == "TRUE" } {
   export_ip_user_files -of_objects             [get_files $ip_dir/block_RAM/block_RAM.xci] -no_script -force >> $log_file
   export_simulation -of_objects [get_files $ip_dir/block_RAM/block_RAM.xci] -directory $ip_dir/ip_user_files/sim_scripts -force >> $log_file
 }
+
+#create HBM
+#if { $create_hbm == "TRUE" } {
+#  puts "                        generating IP block_HBM 2MC - 3 mem"
+#  create_ip -name hbm -vendor xilinx.com -library ip -version 1.0 -module_name block_HBM -dir  $ip_dir >> $log_file
+## HBM 4GB Left - 2MC - 3 mem - APB=75MHz
+#  set_property -dict [list                                       \
+#                      CONFIG.USER_HBM_DENSITY {4GB}              \
+#                      CONFIG.USER_SINGLE_STACK_SELECTION {LEFT}  \
+#                      CONFIG.USER_MEMORY_DISPLAY {1024}          \
+#                      CONFIG.USER_SWITCH_ENABLE_00 {FALSE}       \
+#                      CONFIG.USER_APB_PCLK_0 {75}                \
+#                      CONFIG.USER_TEMP_POLL_CNT_0 {75000}        \
+#                      CONFIG.USER_CLK_SEL_LIST0 {AXI_01_ACLK}    \
+#                      CONFIG.USER_MC_ENABLE_01 {TRUE}            \
+#                      CONFIG.USER_MC_ENABLE_02 {FALSE}           \
+#                      CONFIG.USER_MC_ENABLE_03 {FALSE}           \
+#                      CONFIG.USER_MC_ENABLE_04 {FALSE}           \
+#                      CONFIG.USER_MC_ENABLE_05 {FALSE}           \
+#                      CONFIG.USER_MC_ENABLE_06 {FALSE}           \
+#                      CONFIG.USER_MC_ENABLE_07 {FALSE}           \
+#                      CONFIG.USER_SAXI_03 {false}                \
+#                     ] [get_ips block_HBM]
+#
+#  set_property generate_synth_checkpoint false [get_files $ip_dir/block_HBM/block_HBM.xci]
+#  generate_target {instantiation_template}     [get_files $ip_dir/block_HBM/block_HBM.xci] >> $log_file
+#  generate_target all                          [get_files $ip_dir/block_HBM/block_HBM.xci] >> $log_file
+#  export_ip_user_files -of_objects             [get_files $ip_dir/block_HBM/block_HBM.xci] -no_script -force >> $log_file
+#  export_simulation -of_objects [get_files $ip_dir/block_HBM/block_HBM.xci] -directory $ip_dir/ip_user_files/sim_scripts -force >> $log_file
+#
+# Create instance: utils_ds_buf, and set properties
+#  puts "                        generating Utility Buffers"
+#  create_ip -name util_ds_buf -vendor xilinx.com -library ip -version 2.1 -module_name util_buffer -dir $ip_dir >> $log_file
+#  set_property -dict [list                         \
+#                     CONFIG.C_BUF_TYPE {IBUFDS}    \
+#                     ] [get_ips util_buffer]
+#
+#  set_property generate_synth_checkpoint false [get_files $ip_dir/util_buffer/util_buffer.xci]
+#  generate_target {instantiation_template}     [get_files $ip_dir/util_buffer/util_buffer.xci] >> $log_file
+#  generate_target all                          [get_files $ip_dir/util_buffer/util_buffer.xci] >> $log_file
+#  export_ip_user_files -of_objects             [get_files $ip_dir/util_buffer/util_buffer.xci] -no_script -force >> $log_file
+#  export_simulation -of_objects [get_files $ip_dir/util_buffer/util_buffer.xci] -directory $ip_dir/ip_user_files/sim_scripts -force >> $log_file
+
+# Create instance: utils_ds_buf, and set properties
+#  puts "                        generating AXI converters"
+#  create_ip -name axi_protocol_converter -vendor xilinx.com -library ip -version 2.1 -module_name axi4_to_axi3 -dir $ip_dir >> $log_file
+#  set_property -dict [list                       \
+#                     CONFIG.MI_PROTOCOL {AXI3}   \
+#                     CONFIG.DATA_WIDTH {256}     \
+#                     CONFIG.TRANSLATION_MODE {2} \
+#                     ] [get_ips axi4_to_axi3]
+#  set_property generate_synth_checkpoint false [get_files $ip_dir/axi4_to_axi3/axi4_to_axi3.xci]
+#  generate_target {instantiation_template}     [get_files $ip_dir/axi4_to_axi3/axi4_to_axi3.xci] >> $log_file
+#  generate_target all                          [get_files $ip_dir/axi4_to_axi3/axi4_to_axi3.xci] >> $log_file
+#  export_ip_user_files -of_objects             [get_files $ip_dir/axi4_to_axi3/axi4_to_axi3.xci] -no_script -force >> $log_file
+#  export_simulation -of_objects [get_files $ip_dir/axi4_to_axi3/axi4_to_axi3.xci] -directory $ip_dir/ip_user_files/sim_scripts -force >> $log_file
+#
+#  create_ip -name axi_dwidth_converter -vendor xilinx.com -library ip -version 2.1 -module_name axi512_to_256 -dir $ip_dir >> $log_file
+#  set_property -dict [list                       \
+#                     CONFIG.SI_DATA_WIDTH {512}  \
+#                     CONFIG.MI_DATA_WIDTH {256}  \
+#                     ] [get_ips axi512_to_256]
+#  set_property generate_synth_checkpoint false [get_files $ip_dir/axi512_to_256/axi512_to_256.xci]
+#  generate_target {instantiation_template}     [get_files $ip_dir/axi512_to_256/axi512_to_256.xci] >> $log_file
+#  generate_target all                          [get_files $ip_dir/axi512_to_256/axi512_to_256.xci] >> $log_file
+#  export_ip_user_files -of_objects             [get_files $ip_dir/axi512_to_256/axi512_to_256.xci] -no_script -force >> $log_file
+#  export_simulation -of_objects [get_files $ip_dir/axi512_to_256/axi512_to_256.xci] -directory $ip_dir/ip_user_files/sim_scripts -force >> $log_file
+#
+#}
 
 #DDR3 create ddr3sdramm with ECC
 if { $create_ddr3 == "TRUE" } {

@@ -26,12 +26,17 @@ snap_config=$snapdir/\.snap_config
 
 simulator=`grep SIMULATOR $snap_config|cut -d = -f 2 |tr -d '"'`
 capi20=`grep CAPI20 .snap_config|cut -d = -f 2`
+enable_hbm=`grep ENABLE_HBM .snap_config|cut -d = -f 2`
 
 cd hardware/sim
 if [ $simulator == "xsim" ]; then
   if [ -d "xsim" ]; then
     if [ "$capi20" == "y" ]; then
-	xsim -gui xsim/latest/top.wdb -view debug2_action_gmem_ddr4.wcfg
+      if [ "$enable_hbm" == "y" ]; then
+	  xsim -gui xsim/latest/top.wdb -view debug2_action_gmem_hbm.wcfg
+      else
+	  xsim -gui xsim/latest/top.wdb -view debug2_action_gmem_ddr4.wcfg
+      fi
     else
 	xsim -gui xsim/latest/top.wdb -view debug_action_gmem_ddr4.wcfg
     fi
@@ -42,9 +47,28 @@ fi
 if [ $simulator == "irun" ]; then
   if [ -d "ies" ]; then
     if [ "$capi20" == "y" ]; then
-	simvision -wave -input ./debug2_action_gmem_ddr4.svwf ./ies/latest/capiWave.shm
+      if [ "$enable_hbm" == "y" ]; then
+	  simvision -wave -input ./debug2_action_gmem_hbm.svwf ./ies/latest/capiWave.shm
+      else
+	  simvision -wave -input ./debug2_action_gmem_ddr4.svwf ./ies/latest/capiWave.shm
+      fi
     else
 	simvision -wave -input ./debug_action_gmem_ddr4.svwf ./ies/latest/capiWave.shm
+    fi
+  else
+    echo "Please launch a simulation (make sim) prior to see traces"
+  fi
+fi
+if [ $simulator == "xcelium" ]; then
+  if [ -d "xcelium" ]; then
+    if [ "$capi20" == "y" ]; then
+      if [ "$enable_hbm" == "y" ]; then
+	  simvision -wave -input ./debug2_action_gmem_hbm.svwf ./xcelium/latest/capiWave.shm
+      else
+	  simvision -wave -input ./debug2_action_gmem_ddr4.svwf ./xcelium/latest/capiWave.shm
+      fi
+    else
+	simvision -wave -input ./debug_action_gmem_ddr4.svwf ./xcelium/latest/capiWave.shm
     fi
   else
     echo "Please launch a simulation (make sim) prior to see traces"

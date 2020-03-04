@@ -222,6 +222,7 @@ if { [expr $TIMING_WNS >= 0 ] } {
     puts "-- The logic was not placed and routed correctly with the constraints provided.            --"
     puts "--  Maximum WNS authorized is set in snap_env.sh by TIMING_LABLIMIT (negative value in ps) --"
     puts "-- Run ./snap_debug_timing to help you finding the paths containing the timing violation   --"
+    puts "-- Run vivado hardware/build/Checkpoints/opt_routed_design.dcp to see logic placement.     --"
     puts "---------------------------------------------------------------------------------------------"
     set ::env(REMOVE_TMP_FILES) FALSE
     exit 42
