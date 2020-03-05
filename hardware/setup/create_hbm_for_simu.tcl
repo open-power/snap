@@ -107,12 +107,12 @@ for {set i 0} {$i < $HBM_MEM_NUM} {incr i} {
   #create the axi_clock_converters for each of the HBM interfaces
 
   #create the bram controller + URAM
+      #CONFIG.READ_LATENCY {6}    
   create_bd_cell -type ip -vlnv xilinx.com:ip:axi_bram_ctrl:4.1 axi_bram_ctrl_$i >> $log_file
   set_property -dict [list        \
       CONFIG.DATA_WIDTH {256}     \
       CONFIG.SINGLE_PORT_BRAM {1} \
       CONFIG.ECC_TYPE {0}         \
-      CONFIG.READ_LATENCY {6}     \
   ] [get_bd_cells axi_bram_ctrl_$i]  >> $log_file
 
   create_bd_cell -type ip -vlnv xilinx.com:ip:blk_mem_gen:8.4 blk_mem_gen_$i >> $log_file
