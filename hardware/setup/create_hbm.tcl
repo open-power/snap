@@ -35,7 +35,7 @@ set bd_name  hbm_top
 # _______________________________________________________________________________
 # In this file, we define all the logic to have independent 256MB/2Gb memories
 # each with an independent AXI interfaces which will be connected to the action
-# Default is HBM_MEM_NUM = 2 interfaces
+# Default is HBM_MEM_NUM = 8 interfaces
 # TO increase/decrease the number of memory needed, just look to #CHANGE_HBM_INTERFACES_NUMBER
 # param and 1) change HBM_MEM_NUM value
 # with a value between 1 and 16. If you need more memories, you need to add the 2nd stack
@@ -94,20 +94,16 @@ set_property -dict [list CONFIG.C_BUF_TYPE {IBUFDS}] [get_bd_cells refclk_ibufds
 
 #====================
 #create the clocks and the reset signals for the design
-#create_bd_cell -type ip -vlnv xilinx.com:ip:util_ds_buf:2.1 refclk_bufg_div3
-#set_property -dict [list CONFIG.C_BUF_TYPE {BUFGCE_DIV} CONFIG.C_BUFGCE_DIV {3}] [get_bd_cells refclk_bufg_div3]
-
 create_bd_cell -type ip -vlnv xilinx.com:ip:util_ds_buf:2.1 refclk_bufg_div4
 set_property -dict [list CONFIG.C_BUF_TYPE {BUFGCE_DIV} CONFIG.C_BUFGCE_DIV {4}] [get_bd_cells refclk_bufg_div4]
 
 #====================
-#connect_bd_net [get_bd_pins constant_1_zero/dout] [get_bd_pins refclk_bufg_div3/BUFGCE_CLR]
-#connect_bd_net [get_bd_pins constant_1_one/dout] [get_bd_pins refclk_bufg_div3/BUFGCE_CE]
 connect_bd_net [get_bd_pins constant_1_zero/dout] [get_bd_pins refclk_bufg_div4/BUFGCE_CLR]
 connect_bd_net [get_bd_pins constant_1_one/dout] [get_bd_pins refclk_bufg_div4/BUFGCE_CE]
 
 set port [create_bd_port -dir I ARESETN]
 
+#This 300MHz clock is used divided by 4 for the APB_CLK of the HBM
 if { ($vivadoVer >= "2019.2")} {
   set port [create_bd_port -dir I -type clk -freq_hz 300000000 refclk300_n]
 } else {
@@ -134,9 +130,8 @@ set cell [create_bd_cell -quiet -type ip -vlnv {xilinx.com:ip:hbm:*} hbm]
 #Common params for the HBM not depending on the number of memories enabled
 # The reference clock provided to HBM is at 100MHz (output of refclk_bufg_div3)
 # and HBM IP logic generates internally the 800MHz which HBM operates at
-#(params provided by AlphaData)
 
-#Setting for Production chips: HBM_REF_CLK=300MHz => HBM Mem freq=900MHz
+#Setting for Production chips: HBM_REF_CLK=250 or 225MHz
 set_property -dict [list                               \
   CONFIG.USER_HBM_DENSITY {4GB}                        \
   CONFIG.USER_HBM_STACK {1}                            \
@@ -230,18 +225,9 @@ if { $action_clock_freq == "225MHZ" } {
 #===============================================================================
 #Define here the configuration you request 
 #
-#Config below is enabling 2 independent 256MB memory using 2 MC => 1024MB
-# MC0 contains S_AXI_00 and MC1 contains S_AXI_02
-# Each memory is accessible using address from <0x0000_0000> to <0x0FFF_FFFF> [ 256M ]
-#Slave segment </hbm/SAXI_00/HBM_MEM00> is being mapped into address space </S_AXI_0> at <0x0000_0000 [ 256M ]>
-#Slave segment </hbm/SAXI_00/HBM_MEM01> is being mapped into address space </S_AXI_0> at <0x1000_0000 [ 256M ]>
-#Slave segment </hbm/SAXI_01/HBM_MEM00> is being mapped into address space </S_AXI_1> at <0x0000_0000 [ 256M ]>
-#Slave segment </hbm/SAXI_01/HBM_MEM01> is being mapped into address space </S_AXI_1> at <0x1000_0000 [ 256M ]>
-#   
 #CHANGE_HBM_INTERFACES_NUMBER
-#  CONFIG.USER_MEMORY_DISPLAY {1024}  => set the value to 512 by MC used (1024 = 2 MC used)
+#  CONFIG.USER_MEMORY_DISPLAY {2048}  => set the value to 512 by MC used (2048 = 4 MC used)
 #  CONFIG.USER_MC_ENABLE_00 {TRUE}    => enable/disable the MC
-#  CONFIG.USER_SAXI_00 {true}         => enable/disable each of the AXI interface/HBM memory
 set_property -dict [list \
   CONFIG.USER_MEMORY_DISPLAY {2048}  \
   CONFIG.USER_CLK_SEL_LIST0 {AXI_00_ACLK}  \
@@ -258,13 +244,11 @@ set_property -dict [list \
 
 #add log_file to remove the warning on screen
 connect_bd_net [get_bd_pins constant_1_zero/dout] [get_bd_pins hbm/APB_0_PENABLE] >> $log_file
-connect_bd_net [get_bd_pins constant_22_zero/dout] [get_bd_pins hbm/APB_0_PADDR] >> $log_file
-connect_bd_net [get_bd_pins constant_1_zero/dout] [get_bd_pins hbm/APB_0_PSEL] >> $log_file
+connect_bd_net [get_bd_pins constant_22_zero/dout] [get_bd_pins hbm/APB_0_PADDR]  >> $log_file
+connect_bd_net [get_bd_pins constant_1_zero/dout] [get_bd_pins hbm/APB_0_PSEL]    >> $log_file
 connect_bd_net [get_bd_pins constant_32_zero/dout] [get_bd_pins hbm/APB_0_PWDATA] >> $log_file
-connect_bd_net [get_bd_pins constant_1_zero/dout] [get_bd_pins hbm/APB_0_PWRITE] >> $log_file
+connect_bd_net [get_bd_pins constant_1_zero/dout] [get_bd_pins hbm/APB_0_PWRITE]  >> $log_file
 
-#connect_bd_net [get_bd_pins refclk_bufg_div3/BUFGCE_O] [get_bd_pins hbm/HBM_REF_CLK_0]
-connect_bd_net [get_bd_pins hbm/HBM_REF_CLK_0] [get_bd_pins refclk_ibufds_inst/IBUF_OUT]  
 connect_bd_net [get_bd_pins refclk_bufg_div4/BUFGCE_O] [get_bd_pins hbm/APB_0_PCLK]
 connect_bd_net [get_bd_pins ARESETN] [get_bd_pins hbm/APB_0_PRESET_N]
 
@@ -281,20 +265,6 @@ for {set i 0} {$i < $HBM_MEM_NUM} {incr i} {
     CONFIG.ADDR_WIDTH {64}        \
   } $cell
   
-
-  #create the axi_register_slice converters
-  set cell [create_bd_cell -type ip -vlnv {xilinx.com:ip:axi_register_slice:*} axi_register_slice_$i ]
-  set_property -dict {     \
-    CONFIG.ADDR_WIDTH {33}              \
-    CONFIG.DATA_WIDTH {256}             \
-    CONFIG.ID_WIDTH {6}                 \
-    CONFIG.REG_AW {10}                  \
-    CONFIG.REG_AR {10}                  \
-    CONFIG.REG_W {10}                   \
-    CONFIG.REG_R {10}                   \
-    CONFIG.REG_B {10}                   \
-    }  $cell
-
   #create the ports
   create_bd_intf_port -mode Slave -vlnv xilinx.com:interface:aximm_rtl:1.0 S_AXI_p$i\_HBM
   set_property -dict [list \
@@ -329,26 +299,23 @@ for {set i 0} {$i < $HBM_MEM_NUM} {incr i} {
   connect_bd_net $port [get_bd_pins axi4_to_axi3_$i/aclk]
   connect_bd_net [get_bd_pins ARESETN] [get_bd_pins axi4_to_axi3_$i/aresetn]
   
-  #connect aaxi4_to_axi3 to axi_register_slice
-  connect_bd_net [get_bd_pins ARESETN] [get_bd_pins axi_register_slice_$i/aresetn]
-  connect_bd_net [get_bd_pins axi4_to_axi3_$i/aclk] [get_bd_pins axi_register_slice_$i/aclk]
-  connect_bd_intf_net [get_bd_intf_pins axi4_to_axi3_$i/M_AXI] [get_bd_intf_pins axi_register_slice_$i/S_AXI]
-  
-  #connect axi_register_slice to hbm
+  #connect aaxi4_to_axi3 to hbm
   #Manage 1 vs 2 digits
   if { $i < 10} {
     connect_bd_net [get_bd_pins ARESETN] [get_bd_pins hbm/AXI_0$i\_ARESET_N]
     connect_bd_net [get_bd_pins axi4_to_axi3_$i/aclk] [get_bd_pins hbm/AXI_0$i\_ACLK]
-    connect_bd_intf_net [get_bd_intf_pins axi_register_slice_$i/M_AXI] [get_bd_intf_pins hbm/SAXI_0$i]
+    connect_bd_intf_net [get_bd_intf_pins axi4_to_axi3_$i/M_AXI] [get_bd_intf_pins hbm/SAXI_0$i]
   } else {
     connect_bd_net [get_bd_pins ARESETN] [get_bd_pins hbm/AXI_$i\_ARESET_N]
     connect_bd_net [get_bd_pins axi4_to_axi3_$i/aclk] [get_bd_pins hbm/AXI_$i\_ACLK]
-    connect_bd_intf_net [get_bd_intf_pins axi_register_slice_$i/M_AXI] [get_bd_intf_pins hbm/SAXI_$i]
+    connect_bd_intf_net [get_bd_intf_pins axi4_to_axi3_$i/M_AXI] [get_bd_intf_pins hbm/SAXI_$i]
   }
 }
 #--------------------- end loop ------------------
 
-# In Vivado 2018.3, there are 32 segments of 256 MiB each in the HBM.
+#This line need to be added after the loop since the S_AXI_p0_HBM_ACLK is not defined before
+connect_bd_net [get_bd_pins hbm/HBM_REF_CLK_0] [get_bd_pins S_AXI_p0_HBM_ACLK]
+
 assign_bd_address >> $log_file
 
 regenerate_bd_layout

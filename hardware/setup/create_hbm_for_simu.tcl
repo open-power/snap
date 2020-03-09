@@ -74,6 +74,7 @@ if {[string equal [get_filesets -quiet sources_1] ""]} {
 
 #====================
 #create the buffer to propagate the clocks
+# UNUSED HERE but kept to not leave the inputs unconnected
 create_bd_cell -type ip -vlnv xilinx.com:ip:util_ds_buf:2.1 refclk_ibufds_inst
 set_property -dict [list CONFIG.C_BUF_TYPE {IBUFDS}] [get_bd_cells refclk_ibufds_inst]
 
@@ -107,7 +108,6 @@ for {set i 0} {$i < $HBM_MEM_NUM} {incr i} {
   #create the axi_clock_converters for each of the HBM interfaces
 
   #create the bram controller + URAM
-      #CONFIG.READ_LATENCY {6}    
   create_bd_cell -type ip -vlnv xilinx.com:ip:axi_bram_ctrl:4.1 axi_bram_ctrl_$i >> $log_file
   set_property -dict [list        \
       CONFIG.DATA_WIDTH {256}     \
@@ -164,7 +164,6 @@ for {set i 0} {$i < $HBM_MEM_NUM} {incr i} {
 }
 #--------------------- end loop ------------------
 
-# In Vivado 2018.3, there are 32 segments of 256 MiB each in the HBM.
 assign_bd_address  >> $log_file
 
 regenerate_bd_layout
