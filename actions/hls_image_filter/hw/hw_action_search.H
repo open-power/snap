@@ -1,5 +1,5 @@
-#ifndef __ACTION_PIXEL_FILTER_H__
-#define __ACTION_PIXEL_FILTER_H__
+#ifndef __ACTION_SEARCH_HLS_H__
+#define __ACTION_SEARCH_HLS_H__
 
 /*
  * Copyright 2017 International Business Machines
@@ -20,11 +20,13 @@
 #include <stdint.h>
 #include <string.h>
 #include <ap_int.h>
+#include <hls_stream.h>
 
-#include "hls_snap.H"
-#include <action_pixel_filtering.h> /* HelloWorld Job definition */
+#include <hls_snap.H>
+#include <action_search.h>
 
-#define PATTERN_SIZE BPERDW
+#define RELEASE_LEVEL           0x00000022
+
 #define CARD_DRAM_SIZE (1 * 1024 *1024 * 1024)  //Maximum size in bytes (depends on the card used)
 #define MAX_NB_OF_BYTES_READ  (4 * 1024)
 #define MAX_NB_OF_WORDS_READ MAX_NB_OF_BYTES_READ/BPERDW
@@ -34,20 +36,19 @@ typedef snapu64_t address_t;
 
 #define PATTERN_SIZE BPERDW
 #define TEXT_SIZE    4096 * MAX_NB_OF_BYTES_READ // used for streaming only
+#define HOST2DDR 0
+#define DDR2HOST 1
 
-//--------------------------------------------------------------------
-// 10: Creation
-#define RELEASE_LEVEL		0x00000010
-
-typedef char word_t[BPERDW];
 //---------------------------------------------------------------------
-// This is generic. Just adapt names for a new action
-// CONTROL is defined and handled by SNAP
-// helloworld_job_t is user defined in hls_helloworld/include/action_change_case.h
 typedef struct {
-	CONTROL Control;	/*  16 bytes */
-	image_filtering_job_t Data;	/* up to 108 bytes */
-	uint8_t padding[SNAP_HLS_JOBSIZE - sizeof(image_filtering_job_t)];
+        CONTROL Control;       /*  16 bytes */
+        search_job_t Data;     /* up to 108 Bytes */
+	uint8_t padding[SNAP_HLS_JOBSIZE - sizeof(search_job_t)];
 } action_reg;
 
-#endif  /* __ACTION_PIXEL_FILTER_H__*/
+int Naive_search (char pat[PATTERN_SIZE], int M, char txt[TEXT_SIZE], int N);
+int KMP_search   (char pat[PATTERN_SIZE], int M, char txt[TEXT_SIZE], int N);
+
+#define CONFIG_HOSTSTYLE_ALGO
+
+#endif  /* __ACTION_SEARCH_HLS_H__ */

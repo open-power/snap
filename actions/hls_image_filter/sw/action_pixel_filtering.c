@@ -72,7 +72,6 @@ static int mmio_read32(struct snap_card *card,
 
 static void grayscale(pixel_t *pixel_in, pixel_t *pixel_out){
 	uint8_t gray=(((pixel_in->red)   * RED_FACTOR)>> 8) + (((pixel_in->green) * GREEN_FACTOR)>> 8) + (((pixel_in->blue)  * BLUE_FACTOR)>> 8); 
-	pixel_out->alpha = pixel_in->alpha;
 	pixel_out->red   = gray;
 	pixel_out->green = gray;
 	pixel_out->blue  = gray;
@@ -89,7 +88,6 @@ static void transform_pixel(pixel_t *pixel_in_add, pixel_t *pixel_out_add) {
   }
   else
   {
-    pixel_out_add->alpha = pixel_in_add->alpha;
     pixel_out_add->red = pixel_in_add->red;
     pixel_out_add->blue = pixel_in_add->blue;
     pixel_out_add->green = pixel_in_add->green;
@@ -109,68 +107,28 @@ static int action_main(struct snap_sim_action *action,
 	size_t i;
 	pixel_t current_pixel, new_pixel;
 	
-	/* debuging common structure*/
-	printf("totalFileSizeFromHeader=%d", js->totalFileSizeFromHeader);
-
 	/* No error checking ... */
 	act_trace("%s(%p, %p, %d) type_in=%d type_out=%d jobsize %ld bytes\n",
 		  __func__, action, job, job_len, js->in.type, js->out.type,
 		  sizeof(*js));
 
-	// Uncomment to dump the action params
-	//__hexdump(stderr, js, sizeof(*js));
-
 	// get the parameters from the structure
 	len = js->in.size;
 	dst = (char *)(unsigned long)js->out.addr;
-	//current_pixel=(pixel_t)(unsigned long)js->in.addr;
 	src = ( char *)(unsigned long)js->in.addr;
-	//src = (char *)js->in.addr;	
-	for ( i = 0; i < 16; i=i+4)
-		{
-	fprintf(stdout, "\nsrc[%lu]  content :     %02x %02x %02x %02x  ",(long unsigned int)i, src[i+3],src[i+2],src[i+1],src[i]);
-		}
-	
-	//src = (unsigned long)js->in.addr;
-	//fprintf(stdout, "src : %s", src);
 	act_trace("   copy %p to %p %ld bytes\n", src, dst, len);
 
-// software action processing : Convert all char to lower case
-//        for ( i = 0; i < len; i++ ) {
-//            if (src[i] >= 'A' && src[i] <= 'Z')
-//                dst[i] = src[i] + ('a' - 'A');
-//            else
-//                            dst[i] = src[i];
-//      }
-
-/*for ( i = 0; i < len; i++)
-		{
-		if ( i < HEADER_BYTES)
-			dst[i] = src[i];
-		}
-*/
-		
-//for ( i = HEADER_BYTES; i < len; i = i +4)
-  for ( i = 0; i < len; i = i +4)
-//  for ( i = HEADER_BYTES; i < 157; i = i +4)
-		{
-		current_pixel.alpha = src[i+3];
+	for ( i = 0; i < len; i = i +3)  {
 		current_pixel.red   = src[i+2];
 		current_pixel.green = src[i+1];
 		current_pixel.blue  = src[i];
 		transform_pixel(&current_pixel, &new_pixel);
 				
-if ( (i < 16)||((i>len-16)&&(i<len)) )
-{
-  fprintf(stdout, "\n%10lu pixel content :     %02x %02x %02x %02x  ",(long unsigned int)i, current_pixel.alpha,current_pixel.red,current_pixel.green,current_pixel.blue);
-  fprintf(stdout,   "%10lu  new_pixel content :%02x %02x %02x %02x"  ,  (long unsigned int)i, new_pixel.alpha,    new_pixel.red,    new_pixel.green,    new_pixel.blue);
-}		  
-		dst[i+3] = new_pixel.alpha;
 		dst[i+2] = new_pixel.red;
 		dst[i+1] = new_pixel.green;
 		dst[i]   = new_pixel.blue;
-		}
-fprintf(stdout, "\n");		
+	}
+	fprintf(stdout, "\n");		
 	// update the return code to the SNAP job manager
 	action->job.retc = SNAP_RETC_SUCCESS;
 	return 0;

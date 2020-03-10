@@ -38,8 +38,8 @@ endif
 
 # This is solution specific. Check if we can replace this by generics too.
 
-snap_image_filter: action_pixel_filtering.o
-snap_image_filter_objs = action_pixel_filtering.o
+snap_image_filter: action_pixel_filtering.o params.o bmp.o
+snap_image_filter_objs = action_pixel_filtering.o params.o bmp.o
 
 projs += snap_image_filter
 

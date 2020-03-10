@@ -37,7 +37,7 @@ endif
 endif
 
 # This is solution specific. Check if we can replace this by generics too.
-SOLUTION_NAME ?= mage_filtering
+SOLUTION_NAME ?= image_filtering
 SOLUTION_DIR ?= hlsPixelfilter
 srcs += action_pixel_filter.cpp 
 
