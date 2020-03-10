@@ -65,8 +65,8 @@ Note : X86 environment is required as Xilinx doesn't provide code or POWER platf
 
 Connect the Xilinx Platform Cable with the card as described in the card's reference manual.
 Here are somes examples of card connection situations :
-* The Alpha-Data ADKU3 and AD9V3 have an on-board connector to plug the Xilinx Platform Cable USB II ribbon.
-* The Alpha-Data AD8k5 has an embedded Xilinx compatible programmer, so only a micro USB cable is required. 
+* The Alpha-Data ADKU3 has an on-board connector to plug the Xilinx Platform Cable USB II ribbon.
+* The Alpha-Data AD8K5, AD9V3, AD9H3 and AD9H7 have an embedded Xilinx compatible programmer, so only a micro USB cable connected to the front panel of the card is required. 
 * The Nallatech N250S and N250SP require an **additional Development & Debug Breakout Board** to interface with the Xilinx Platform Cable USB II.
 
 ## 1. Programming the flash device with a .mcs file 

@@ -55,6 +55,7 @@
 #define SNAP_HLS_JOBSIZE SNAP_JOBSIZE
 
 typedef ap_uint<MEMDW> snap_membus_t;  /* snap memory access */
+typedef ap_uint<MEMDW/2> snap_HBMbus_t;  /* snap HBM memory access */
 typedef ap_uint<64> snapu64_t;
 typedef ap_uint<32> snapu32_t;
 typedef ap_uint<16> snapu16_t;
