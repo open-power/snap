@@ -165,11 +165,11 @@ static int call_FPGA_Action( BMPImage *Image)
 	// Fill the stucture of data exchanged with the action
 	
 	/* Display the parameters that will be used for the example */
-	printf("PARAMETERS:\n"
+	/*printf("PARAMETERS:\n"
 	       "  addr_in:     %016llx\n"
 	       "  addr_out:    %016llx\n",
 	       (long long)addr_in,
-	       (long long)addr_out);
+	       (long long)addr_out);*/
 
 	//
 	snap_prepare_image_filter(&cjob, &mjob,
