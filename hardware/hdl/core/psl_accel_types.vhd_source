@@ -106,6 +106,21 @@ PACKAGE psl_accel_types IS
     CONSTANT C_HOST_AXI_RUSER_WIDTH  : integer  := 1;
     CONSTANT C_HOST_AXI_BUSER_WIDTH  : integer  := 1;
 
+     -- Parameters for HBM ports
+     --CHANGE_HBM_INTERFACES_NUMBER
+    CONSTANT C_AXI_CARD_HBM_ADDR_WIDTH   : INTEGER := 64; --64 for real - 15 for simu
+#ifdef CONFIG_REPLACE_HBM_BY_BRAM
+    CONSTANT C_AXI_CARD_HBM_SIM_ADDR_WIDTH   : INTEGER := 15; --64 for real - 15 for simu
+#else
+    CONSTANT C_AXI_CARD_HBM_SIM_ADDR_WIDTH   : INTEGER := 64; --64 for real - 15 for simu
+#endif
+    CONSTANT C_AXI_CARD_HBM_ID_WIDTH     : INTEGER := 1;
+    CONSTANT C_AXI_CARD_HBM_AWUSER_WIDTH : INTEGER := 1;
+    CONSTANT C_AXI_CARD_HBM_DATA_WIDTH   : INTEGER := 256;
+    CONSTANT C_AXI_CARD_HBM_WUSER_WIDTH  : INTEGER := 1;
+    CONSTANT C_AXI_CARD_HBM_ARUSER_WIDTH : INTEGER := 1;
+    CONSTANT C_AXI_CARD_HBM_RUSER_WIDTH  : INTEGER := 1;
+    CONSTANT C_AXI_CARD_HBM_BUSER_WIDTH  : INTEGER := 1;
 
 
     CONSTANT INT_BITS                : integer :=  3;      -- number of bits required to represent the seven interrupt

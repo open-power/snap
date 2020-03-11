@@ -85,10 +85,14 @@ The PSL differs whether we have a POWER8 with CAPI 1.0 or a POWER9 with CAPI 2.0
 
 In any case, to get the latest CAPI board support and PSL download, visit **IBM Portal for OpenPOWER** at
 
-https://www.ibm.com/systems/power/openpower
+https://www.ibm.com/systems/power/openpower/
 
 From the menu, select "CAPI"->"Coherent Accelerator Processor Interface (CAPI)" or directly click the "CAPI" icon to go to the CAPI section.
 Then download the appropriate files depending on your target system being POWER8 (CAPI 1.0) or POWER9 (CAPI 2.0).
+
+Alternatively, the following link will provide direct access:
+
+https://www-355.ibm.com/systems/power/openpower/posting.xhtml?postingId=442C0B0844708F7E8525810200477C78
 
 #### POWER8
 CAPI board support and PSL are provided combined in a Vivado DCP (**D**esign **C**heck**P**oint).

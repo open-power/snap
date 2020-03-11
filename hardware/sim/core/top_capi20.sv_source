@@ -38,7 +38,7 @@ module top (
              input           ah_jcack_top,
              input  [0:63]   ah_jerror_top,
              input  [0:3]    ah_brlat_top,
-//             input           ah_jyield,
+       //      input           ah_jyield,
              input           ah_tbreq_top,
              input           ah_paren_top,
              inout           ha_mmval_top,
@@ -596,7 +596,7 @@ module top (
              ah_jcack_top,
              ah_jerror_top,
              ah_brlat_top,
-//             ah_jyield,
+        //     ah_jyield,
              ah_tbreq_top,
              ah_paren_top,
              ha_mmval_top,
@@ -715,7 +715,7 @@ module top (
     ah_jerror_top <= ah_jerror;
     ah_jdone_top <= ah_jdone;
     ah_brlat_top <= ah_brlat;
-//    ah_jyield_top <= ah_jyield;
+  //  ah_jyield_top <= ah_jyield;
     ah_tbreq_top <= ah_tbreq;
     ah_paren_top <= ah_paren;
     ah_cvalid_top <= ah_cvalid;
@@ -1187,6 +1187,15 @@ module top (
 #endif
 #endif
 #endif
+#ifdef CONFIG_ENABLE_HBM
+  // SDRAM System Clock generation
+  reg       refclk300_p;
+  initial   refclk300_p <= 0;
+  // 300.MHz DDR4 system clock
+  always begin
+     refclk300_p = !refclk300_p; #(3.332ns / 2.0); // a line can not start with "#", because SNAP is unsing the C preprocessor
+  end
+#endif
 #if CONFIG_ENABLE_NVME
   // NVME Reference Clock generation
   reg refclk_nvme_p;
@@ -1195,6 +1204,28 @@ module top (
   // 100MHz NVME reference clock
   always begin
      refclk_nvme_p = !refclk_nvme_p; #(10.0ns / 2); // a line can not start with "#", because SNAP is unsing the C preprocessor
+  end
+#endif
+#if defined(CONFIG_ENABLE_ETHERNET) && !defined(CONFIG_ENABLE_ETH_LOOP_BACK)
+  wire  eth_rc0_rxtxp;
+  wire  eth_rc0_rxtxn;
+  wire  eth_rc1_rxtxp;
+  wire  eth_rc1_rxtxn;
+  wire  eth_rc2_rxtxp;
+  wire  eth_rc2_rxtxn;
+  wire  eth_rc3_rxtxp;
+  wire  eth_rc3_rxtxn;
+
+  // ETHERNET Reference Clock generation
+  reg initclk_eth_p;
+  reg refclk_eth_p;
+  initial initclk_eth_p <= 0;
+  initial refclk_eth_p <= 0;
+
+  // 100MHz Ethernet reference clock
+  always begin
+     initclk_eth_p = !initclk_eth_p; #(10.0ns / 2); // a line can not start with "#", because SNAP is unsing the C preprocessor
+     refclk_eth_p = !refclk_eth_p; #(10.0ns / 2); // a line can not start with "#", because SNAP is unsing the C preprocessor
   end
 #endif
   ////////////////////////////////////////////////////////////
@@ -1263,9 +1294,14 @@ module top (
     .ah_jdone(ah_jdone),
     .ah_jcack(ah_jcack),
     .ah_jerror(ah_jerror),
-//    .ah_jyield(ah_jyield),    - mcp004 does not seem to have this port
+  //  .ah_jyield(ah_jyield),    //- mcp004 does not seem to have this port
     .ah_tbreq(ah_tbreq),
     .ah_paren(ah_paren),
+#ifdef CONFIG_ENABLE_HBM
+    // HBM
+    .refclk300_p           (refclk300_p),
+    .refclk300_n           (~refclk300_p),
+#endif
 #ifdef CONFIG_ENABLE_DDR3
     // DDR3
     .c0_sys_clk_p           (sys_clk_p),
@@ -1340,6 +1376,28 @@ module top (
     .pcie_rc1_rxp(pcie_rc1_rxp),
     .pcie_rc1_txn(pcie_rc1_txn),
     .pcie_rc1_txp(pcie_rc1_txp),
+#endif
+#if defined(CONFIG_ENABLE_ETHERNET) && !defined(CONFIG_ENABLE_ETH_LOOP_BACK)
+//    .init_clk_n(initclk_eth_p),
+//    .init_clk_p(~initclk_eth_p),
+    .gt_ref_clk_n(refclk_eth_p),
+    .gt_ref_clk_p(~refclk_eth_p),
+    .gt_rx_gt_port_0_n(eth_rc0_rxtxn),
+    .gt_rx_gt_port_0_p(eth_rc0_rxtxp),
+    .gt_rx_gt_port_1_n(eth_rc1_rxtxn),
+    .gt_rx_gt_port_1_p(eth_rc1_rxtxp),
+    .gt_rx_gt_port_2_n(eth_rc2_rxtxn),
+    .gt_rx_gt_port_2_p(eth_rc2_rxtxp),
+    .gt_rx_gt_port_3_n(eth_rc3_rxtxn),
+    .gt_rx_gt_port_3_p(eth_rc3_rxtxp),
+    .gt_tx_gt_port_0_n(eth_rc0_rxtxn),
+    .gt_tx_gt_port_0_p(eth_rc0_rxtxp),
+    .gt_tx_gt_port_1_n(eth_rc1_rxtxn),
+    .gt_tx_gt_port_1_p(eth_rc1_rxtxp),
+    .gt_tx_gt_port_2_n(eth_rc2_rxtxn),
+    .gt_tx_gt_port_2_p(eth_rc2_rxtxp),
+    .gt_tx_gt_port_3_n(eth_rc3_rxtxn),
+    .gt_tx_gt_port_3_p(eth_rc3_rxtxp),
 #endif
     .ha_pclock(ha_pclock),
     .pci_user_reset(~sys_reset_n_q),

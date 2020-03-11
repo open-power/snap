@@ -39,6 +39,14 @@ extern "C" {
 #define SNAP_ADDRTYPE_CARD_DRAM		0x0001 /* card specific */
 #define SNAP_ADDRTYPE_NVME		0x0002 /* card specific */
 #define SNAP_ADDRTYPE_zzz		0x0003 /* ? */
+#define SNAP_ADDRTYPE_HBM_P0            0x0010 /* card specific HBM Port 0 */
+#define SNAP_ADDRTYPE_HBM_P1            0x0011 /* card specific HBM Port 1 */
+#define SNAP_ADDRTYPE_HBM_P2            0x0012 /* card specific HBM Port 2 */
+#define SNAP_ADDRTYPE_HBM_P3            0x0103 /* card specific HBM Port 3 */
+#define SNAP_ADDRTYPE_HBM_P4            0x0104 /* card specific HBM Port 4 */
+#define SNAP_ADDRTYPE_HBM_P5            0x0105 /* card specific HBM Port 5 */
+#define SNAP_ADDRTYPE_HBM_P6            0x0106 /* card specific HBM Port 6 */
+#define SNAP_ADDRTYPE_HBM_P7            0x0107 /* card specific HBM Port 7 */
 
 #define SNAP_ADDRFLAG_END		0x0001 /* last element in the list */
 #define SNAP_ADDRFLAG_ADDR		0x0002 /* this one is an address */
