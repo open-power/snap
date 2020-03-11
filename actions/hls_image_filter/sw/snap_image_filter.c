@@ -161,7 +161,7 @@ static int call_FPGA_Action( BMPImage *Image)
         if (addr_out == NULL) exit(0);
         memset(addr_out, 0, input_size);
 	
-	
+
 	// Fill the stucture of data exchanged with the action
 	
 	/* Display the parameters that will be used for the example */
