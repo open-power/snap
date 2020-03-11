@@ -35,7 +35,7 @@
 #include <malloc.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
-#include <sys/time.h>
+#include <time.h>
 #include <assert.h>
 
 #include <snap_tools.h>
@@ -52,6 +52,19 @@ int verbose_flag = 0, i=0;
 uint32_t j=0;
 
 STRparam *params = NULL;
+
+struct timeval top_chrono;
+
+static void start_chrono() {
+	gettimeofday(&top_chrono, NULL);
+}
+
+static void stop_chrono() {
+	struct timeval stop_chrono;
+	gettimeofday(&stop_chrono, NULL);
+	long long duration = timediff_usec(&stop_chrono,&top_chrono);
+	fprintf(stderr, "elaps time %lld micro seconds.\n", duration);
+}
 
 // Extraction of the size and first pixel location from Header
 /*tatic	void read_header(uint8_t *ibuffer, uint32_t *bmp_size, uint8_t *relFirstPixelLoc, uint32_t *pixel_map_type)
@@ -78,7 +91,7 @@ static void snap_prepare_image_filter(struct snap_job *cjob,
 {
 	assert(sizeof(*mjob) <= SNAP_JOBSIZE);
 	memset(mjob, 0, sizeof(*mjob));
-        __hexdump(stdout, addr_in, 200);
+
 	// Setting input params : where image.bmp is located in host memory
 	snap_addr_set(&mjob->in, addr_in, size_in, type_in,
 		      SNAP_ADDRFLAG_ADDR | SNAP_ADDRFLAG_SRC);
@@ -112,7 +125,7 @@ static int call_FPGA_Action( BMPImage *Image)
 	unsigned long timeout = 6000;
 		
 
-        __hexdump(stdout, input_data, 200);
+    //__hexdump(stdout, input_data, 200);
 
 	parms.type_in = SNAP_ADDRTYPE_HOST_DRAM;
 	// reading the first bytes of the pixel Map to check file size and first pixels values
@@ -122,8 +135,6 @@ static int call_FPGA_Action( BMPImage *Image)
 	memcpy ( actionBuff, input_data, input_size);
 	addr_in = (void *)actionBuff;
 	
-	__hexdump(stdout, actionBuff, 200);
-        __hexdump(stdout, addr_in, 200);
 	// Allocate the card that will be used
 	snprintf(device, sizeof(device)-1, "/dev/cxl/afu%d.0s", card_no);
 	card = snap_card_alloc_dev(device, SNAP_VENDOR_ID_IBM,
@@ -165,10 +176,9 @@ static int call_FPGA_Action( BMPImage *Image)
 			     (void *)addr_in,  input_size, SNAP_ADDRTYPE_HOST_DRAM,
 			     (void *)addr_out, input_size, SNAP_ADDRTYPE_HOST_DRAM,
 			     input_size, 0, 0);
-
+	start_chrono();
 	rc = snap_action_sync_execute_job(action, &cjob, timeout);
-	
-	__hexdump(stdout, addr_out, 200);
+	stop_chrono();
 
 	if (params->output != NULL) {
 		pFileOut=fopen(params->output, "w");
