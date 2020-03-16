@@ -382,34 +382,35 @@ choice
 		select DISABLE_NVME
 		select ENABLE_ACTION_CLK_DERATE
 	
-    config HLS_VECTOR_GENERATOR
+	config HLS_VECTOR_GENERATOR
 		bool "HLS Vector Generator example"
-        help
-            This is a simple example that generates a vector from FPGA:
-            - HOST calls an FPGA action to generate a vector of size N
-            This example is written in C and compiled with HLS
-        select ENABLE_HLS_SUPPORT
-        select DISABLE_SDRAM_AND_BRAM
-        select DISABLE_NVME
+        	help
+            	  This is a simple example that generates a vector from FPGA:
+            	  - HOST calls an FPGA action to generate a vector of size N
+            	  This example is written in C and compiled with HLS
+        	select ENABLE_HLS_SUPPORT
+        	select DISABLE_SDRAM_AND_BRAM
+        	select DISABLE_NVME
 
-    config HLS_PARALLEL_MEMCPY
+    	config HLS_PARALLEL_MEMCPY
 		bool "HLS Parallel Memcpy example"
-        help
-            This example is written in C and compiled with HLS
-        select ENABLE_HLS_SUPPORT
-        select DISABLE_SDRAM_AND_BRAM
-        select DISABLE_NVME
+        	help
+            	  This example is written in C and compiled with HLS
+        	select ENABLE_HLS_SUPPORT
+        	select DISABLE_SDRAM_AND_BRAM
+        	select DISABLE_NVME
 
-    config HLS_RX100G
+    	config HLS_RX100G
 		bool "HLS 100G receiver"
-        help
-            This example is written in C and compiled with HLS
-        select ENABLE_HLS_SUPPORT
-        select ENABLE_ETHERNET
-        select FORCE_HBM
-        select DISABLE_SDRAM_AND_BRAM
-        select DISABLE_NVME
-	select ENABLE_SIMU_WO_ETH 
+		depends on AD9H3
+        	help
+            	  This example is written in C and compiled with HLS
+        	select ENABLE_HLS_SUPPORT
+        	select ENABLE_ETHERNET
+        	select FORCE_HBM
+        	select DISABLE_SDRAM_AND_BRAM
+        	select DISABLE_NVME
+		select ENABLE_SIMU_WO_ETH 
 endchoice
 
 config ENABLE_HLS_SUPPORT
