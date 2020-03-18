@@ -38,9 +38,6 @@ typedef unsigned char uint8_t;
 #define GREEN_FACTOR 183
 #define BLUE_FACTOR 18
 
-//hls::stream<unsigned char> in_stream;
-//hls::stream<unsigned char> out_stream;
-
 
 static void grayscale(pixel_t *pixel_in, pixel_t *pixel_out){
 
@@ -54,9 +51,9 @@ static void grayscale(pixel_t *pixel_in, pixel_t *pixel_out){
   return;
 }
 
-static void transform_pixel(pixel_t *pixel_in_add, pixel_t *pixel_out_add) {
+static void transformPixel(pixel_t *pixel_in_add, pixel_t *pixel_out_add) {
 
-#pragma HLS INLINE 
+#pragma HLS INLINE
 
   if (pixel_in_add->red < pixel_in_add->green || pixel_in_add->red < pixel_in_add->blue)
   {
@@ -75,9 +72,9 @@ static void transform_pixel(pixel_t *pixel_in_add, pixel_t *pixel_out_add) {
 
 
 // READ DATA FROM MEMORY
-static void r_burst_of_data_m(snap_membus_t *din_gmem,
+static void rBurstOfDataMem(snap_membus_t *din_gmem,
 					 snapu64_t input_address,
-					 unsigned char *buffer )
+					 unsigned char *buffer)
 {
 	#pragma HLS INLINE
 	memcpy((char *)buffer, (snap_membus_t  *) (din_gmem + input_address), BPERDW);
@@ -85,23 +82,24 @@ static void r_burst_of_data_m(snap_membus_t *din_gmem,
 
 
 // WRITE DATA TO MEMORY
-static void w_burst_of_data_m(snap_membus_t *dout_gmem,
+static void wBurstOfDataMem(snap_membus_t *dout_gmem,
 					 snapu64_t input_address,
 					 unsigned char* buffer)
 {
 	#pragma HLS INLINE
-	memcpy((snap_membus_t *)(dout_gmem + input_address), (char *) buffer, BPERDW );
+	memcpy((snap_membus_t *)(dout_gmem + input_address), (char *) buffer, BPERDW);
 }
 
 
 /*******************************************************/
 /********* READ on pixel in sttrzeam  ******************/
 /*******************************************************/
-static void strm_read(hls::stream<unsigned char> &in_stream, pixel_t *pixel )
+static void strmRead(hls::stream<unsigned char> &in_stream, pixel_t *pixel )
 {
 
 #pragma HLS INLINE
-#pragma HLS stream depth=8 variable=in_stream
+#pragma HLS stream depth=16 variable=in_stream
+#pragma HLS PIPELINE
 	pixel->red = in_stream.read();
 	pixel->green = in_stream.read();
 	pixel->blue = in_stream.read();
@@ -110,74 +108,65 @@ static void strm_read(hls::stream<unsigned char> &in_stream, pixel_t *pixel )
 /******************************************************/
 /********* Write on pixel in stream  ******************/
 /******************************************************/
-static void strm_write(hls::stream<unsigned char> &out_stream, pixel_t *pixel )
+static void strmWrite(hls::stream<unsigned char> &out_stream, pixel_t *pixel )
 {
 
 #pragma HLS INLINE 
 #pragma HLS stream depth=8 variable=out_stream
+#pragma HLS PIPELINE
 	out_stream << pixel->red;
 	out_stream << pixel->green;
 	out_stream << pixel->blue;
 }
 
 
-static void  strm_in_write(hls::stream<unsigned char> &in_stream, snap_membus_t *din_gmem, action_reg *act_reg, uint64_t idx )
+static void strmInWrite(hls::stream<unsigned char> &in_stream, snap_membus_t *din_gmem, action_reg *act_reg, uint64_t idx, uint32_t nbPixel )
 {
 	unsigned char  elt[BPERDW];
-	uint32_t bytes_to_transfer;
-	uint32_t nb;
-	snapu32_t   InputSize;
+	uint32_t nb, done;
+	int i;
 
-#pragma HLS INLINE // dataflow
-
-    InputSize    = act_reg->Data.in.size;
-    nb = InputSize;
-    memset(elt, '\0', BPERDW);
-    strm_in_w_loop:
-	while ( nb > 0 ) {
-		bytes_to_transfer = MIN(nb, BPERDW);
-		r_burst_of_data_m(din_gmem, (snapu64_t)idx, elt);
-		strm_in_for_loop:
-		for ( int i = 0; i < bytes_to_transfer; i++ ) {
-		#pragma HLS PIPELINE
-			in_stream.write(elt[i]);
+	#pragma HLS INLINE // dataflow
+    nb    = act_reg->Data.in.size / BPERDW;
+    L1:
+	//#pragma HLS PIPELINE
+	for ( int j = 0; j < nb; j ++) {
+		rBurstOfDataMem(din_gmem, (snapu64_t)idx, elt );
+		L11:
+		for ( i = 0; i < BPERDW; i++ ) {
+			#pragma HLS UNROLL factor 64
+			done = j*BPERDW + i;
+			if ( done < nbPixel ) in_stream.write(elt[i]);
 		}
-		nb = nb - bytes_to_transfer;
 		idx++;
 	}
 }
 
-static void  strm_out_write(hls::stream<unsigned char> &out_stream, snap_membus_t *dout_gmem, action_reg *act_reg, uint64_t odx )
+static void  strmOutWrite(hls::stream<unsigned char> &out_stream, snap_membus_t *dout_gmem, action_reg *act_reg, uint64_t odx, uint32_t nbPixel )
 {
-	uint32_t bytes_to_transfer;
 	unsigned char dst[BPERDW];
-	uint32_t nb;
+	uint32_t nb, done;
 
-#pragma HLS INLINE  // dataflow 
-
-	nb    = act_reg->Data.out.size;
-	memset(dst, '\0', BPERDW);
-	strm_out_w_loop:
-	while ( nb > 0 ) {
-		bytes_to_transfer = MIN(nb, BPERDW);
-		strm_out_for_loop:
-		for ( int i = 0; i < bytes_to_transfer; i++ ) {
-		#pragma HLS PIPELINE
-			out_stream >> dst[i];
-			//printf("%x ", (unsigned char)dst[i] );dst_membus
+	#pragma HLS INLINE  // dataflow
+	nb    = act_reg->Data.out.size / BPERDW ;
+	L2:
+	//#pragma HLS PIPELINE
+	for ( int j = 0; j < nb; j ++) {
+		L21:
+		for ( int i = 0; i < BPERDW; i++ ) {
+			#pragma HLS UNROLL factor 64
+			done = j*BPERDW + i;
+			if ( done < nbPixel ) out_stream.read(dst[i]);
 		}
-		w_burst_of_data_m(dout_gmem, odx, dst);
+		wBurstOfDataMem(dout_gmem, odx, dst);
 		odx++;
-		nb = nb - bytes_to_transfer;
 	}
 }
-
-
 
 //----------------------------------------------------------------------
 //--- MAIN PROGRAM -----------------------------------------------------
 //----------------------------------------------------------------------
-static int process_action(snap_membus_t *din_gmem,
+static int pAction(snap_membus_t *din_gmem,
 	      snap_membus_t *dout_gmem,
 	      action_reg *act_reg,
 		  uint64_t i_idx, uint64_t o_idx,
@@ -186,27 +175,29 @@ static int process_action(snap_membus_t *din_gmem,
     pixel_t current_pixel, new_pixel;
     hls::stream<unsigned char> in_stream;
     hls::stream<unsigned char> out_stream;
+    uint32_t nb, nbPixel;
+    int i;
 
     //remainingPayLoadSize = MIN(act_reg->Data.in.size,9600);
 	#ifdef NO_SYNTH
 	  fprintf(stdout, "\ni_idx=%016llu o_idx=%016llu\n",i_idx, o_idx);
 	#endif
 
+	//#pragma HLS DATAFLOW
+	//#pragma HLS INLINE region // bring loops in sub-functions to this DATAFLOW region
+	nb = remainingPayLoadSize;
+	nbPixel = (nb / 3 )* 3;
 
-	#pragma HLS DATAFLOW
-	#pragma HLS INLINE region // bring loops in sub-functions to this DATAFLOW region
+	strmInWrite(in_stream, din_gmem, act_reg, i_idx, nbPixel);
+	L0:
+	for ( i =0; i < nbPixel; i+=3) {
+		//#pragma HLS PIPELINE
+		strmRead(in_stream, &current_pixel);
+		transformPixel(&current_pixel, &new_pixel);
+		strmWrite(out_stream, &new_pixel);
 
-	strm_in_write(in_stream, din_gmem, act_reg, i_idx);
-    main_loop:
-    while (remainingPayLoadSize > 0) {
-	//#pragma HLS PIPELINE
-		strm_read(in_stream, &current_pixel);
-		transform_pixel(&current_pixel, &new_pixel);
-		strm_write(out_stream, &new_pixel);
-		//strm_write(&current_pixel);
-		remainingPayLoadSize-=3;
     }
-    strm_out_write(out_stream, dout_gmem, act_reg, o_idx);
+    strmOutWrite(out_stream, dout_gmem, act_reg, o_idx, nbPixel);
 
     return SNAP_RETC_SUCCESS;
 }
@@ -248,18 +239,18 @@ void hls_action(snap_membus_t *din_gmem,
     // Test used to exit the action if no parameter has been set.
     // Used for the discovery phase of the cards */
     switch (act_reg->Control.flags) {
-    case 0:
-	Action_Config->action_type = IMAGE_FILTERING_ACTION_TYPE; //TO BE ADAPTED
-	Action_Config->release_level = RELEASE_LEVEL;
-	act_reg->Control.Retc = 0xe00f;
-	return;
-	break;
+		case 0:
+		Action_Config->action_type = IMAGE_FILTERING_ACTION_TYPE; //TO BE ADAPTED
+		Action_Config->release_level = RELEASE_LEVEL;
+		act_reg->Control.Retc = 0xe00f;
+		return;
+		break;
     default:
     	/* byte address received need to be aligned with port width */
 		i_idx = act_reg->Data.in.addr >> ADDR_RIGHT_SHIFT;
 		o_idx = act_reg->Data.out.addr >> ADDR_RIGHT_SHIFT;
 		remainingPayLoadSize = act_reg->Data.in.size;
-		act_reg->Control.Retc = process_action(din_gmem, dout_gmem, act_reg, i_idx, o_idx, remainingPayLoadSize);
+		act_reg->Control.Retc = pAction(din_gmem, dout_gmem, act_reg, i_idx, o_idx, remainingPayLoadSize);
 	break;
     }
 }
@@ -312,11 +303,11 @@ int main(void)
     act_reg.Control.flags = 0x1; /* just not 0x0 */
 
     act_reg.Data.in.addr = 0;
-    act_reg.Data.in.size = size;
+    act_reg.Data.in.size = size/BPERDW * BPERDW + BPERDW;
     act_reg.Data.in.type = SNAP_ADDRTYPE_HOST_DRAM;
 
     act_reg.Data.out.addr = 0;
-    act_reg.Data.out.size = size;
+    act_reg.Data.out.size = size/BPERDW * BPERDW + BPERDW;;
     act_reg.Data.out.type = SNAP_ADDRTYPE_HOST_DRAM;
 
     printf("\n Action call \n");

@@ -128,6 +128,7 @@ static int call_FPGA_Action( BMPImage *Image)
     //__hexdump(stdout, input_data, 200);
 
 	parms.type_in = SNAP_ADDRTYPE_HOST_DRAM;
+	input_size = (input_size / 64)*64+64;
 	// reading the first bytes of the pixel Map to check file size and first pixels values
 	actionBuff = snap_malloc(input_size); //64Bytes aligned malloc  // adding 64 bytes to anticipate alignment
 	if (actionBuff == NULL)
