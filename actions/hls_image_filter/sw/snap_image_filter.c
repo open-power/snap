@@ -119,8 +119,9 @@ static int call_FPGA_Action( BMPImage *Image)
 	snap_action_flag_t action_irq = (SNAP_ACTION_DONE_IRQ | SNAP_ATTACH_IRQ);
 	//snap_action_flag_t action_irq  = 0;
 	void *addr_in = NULL, *addr_out = NULL;
-	uint32_t input_size = Image->header.image_size_bytes;
+	uint32_t imageSize = Image->header.image_size_bytes;
 	uint32_t *input_data = (uint32_t *)Image->data;
+	uint32_t dataSize;
 	int rc =0;
 	unsigned long timeout = 6000;
 		
@@ -128,12 +129,12 @@ static int call_FPGA_Action( BMPImage *Image)
     //__hexdump(stdout, input_data, 200);
 
 	parms.type_in = SNAP_ADDRTYPE_HOST_DRAM;
-	input_size = (input_size / 64)*64+64;
+	dataSize = (imageSize / 64)*64+64;
 	// reading the first bytes of the pixel Map to check file size and first pixels values
-	actionBuff = snap_malloc(input_size); //64Bytes aligned malloc  // adding 64 bytes to anticipate alignment
+	actionBuff = snap_malloc(dataSize); //64Bytes aligned malloc  // adding 64 bytes to anticipate alignment
 	if (actionBuff == NULL)
 		exit(0);
-	memcpy ( actionBuff, input_data, input_size);
+	memcpy ( actionBuff, input_data, dataSize);
 	addr_in = (void *)actionBuff;
 	
 	// Allocate the card that will be used
@@ -158,9 +159,9 @@ static int call_FPGA_Action( BMPImage *Image)
 	}
 
 	// prepare output buffer
-	addr_out = snap_malloc(input_size); //64Bytes aligned malloc containing pixels only (no header)
+	addr_out = snap_malloc(dataSize); //64Bytes aligned malloc containing pixels only (no header)
         if (addr_out == NULL) exit(0);
-        memset(addr_out, 0, input_size);
+        memset(addr_out, 0, dataSize);
 	
 
 	// Fill the stucture of data exchanged with the action
@@ -174,9 +175,9 @@ static int call_FPGA_Action( BMPImage *Image)
 
 	//
 	snap_prepare_image_filter(&cjob, &mjob,
-			     (void *)addr_in,  input_size, SNAP_ADDRTYPE_HOST_DRAM,
-			     (void *)addr_out, input_size, SNAP_ADDRTYPE_HOST_DRAM,
-			     input_size, 0, 0);
+			     (void *)addr_in, dataSize, SNAP_ADDRTYPE_HOST_DRAM,
+			     (void *)addr_out,dataSize, SNAP_ADDRTYPE_HOST_DRAM,
+			     dataSize, 0, 0);
 	start_chrono();
 	rc = snap_action_sync_execute_job(action, &cjob, timeout);
 	stop_chrono();
@@ -184,7 +185,7 @@ static int call_FPGA_Action( BMPImage *Image)
 	if (params->output != NULL) {
 		pFileOut=fopen(params->output, "w");
 		fwrite(Image, sizeof(Image->header), 1, pFileOut);
-		fwrite(addr_out, input_size, 1, pFileOut);;
+		fwrite(addr_out, imageSize, 1, pFileOut);
 		fclose(pFileOut);
 	}
 	return(rc);
