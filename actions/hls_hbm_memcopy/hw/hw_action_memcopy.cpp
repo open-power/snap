@@ -338,7 +338,7 @@ static void process_action(snap_membus_t *din_gmem,
 		    read_burst_of_data_from_HBM(d_hbm_p0, d_hbm_p1, 
                         d_hbm_p2, d_hbm_p3, d_hbm_p4, d_hbm_p5, d_hbm_p6, d_hbm_p7,
 			act_reg->Data.in.type,
-			(InputAddress + address_xfer_offset) >> ADDR_RIGHT_SHIFT256, buf_gmem, xfer_size);
+			(InputAddress + address_xfer_offset) >> ADDR_RIGHT_SHIFT_256, buf_gmem, xfer_size);
 
         	if (act_reg->Data.out.type == SNAP_ADDRTYPE_HOST_DRAM)
 		     write_burst_of_data_to_mem(dout_gmem,
@@ -348,7 +348,7 @@ static void process_action(snap_membus_t *din_gmem,
 		     write_burst_of_data_to_HBM(d_hbm_p0, d_hbm_p1,
                         d_hbm_p2, d_hbm_p3, d_hbm_p4, d_hbm_p5, d_hbm_p6, d_hbm_p7,
 			act_reg->Data.out.type,
-			(OutputAddress + address_xfer_offset) >> ADDR_RIGHT_SHIFT256, buf_gmem, xfer_size);
+			(OutputAddress + address_xfer_offset) >> ADDR_RIGHT_SHIFT_256, buf_gmem, xfer_size);
 
 		action_xfer_size -= xfer_size;
 		address_xfer_offset += xfer_size;
