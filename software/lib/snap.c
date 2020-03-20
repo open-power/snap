@@ -924,6 +924,7 @@ int snap_action_completed(struct snap_action *action, int *rc, int timeout)
 			if ((action_data & ACTION_CONTROL_IDLE) == ACTION_CONTROL_IDLE)
 				break;
 			dt = (int)(tget_ms() - t0);
+			usleep(100);  // slow down the polling - 100us
 		}
 	}
 	if (rc)

@@ -211,15 +211,21 @@ choice
                     SNAP String Match (Regular Expression Match) Tool
                 select DISABLE_SDRAM_AND_BRAM
                 select DISABLE_NVME
+	        select DISABLE_HBM
+	        select DISABLE_ETHERNET
 
         config HDL_EXAMPLE
                 bool "HDL Example"
+	        select DISABLE_HBM
+	        select DISABLE_ETHERNET
 
 	config HDL_NVME_EXAMPLE
 		bool "HDL NVMe Example"
 		depends on N250S
 		select FORCE_SDRAM_OR_BRAM
 		select FORCE_NVME
+	        select DISABLE_HBM
+	        select DISABLE_ETHERNET
 
 	config HLS_ACTION
 		bool "HLS Action - manually set ACTION_ROOT in snap_env.sh!"
@@ -240,6 +246,8 @@ choice
 		select ENABLE_HLS_SUPPORT
 		select DISABLE_SDRAM_AND_BRAM
 		select DISABLE_NVME
+		select DISABLE_HBM
+		select DISABLE_ETHERNET
 
 	config HLS_MEMCOPY
 		bool "HLS Memcopy"
@@ -290,12 +298,16 @@ choice
 		select ENABLE_HLS_SUPPORT
 		select DISABLE_SDRAM_AND_BRAM
 		select DISABLE_NVME
+		select DISABLE_HBM
+		select DISABLE_ETHERNET
 
 	config HLS_HASHJOIN
 		bool "HLS Hashjoin"
 		select ENABLE_HLS_SUPPORT
 		select DISABLE_SDRAM_AND_BRAM
 		select DISABLE_NVME
+		select DISABLE_HBM
+		select DISABLE_ETHERNET
 
 	config HLS_SEARCH
 		bool "HLS Search"
@@ -310,12 +322,16 @@ choice
 		select ENABLE_HLS_SUPPORT
 		select FORCE_SDRAM_OR_BRAM
 		select DISABLE_NVME
+		select DISABLE_HBM
+		select DISABLE_ETHERNET
 
 	config HLS_BFS
 		bool "HLS Breadth First Search"
 		select ENABLE_HLS_SUPPORT
 		select DISABLE_SDRAM_AND_BRAM
 		select DISABLE_NVME
+		select DISABLE_HBM
+		select DISABLE_ETHERNET
 
 	config HLS_INTERSECT
 		bool "HLS Intersect - not timing clean, please see help"
@@ -327,6 +343,8 @@ choice
 		select ENABLE_HLS_SUPPORT
 		select FORCE_SDRAM_OR_BRAM
 		select DISABLE_NVME
+		select DISABLE_HBM
+		select DISABLE_ETHERNET
 
 	config HLS_LATENCY_EVAL
 		bool "HLS Latency Evaluation"
@@ -340,6 +358,8 @@ choice
 		select ENABLE_HLS_SUPPORT
 		select DISABLE_SDRAM_AND_BRAM
 		select DISABLE_NVME
+		select DISABLE_HBM
+		select DISABLE_ETHERNET
 	
 	config HLS_MM_TEST
 		bool "HLS WED/STATUS Sharing and MatrixMultiply"
@@ -353,6 +373,8 @@ choice
 		select ENABLE_HLS_SUPPORT
 		select DISABLE_SDRAM_AND_BRAM
 		select DISABLE_NVME
+		select DISABLE_HBM
+		select DISABLE_ETHERNET
 
 	config HLS_DECIMAL_MULT
 		bool "HLS Decimal Multiplication"
@@ -367,6 +389,8 @@ choice
 		select ENABLE_HLS_SUPPORT
 		select DISABLE_SDRAM_AND_BRAM
 		select DISABLE_NVME
+		select DISABLE_HBM
+		select DISABLE_ETHERNET
 
 	config HLS_SCATTER_GATHER
 		bool "HLS Scatter Gather (CAPI2.0 only)"
@@ -381,6 +405,8 @@ choice
 		select DISABLE_SDRAM_AND_BRAM
 		select DISABLE_NVME
 		select ENABLE_ACTION_CLK_DERATE
+		select DISABLE_HBM
+		select DISABLE_ETHERNET
 	
 	config HLS_VECTOR_GENERATOR
 		bool "HLS Vector Generator example"
@@ -399,6 +425,8 @@ choice
         	select ENABLE_HLS_SUPPORT
         	select DISABLE_SDRAM_AND_BRAM
         	select DISABLE_NVME
+		select DISABLE_HBM
+		select DISABLE_ETHERNET
 
     	config HLS_RX100G
 		bool "HLS 100G receiver"
@@ -453,6 +481,10 @@ config ENABLE_SDRAM
 	                8GB DDR4 SDRAM on the AlphaData AD9V3 card.
 	               16GB DDR4 SDRAM on the Xilinx U200 card.
 
+config DISABLE_HBM
+	bool
+	default n
+
 config FORCE_HBM
 	bool
 	default n
@@ -463,7 +495,7 @@ config ENABLE_HBM
 	bool
 	prompt "Enable HBM"
         default N
-	depends on (AD9H3)
+	depends on (AD9H3 && !DISABLE_HBM)
 	help
 	  This option enables the on-card HBM on AD9H3 card.
 
