@@ -1,5 +1,5 @@
 /**
- * Copyright 2016, 2018 International Business Machines
+ * Copyright 2016, 2020 International Business Machines
  * Copyright 2016 Rackspace Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -138,6 +138,7 @@ struct card_2_name snap_card_2_name_tab[] = {
 	{.card_id = S241_CARD,   .card_name = "S241"},
 	{.card_id = AD9V3_CARD,  .card_name = "AD9V3"},
         {.card_id = AD9H3_CARD,  .card_name = "AD9H3"},
+        {.card_id = AD9H7_CARD,  .card_name = "AD9H7"},
 	{.card_id = U200_CARD,   .card_name = "U200"},
 	{.card_id = -1,          .card_name = "INVALID"}
 };
