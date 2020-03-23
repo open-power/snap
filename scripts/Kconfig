@@ -178,7 +178,7 @@ config FPGACHIP
 	default "xcvu3p-ffvc1517-2-i"  if AD9V3
 	default "xcu200-fsgd2104-2-e"  if U200
         default "xcvu33p-fsvh2104-2-e" if AD9H3
-        default "xcvu37p-fsvh2892-2-es1" if AD9H7
+        default "xcvu37p-fsvh2892-2-e-es1" if AD9H7
 
 
 config FPGABOARD
