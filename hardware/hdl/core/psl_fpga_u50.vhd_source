@@ -26,27 +26,44 @@ USE ieee.numeric_std.all;
 
 ENTITY psl_fpga IS
   PORT(
-#ifdef CONFIG_ENABLE_DDR4
-    -- DDR4 SDRAM Interface
-    c0_ddr4_sys_clk_p         : IN    STD_LOGIC;
-    c0_ddr4_sys_clk_n         : IN    STD_LOGIC;
-    c0_ddr4_adr               : OUT   STD_LOGIC_VECTOR(16 DOWNTO 0);
-    c0_ddr4_ba                : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);
-    c0_ddr4_cke               : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
-    c0_ddr4_cs_n              : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
-    c0_ddr4_parity            : OUT   STD_LOGIC;
-    --c0_ddr4_dm_dbi_n          : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);
-    c0_ddr4_dq                : INOUT STD_LOGIC_VECTOR(71 DOWNTO 0);
-    c0_ddr4_dqs_c             : INOUT STD_LOGIC_VECTOR(17 DOWNTO 0);
-    c0_ddr4_dqs_t             : INOUT STD_LOGIC_VECTOR(17 DOWNTO 0);
-    c0_ddr4_odt               : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
-    c0_ddr4_bg                : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);
-    c0_ddr4_reset_n           : OUT   STD_LOGIC;
-    c0_ddr4_act_n             : OUT   STD_LOGIC;
-    c0_ddr4_ck_c              : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
-    c0_ddr4_ck_t              : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
+  #if defined(CONFIG_ENABLE_ETHERNET) && !defined(CONFIG_ENABLE_ETH_LOOP_BACK)
+    gt_ref_clk_n                        : IN STD_LOGIC; 
+    gt_ref_clk_p                        : IN STD_LOGIC;
+--    gt_ref2_clk_n                       : IN STD_LOGIC; 
+--    gt_ref2_clk_p                       : IN STD_LOGIC;
+    gt_rx_gt_port_0_n                   : IN STD_LOGIC;
+    gt_rx_gt_port_0_p                   : IN STD_LOGIC;
+    gt_rx_gt_port_1_n                   : IN STD_LOGIC;
+    gt_rx_gt_port_1_p                   : IN STD_LOGIC;
+    gt_rx_gt_port_2_n                   : IN STD_LOGIC;
+    gt_rx_gt_port_2_p                   : IN STD_LOGIC;
+    gt_rx_gt_port_3_n                   : IN STD_LOGIC;
+    gt_rx_gt_port_3_p                   : IN STD_LOGIC;
+--    gt_rx_gt_port_4_n                   : IN STD_LOGIC;
+--    gt_rx_gt_port_4_p                   : IN STD_LOGIC;
+--    gt_rx_gt_port_5_n                   : IN STD_LOGIC;
+--    gt_rx_gt_port_5_p                   : IN STD_LOGIC;
+--    gt_rx_gt_port_6_n                   : IN STD_LOGIC;
+--    gt_rx_gt_port_6_p                   : IN STD_LOGIC;
+--    gt_rx_gt_port_7_n                   : IN STD_LOGIC;
+--    gt_rx_gt_port_7_p                   : IN STD_LOGIC;
+    gt_tx_gt_port_0_n                   : OUT STD_LOGIC;
+    gt_tx_gt_port_0_p                   : OUT STD_LOGIC;
+    gt_tx_gt_port_1_n                   : OUT STD_LOGIC;
+    gt_tx_gt_port_1_p                   : OUT STD_LOGIC;
+    gt_tx_gt_port_2_n                   : OUT STD_LOGIC;
+    gt_tx_gt_port_2_p                   : OUT STD_LOGIC;
+    gt_tx_gt_port_3_n                   : OUT STD_LOGIC;
+    gt_tx_gt_port_3_p                   : OUT STD_LOGIC;
+--    gt_tx_gt_port_4_n                   : OUT STD_LOGIC;
+--    gt_tx_gt_port_4_p                   : OUT STD_LOGIC;
+--    gt_tx_gt_port_5_n                   : OUT STD_LOGIC;
+--    gt_tx_gt_port_5_p                   : OUT STD_LOGIC;
+--    gt_tx_gt_port_6_n                   : OUT STD_LOGIC;
+--    gt_tx_gt_port_6_p                   : OUT STD_LOGIC;
+--    gt_tx_gt_port_7_n                   : OUT STD_LOGIC;
+--    gt_tx_gt_port_7_p                   : OUT STD_LOGIC;
 #endif
-
     -- CAPI PSL Interface
     --
     pcie_rst_n        	  : in    std_logic;     -- Active low reset from the PCIe reset pin of the device
@@ -64,7 +81,12 @@ ENTITY psl_fpga IS
 -- Flash Interface
 --    spi_miso_secondary    : in    std_logic;
 --    spi_mosi_secondary    : out   std_logic;
---    spi_cen_secondary     : out   std_logic
+--    spi_cen_secondary     : out   std_logic;
+
+-- 300MHz clock for HBM
+--    refclk300_p           : in    std_logic;
+--    refclk300_n           : in    std_logic
+
 
 -- PTMON PMBUS
 --    b_basei2c_scl         : inout std_logic;  -- clock
@@ -192,36 +214,51 @@ Component psl_accel
     hd1_cpl_laddr                    : IN    STD_LOGIC_VECTOR(0 to 6)   ;
     hd1_cpl_byte_count               : IN    STD_LOGIC_VECTOR(0 to 9)   ;
     hd1_cpl_data                     : IN    STD_LOGIC_VECTOR(0 to 1023);
-#ifdef CONFIG_ENABLE_DDR4
-    -- DDR4 SDRAM Interface
--- TODO:    dbg_bus                             : OUT   STD_LOGIC_VECTOR(511 DOWNTO 0);
-    c0_sys_clk_p                        : IN    STD_LOGIC;
-    c0_sys_clk_n                        : IN    STD_LOGIC;
-    c0_ddr4_adr                         : OUT   STD_LOGIC_VECTOR(16 DOWNTO 0);
-    c0_ddr4_ba                          : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);
-    c0_ddr4_cke                         : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
-    c0_ddr4_cs_n                        : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
-    c0_ddr4_parity 			: OUT   STD_LOGIC;
-    --c0_ddr4_dm_dbi_n                    : INOUT STD_LOGIC_VECTOR(8 DOWNTO 0);
-    c0_ddr4_dq                          : INOUT STD_LOGIC_VECTOR(71 DOWNTO 0);
-    c0_ddr4_dqs_c                       : INOUT STD_LOGIC_VECTOR(17 DOWNTO 0);
-    c0_ddr4_dqs_t                       : INOUT STD_LOGIC_VECTOR(17 DOWNTO 0);
-    c0_ddr4_odt                         : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
-    c0_ddr4_bg                          : OUT   STD_LOGIC_VECTOR(1 DOWNTO 0);
-    c0_ddr4_reset_n                     : OUT   STD_LOGIC;
-    c0_ddr4_act_n                       : OUT   STD_LOGIC;
-    c0_ddr4_ck_c                        : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
-    c0_ddr4_ck_t                        : OUT   STD_LOGIC_VECTOR(0 DOWNTO 0);
--- TODO:    c0_ddr4_ten                         : OUT   STD_LOGIC;
+#if defined(CONFIG_ENABLE_ETHERNET) && !defined(CONFIG_ENABLE_ETH_LOOP_BACK)
+    gt_ref_clk_n                        : IN STD_LOGIC; 
+    gt_ref_clk_p                        : IN STD_LOGIC;
+    gt_rx_gt_port_0_n                   : IN STD_LOGIC;
+    gt_rx_gt_port_0_p                   : IN STD_LOGIC;
+    gt_rx_gt_port_1_n                   : IN STD_LOGIC;
+    gt_rx_gt_port_1_p                   : IN STD_LOGIC;
+    gt_rx_gt_port_2_n                   : IN STD_LOGIC;
+    gt_rx_gt_port_2_p                   : IN STD_LOGIC;
+    gt_rx_gt_port_3_n                   : IN STD_LOGIC;
+    gt_rx_gt_port_3_p                   : IN STD_LOGIC;
+--    gt_rx_gt_port_4_n                   : IN STD_LOGIC;
+--    gt_rx_gt_port_4_p                   : IN STD_LOGIC;
+--    gt_rx_gt_port_5_n                   : IN STD_LOGIC;
+--    gt_rx_gt_port_5_p                   : IN STD_LOGIC;
+--    gt_rx_gt_port_6_n                   : IN STD_LOGIC;
+--    gt_rx_gt_port_6_p                   : IN STD_LOGIC;
+--    gt_rx_gt_port_7_n                   : IN STD_LOGIC;
+--    gt_rx_gt_port_7_p                   : IN STD_LOGIC;
+    gt_tx_gt_port_0_n                   : OUT STD_LOGIC;
+    gt_tx_gt_port_0_p                   : OUT STD_LOGIC;
+    gt_tx_gt_port_1_n                   : OUT STD_LOGIC;
+    gt_tx_gt_port_1_p                   : OUT STD_LOGIC;
+    gt_tx_gt_port_2_n                   : OUT STD_LOGIC;
+    gt_tx_gt_port_2_p                   : OUT STD_LOGIC;
+    gt_tx_gt_port_3_n                   : OUT STD_LOGIC;
+    gt_tx_gt_port_3_p                   : OUT STD_LOGIC;
+--    gt_tx_gt_port_4_n                   : OUT STD_LOGIC;
+--    gt_tx_gt_port_4_p                   : OUT STD_LOGIC;
+--    gt_tx_gt_port_5_n                   : OUT STD_LOGIC;
+--    gt_tx_gt_port_5_p                   : OUT STD_LOGIC;
+--    gt_tx_gt_port_6_n                   : OUT STD_LOGIC;
+--    gt_tx_gt_port_6_p                   : OUT STD_LOGIC;
+--    gt_tx_gt_port_7_n                   : OUT STD_LOGIC;
+--    gt_tx_gt_port_7_p                   : OUT STD_LOGIC;
 #endif
-
     -- Parity Enable output and 250MHz Clock input
     ah_tbreq                            : OUT   STD_LOGIC;                      -- Timebase command request
     ah_paren                            : OUT   STD_LOGIC;
     ha_pclock                           : IN    STD_LOGIC;
     pci_user_reset                      : IN    std_logic;                      --PCI hip user_reset signal if required
     pci_clock_125MHz                    : IN    std_logic                       --125MHz clock if required
-
+    -- 300MHz clock for HBM
+--    refclk300_p                         : IN    std_logic;                      --300MHz clock if required
+--    refclk300_n                         : IN    std_logic                       --300MHz clock if required
   );
 End Component psl_accel;
 
@@ -478,7 +515,42 @@ BEGIN
       c0_ddr4_ck_c                      => c0_ddr4_ck_c,
       c0_ddr4_ck_t                      => c0_ddr4_ck_t,
 #endif
-
+#if defined(CONFIG_ENABLE_ETHERNET) && !defined(CONFIG_ENABLE_ETH_LOOP_BACK)
+    gt_ref_clk_n                        => gt_ref_clk_n,
+    gt_ref_clk_p                        => gt_ref_clk_p,
+    gt_rx_gt_port_0_n                   => gt_rx_gt_port_0_n,
+    gt_rx_gt_port_0_p                   => gt_rx_gt_port_0_p,
+    gt_rx_gt_port_1_n                   => gt_rx_gt_port_1_n,
+    gt_rx_gt_port_1_p                   => gt_rx_gt_port_1_p,
+    gt_rx_gt_port_2_n                   => gt_rx_gt_port_2_n,
+    gt_rx_gt_port_2_p                   => gt_rx_gt_port_2_p,
+    gt_rx_gt_port_3_n                   => gt_rx_gt_port_3_n,
+    gt_rx_gt_port_3_p                   => gt_rx_gt_port_3_p,
+--    gt_rx_gt_port_4_n                   => gt_rx_gt_port_4_n,
+--    gt_rx_gt_port_4_p                   => gt_rx_gt_port_4_p,
+--    gt_rx_gt_port_5_n                   => gt_rx_gt_port_5_n,
+--    gt_rx_gt_port_5_p                   => gt_rx_gt_port_5_p,
+--    gt_rx_gt_port_6_n                   => gt_rx_gt_port_6_n,
+--    gt_rx_gt_port_6_p                   => gt_rx_gt_port_6_p,
+--    gt_rx_gt_port_7_n                   => gt_rx_gt_port_7_n,
+--    gt_rx_gt_port_7_p                   => gt_rx_gt_port_7_p,
+    gt_tx_gt_port_0_n                   => gt_tx_gt_port_0_n,
+    gt_tx_gt_port_0_p                   => gt_tx_gt_port_0_p,
+    gt_tx_gt_port_1_n                   => gt_tx_gt_port_1_n,
+    gt_tx_gt_port_1_p                   => gt_tx_gt_port_1_p,
+    gt_tx_gt_port_2_n                   => gt_tx_gt_port_2_n,
+    gt_tx_gt_port_2_p                   => gt_tx_gt_port_2_p,
+    gt_tx_gt_port_3_n                   => gt_tx_gt_port_3_n,
+    gt_tx_gt_port_3_p                   => gt_tx_gt_port_3_p,
+--    gt_tx_gt_port_4_n                   => gt_tx_gt_port_4_n,
+--    gt_tx_gt_port_4_p                   => gt_tx_gt_port_4_p,
+--    gt_tx_gt_port_5_n                   => gt_tx_gt_port_5_n,
+--    gt_tx_gt_port_5_p                   => gt_tx_gt_port_5_p,
+--    gt_tx_gt_port_6_n                   => gt_tx_gt_port_6_n,
+--    gt_tx_gt_port_6_p                   => gt_tx_gt_port_6_p,
+--    gt_tx_gt_port_7_n                   => gt_tx_gt_port_7_n,
+--    gt_tx_gt_port_7_p                   => gt_tx_gt_port_7_p,
+#endif
       -- CAPI PSL Interface
       --
       -- Accelerator Command Interface
@@ -558,6 +630,8 @@ BEGIN
       ha_pclock                         => ha0_pclock,
       pci_user_reset                    => pci_user_reset,
       pci_clock_125MHz                  => pci_clock_125MHz,
+--      refclk300_p			=> refclk300_p,
+--      refclk300_n			=> refclk300_n,
       -- DMA port 0 Req
       d0h_dvalid                        => d0h_dvalid,
       d0h_req_utag                      => d0h_req_utag,

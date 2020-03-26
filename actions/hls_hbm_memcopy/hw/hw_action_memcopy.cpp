@@ -294,8 +294,11 @@ static void process_action(snap_membus_t *din_gmem,
 	// if 4096 bytes max => 64 words
 
 	// byte address received need to be aligned with port width
-	InputAddress = (act_reg->Data.in.addr)   >> ADDR_RIGHT_SHIFT;
-	OutputAddress = (act_reg->Data.out.addr) >> ADDR_RIGHT_SHIFT;
+	// -- shift depends on the size of the bus => defer it later
+	//InputAddress = (act_reg->Data.in.addr)   >> ADDR_RIGHT_SHIFT;
+	//OutputAddress = (act_reg->Data.out.addr) >> ADDR_RIGHT_SHIFT;
+	InputAddress = (act_reg->Data.in.addr);
+	OutputAddress = (act_reg->Data.out.addr);
 
 	address_xfer_offset = 0x0;
 	// testing sizes to prevent from writing out of bounds
@@ -330,25 +333,25 @@ static void process_action(snap_membus_t *din_gmem,
         	if (act_reg->Data.in.type == SNAP_ADDRTYPE_HOST_DRAM)
 		    read_burst_of_data_from_mem(din_gmem,
 			act_reg->Data.in.type,
-			InputAddress + address_xfer_offset, buf_gmem, xfer_size);
+			(InputAddress + address_xfer_offset) >> ADDR_RIGHT_SHIFT, buf_gmem, xfer_size);
         	else
 		    read_burst_of_data_from_HBM(d_hbm_p0, d_hbm_p1, 
                         d_hbm_p2, d_hbm_p3, d_hbm_p4, d_hbm_p5, d_hbm_p6, d_hbm_p7,
 			act_reg->Data.in.type,
-			InputAddress + address_xfer_offset, buf_gmem, xfer_size);
+			(InputAddress + address_xfer_offset) >> ADDR_RIGHT_SHIFT_256, buf_gmem, xfer_size);
 
         	if (act_reg->Data.out.type == SNAP_ADDRTYPE_HOST_DRAM)
 		     write_burst_of_data_to_mem(dout_gmem,
 			act_reg->Data.out.type,
-			OutputAddress + address_xfer_offset, buf_gmem, xfer_size);
+			(OutputAddress + address_xfer_offset) >> ADDR_RIGHT_SHIFT, buf_gmem, xfer_size);
 		else
 		     write_burst_of_data_to_HBM(d_hbm_p0, d_hbm_p1,
                         d_hbm_p2, d_hbm_p3, d_hbm_p4, d_hbm_p5, d_hbm_p6, d_hbm_p7,
 			act_reg->Data.out.type,
-			OutputAddress + address_xfer_offset, buf_gmem, xfer_size);
+			(OutputAddress + address_xfer_offset) >> ADDR_RIGHT_SHIFT_256, buf_gmem, xfer_size);
 
 		action_xfer_size -= xfer_size;
-		address_xfer_offset += (snapu64_t)(xfer_size >> ADDR_RIGHT_SHIFT);
+		address_xfer_offset += xfer_size;
 	} // end of L0 loop
 
 	if (rc != 0)

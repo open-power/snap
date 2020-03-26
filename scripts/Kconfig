@@ -84,6 +84,7 @@ choice
 		bool "CAPI2.0: Xilinx U50 board (in development)"
 		select CAPI20
 		select DISABLE_NVME
+		select DISABLE_SDRAM_AND_BRAM
 		help
 		  Xilinx U50 FPGA board (IN DEVELOPMENT).
 
@@ -253,7 +254,7 @@ choice
 
 	config HLS_MEMCOPY
 		bool "HLS Memcopy"
-		depends on !AD9H3
+		depends on ! (AD9H3 ||U50)
 		help
 		  This is a basic example to start accessing data:
 		  - Read data from the server memory or from the card DDR
@@ -267,7 +268,7 @@ choice
 
 	config HLS_HBM_MEMCOPY
 		bool "HLS HBM Memcopy"
-		depends on AD9H3
+		depends on (AD9H3 || U50)
 		help
 		  This is a basic example to start accessing data:
 		  - Read data from the server memory or from the FPGA HBM (High Bandwidth Memory)
@@ -466,16 +467,16 @@ config ENABLE_SDRAM
 config FORCE_HBM
 	bool
 	default n
-	depends on AD9H3
+	depends on (AD9H3 || U50)
 	select ENABLE_HBM
 
 config ENABLE_HBM
 	bool
 	prompt "Enable HBM"
         default N
-	depends on (AD9H3)
+	depends on (AD9H3 || U50)
 	help
-	  This option enables the on-card HBM on AD9H3 card.
+	  This option enables the on-card HBM on AD9H3 and U50 card.
 
 config HBM_USED
 	string
@@ -497,7 +498,7 @@ config ENABLE_BRAM
 config REPLACE_HBM_BY_BRAM
 	bool
 	prompt "Replace HBM by 32K BRAM (mandatory when simulating with xsim)"
-	depends on (AD9H3 && ENABLE_HBM)
+	depends on ((AD9H3 || U50) && ENABLE_HBM)
 	help
 	  This is a development option. The AXI attached on-FPGA HBM will be replaced by 32K URAM.
 
@@ -561,7 +562,7 @@ config NVME_USED
 config ENABLE_ETHERNET
 	bool "Enable Ethernet support"
 	default N
-	depends on ( AD9H3 && !DISABLE_ETHERNET )
+	depends on ((AD9H3 || U50) && !DISABLE_ETHERNET )
 	help
 	  This option controls the instantiation of an Ethernet IP 
 	  together with the AXI interfaces for MMIO control and action access.
@@ -574,7 +575,7 @@ config ENABLE_ETH_LOOP_BACK
          bool "Ethernet loopback in the action wrapper (removes ETH IP)"
          default "TRUE"  if  ENABLE_SIMU_WO_ETH
          default "FALSE" if !ENABLE_SIMU_WO_ETH
-         depends on (AD9H3 && ENABLE_ETHERNET)
+         depends on ((AD9H3 ||U50) && ENABLE_ETHERNET)
          help
            This option prevent the instantiation of an Ethernet IP
            Instead it shortens the action ethernet AXI out interface to ethernet input interface.

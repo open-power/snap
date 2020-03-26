@@ -212,14 +212,14 @@ if { $fpga_card == "ADKU3" } {
     set create_clock_conv   TRUE
     set create_ddr4_u200   TRUE
   }
-} elseif { $fpga_card == "U50" } {
-  if { $bram_used == "TRUE" } {
-    set create_clock_conv   TRUE
-    set create_bram        TRUE
-  } elseif { $sdram_used == "TRUE" } {
-    set create_clock_conv   TRUE
-    set create_ddr4_u50   TRUE
-  }
+#} elseif { $fpga_card == "U50" } {
+#  if { $bram_used == "TRUE" } {
+#    set create_clock_conv   TRUE
+#    set create_bram        TRUE
+#  } elseif { $sdram_used == "TRUE" } {
+#    set create_clock_conv   TRUE
+#    set create_ddr4_u50   TRUE
+#  }
 
 } elseif { ($fpga_card == "N250S") || ($fpga_card == "N250SP") } {
   if { $bram_used == "TRUE" } {
