@@ -43,8 +43,8 @@ set_false_path -from [get_ports *pci_pi_nperst0]
 # Set the 300MHz clk for HBM_REF_CLK and APB_CLK
 create_clock -period 3.332 -name refclk300_p [get_ports refclk300_p]
 #create_clock -period 3.333 -name refclk [get_ports {refclk300_p}]
-set_property PACKAGE_PIN BJ53 [get_ports refclk300_n]
-set_property PACKAGE_PIN BJ52 [get_ports refclk300_p]
+set_property PACKAGE_PIN BJ52 [get_ports refclk300_n]
+set_property PACKAGE_PIN BJ53 [get_ports refclk300_p]
 
 set_property IOSTANDARD LVDS [get_ports refclk300_p]
 set_property IOSTANDARD LVDS [get_ports refclk300_n]
