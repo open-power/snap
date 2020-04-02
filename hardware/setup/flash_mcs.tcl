@@ -87,7 +87,7 @@ switch $fpgacard {
         }
 
   default {
-    puts "Error: Environment FPGACARD must be set to N250S, ADKU3, AD8K5, S121B, N250SP, RCXVUP, FX609, S241, AD9V3 or AD9H3"
+    puts "Error: Environment FPGACARD must be set to N250S, ADKU3, AD8K5, S121B, N250SP, RCXVUP, FX609, S241, AD9V3, AD9H3 or AD9H7"
     exit 96
   }
 }

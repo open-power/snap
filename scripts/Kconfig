@@ -136,7 +136,8 @@ config FLASH_SIZE
 	string
 	default 256 if S121B_SPIx4  || RCXVUP || S241
 	default 128 if S121B_BPIx16 || N250SP || AD8K5 || ADKU3 || FX609 || U200
-	default 64  if N250S || AD9V3 || AD9H3 || AD9H7
+	default 64  if N250S || AD9V3 || AD9H3
+	default 128 if AD9H7
 
 #FLASH_FACTORYADDR: For all cards, factory address is 0x0
 config FLASH_FACTORYADDR
@@ -149,8 +150,8 @@ config FLASH_USERADDR
 	string
 	default 0x01000000 if N250S || ADKU3
 	default 0x02000000 if S121B_BPIx16 || AD8K5 || N250SP || AD9V3 || AD9H3
-	default 0x04000000 if FX609
-	default 0x08000000 if S121B_SPIx4 || RCXVUP || S241 || AD9H7
+	default 0x04000000 if FX609 || AD9H7
+	default 0x08000000 if S121B_SPIx4 || RCXVUP || S241
 	default 0x01002000 if U200
 
 
