@@ -1,7 +1,7 @@
 #!/bin/sh
 #-----------------------------------------------------------
 #
-# Copyright 2016-2018, International Business Machines
+# Copyright 2016-2020, International Business Machines
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -80,12 +80,14 @@ switch $fpgacard {
   AD9V3 { set flashdevice mt25qu256-spi-x1_x2_x4_x8
           set fpgapartnum xcvu3p
         } 
-  AD9H3 { set flashdevice mt25qu01-spi-x1_x2_x4_x8  # to be corrected !!
+  AD9H3 { set flashdevice mt25qu256-spi-x1_x2_x4_x8  # was set to mt25qu01_spi-x1_x2_x4_x8 due to AD doc error
           set fpgapartnum xcvu33p
+  AD9H7 { set flashdevice mt25qu01g-spi-x1_x2_x4_x8
+          set fpgapartnum xcvu37p
         }
 
   default {
-    puts "Error: Environment FPGACARD must be set to N250S, ADKU3, AD8K5, S121B, N250SP, RCXVUP, FX609, S241, AD9V3 or AD9H3"
+    puts "Error: Environment FPGACARD must be set to N250S, ADKU3, AD8K5, S121B, N250SP, RCXVUP, FX609, S241, AD9V3, AD9H3 or AD9H7"
     exit 96
   }
 }

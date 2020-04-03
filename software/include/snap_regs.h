@@ -2,7 +2,7 @@
 #define __SNAP_REGS_H__
 
 /**
- * Copyright 2017 International Business Machines
+ * Copyright 2020 International Business Machines
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -114,6 +114,7 @@ extern "C" {
  *   15..9  RO: Reserved
  *       8  RO: NVMe enabled
  *    7..0  RO: Card type:
+ *              0x17 : AD9H7
  *              0x16 : AD9H3
  *              0x15 : U200
  *              0x14 : AD9V3
@@ -128,6 +129,7 @@ extern "C" {
  */
 #define SNAP_CAP        0x30
 #define SNAP_NVME_ENA   0x100
+#define AD9H7_CARD      0x017     /* CAPI 2.0 */
 #define AD9H3_CARD      0x016     /* CAPI 2.0 */
 #define U200_CARD       0x015     /* CAPI 2.0 */
 #define AD9V3_CARD      0x014     /* CAPI 2.0 */

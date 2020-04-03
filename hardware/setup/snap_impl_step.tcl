@@ -1,7 +1,7 @@
 ############################################################################
 ############################################################################
 ##
-## Copyright 2016-2018 International Business Machines
+## Copyright 2016-2020 International Business Machines
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
 ## you may not use this file except in compliance with the License.
@@ -103,7 +103,7 @@ puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "start place_design" $
 
 ##
 ## prevent placing inside PSL for CAPI1.0 cards
-if { ($fpgacard != "N250SP") && ($fpgacard != "RCXVUP") && ($fpgacard != "FX609") && ($fpgacard != "S241") && ($fpgacard != "U200") && ($fpgacard != "AD9V3") && ($fpgacard != "AD9H3") } {
+if { ($fpgacard != "N250SP") && ($fpgacard != "RCXVUP") && ($fpgacard != "FX609") && ($fpgacard != "S241") && ($fpgacard != "U200") && ($fpgacard != "AD9V3") && ($fpgacard != "AD9H3") && ($fpgacard != "AD9H7") } {
   puts [format "%-*s%-*s%-*s%-*s"  $widthCol1 "" $widthCol2 "" $widthCol3 "Prevent placing inside PSL" $widthCol4 "[clock format [clock seconds] -format {%T %a %b %d %Y}]"]
   set_property EXCLUDE_PLACEMENT 1 [get_pblocks b_nestedpsl]
 }

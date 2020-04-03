@@ -1,7 +1,7 @@
 ############################################################################
 ############################################################################
 ##
-## Copyright 2016-2019 International Business Machines
+## Copyright 2016-2020 International Business Machines
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
 ## you may not use this file except in compliance with the License.
@@ -138,7 +138,7 @@ export_simulation -of_objects [get_files $ip_dir/fifo_4x512/fifo_4x512.xci] -dir
 # SDRAM_USED=TRUE   8GB Semptian  S241    DDR4 RAM MT40A1G8WE-075E (8Bb, x8)
 # SDRAM_USED=TRUE   8GB AlphaData 9V3     DDR4 RAM CUSTOM_DBI_K4A8G085WB-RC (8Gb, x8)
 # SDRAM_USED=TRUE   8GB ReflexCES VUP     DDR4 RAM MT40A512M16HA-075E (8Gb, x16)
-# NOTE AD9H3 has no DDR attached, uses HBM instead
+# NOTE AD9H3 & AD9H7 have no DDR attached, use HBM instead
 set create_clock_conv   FALSE
 set create_interconnect FALSE
 set create_bram         FALSE
@@ -241,7 +241,7 @@ if { $create_clock_conv == "TRUE" } {
   puts "                        generating IP axi_clock_converter"
   create_ip -name axi_clock_converter -vendor xilinx.com -library ip -version 2.1 -module_name axi_clock_converter -dir $ip_dir  >> $log_file
 
-  if { ($sdram_used == "TRUE") && ( $fpga_card == "ADKU3" || $fpga_card == "S121B" || $fpga_card == "AD8K5" || $fpga_card == "S241"|| $fpga_card == "U200"|| $fpga_card == "AD9V3" || $fpga_card == "AD9H3") } {
+  if { ($sdram_used == "TRUE") && ( $fpga_card == "ADKU3" || $fpga_card == "S121B" || $fpga_card == "AD8K5" || $fpga_card == "S241"|| $fpga_card == "U200"|| $fpga_card == "AD9V3" || $fpga_card == "AD9H3" || $fpga_card == "AD9H7") } {
 	if { $fpga_card == "U200" } {
 	    set_property -dict [list CONFIG.ADDR_WIDTH {34} CONFIG.DATA_WIDTH {512} CONFIG.ID_WIDTH {4}] [get_ips axi_clock_converter]
 	} else {

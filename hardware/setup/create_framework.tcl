@@ -1,7 +1,7 @@
 ############################################################################
 ############################################################################
 ##
-## Copyright 2016-2019 International Business Machines
+## Copyright 2016-2020 International Business Machines
 ## Copyright 2019 Filip Leonarski, Paul Scherrer Institute
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
@@ -220,7 +220,7 @@ if { $simulator != "nosim" } {
     add_files    -fileset sim_1 -norecurse -scan_for_includes $sim_dir/core/ddr4_dimm_s121b.sv  >> $log_file
     set_property used_in_synthesis false           [get_files $sim_dir/core/ddr4_dimm_s121b.sv]
   }
-  # NOTE AD9H3 has no DDR attached, uses HBM instead
+  # NOTE AD9H3 & AD9H7 have no DDR attached, use HBM instead
 }
 
 # Add IP
@@ -416,6 +416,16 @@ if { $fpga_card == "ADKU3" } {
 #    set_property used_in_synthesis false [get_files $root_dir/setup/AD9H3/AR72607.xdc]
     add_files -fileset constrs_1 -norecurse  $root_dir/setup/AD9H3/capi_hbm_pblock.xdc
 #    set_property used_in_synthesis false [get_files $root_dir/setup/AD9H3/capi_hbm_pblock.xdc]
+} elseif { ($fpga_card == "AD9H7") } {
+   if { $eth_used == "TRUE" } { 
+      add_files -fileset constrs_1 -norecurse $root_dir/setup/AD9H7/snap_qsfpdd_pins.xdc
+      set_property used_in_synthesis false [get_files $root_dir/setup/AD9H7/snap_qsfpdd_pins.xdc]
+    }   
+    #cirumventing unconnected clock for hbm Xilinx AR#72607
+    add_files -fileset constrs_1 -norecurse  $root_dir/setup/AD9H7/AR72607.xdc
+#    set_property used_in_synthesis false [get_files $root_dir/setup/AD9H7/AR72607.xdc]
+    add_files -fileset constrs_1 -norecurse  $root_dir/setup/AD9H7/capi_hbm_pblock.xdc
+#    set_property used_in_synthesis false [get_files $root_dir/setup/AD9H7/capi_hbm_pblock.xdc]
 }
 
 if { $ila_debug == "TRUE" } {
