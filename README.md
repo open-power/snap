@@ -62,6 +62,9 @@ As of now, the following FPGA cards can be used with SNAP if they contain CAPI l
   * Alpha-Data ADM-PCIE-9V3 https://www.alpha-data.com/dcp/products.php?product=adm-pcie-9v3
   * Alpha-Data ADM-PCIE-9H3 https://www.alpha-data.com/dcp/products.php?product=adm-pcie-9h3
   * Alpha-Data ADM-PCIE-9H7 https://www.alpha-data.com/dcp/products.php?product=adm-pcie-9h7
+  
+    (only JTAG programming, only "Factory region" available)
+  
       Note : for ADM-PCIE-9H3 & -9H7: capi-bsp zip file needs temporary mods to include hbm lib
 
 ## 3.2 Development (Step1 & Step2)
