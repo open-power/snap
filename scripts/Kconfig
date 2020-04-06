@@ -146,11 +146,14 @@ config FLASH_FACTORYADDR
 
 #FLASH_USERADDR: For BPIx16, it is two-bytes address;
 #                For SPI, it is byte address.
+#                         we need to provide twice the desired SPI8 User region address
+#                         for example for 9H7 User address is 0x400 0000 we provide 0x800 0000
 config FLASH_USERADDR
 	string
 	default 0x01000000 if N250S || ADKU3
 	default 0x02000000 if S121B_BPIx16 || AD8K5 || N250SP || AD9V3 || AD9H3
-	default 0x04000000 if FX609 || AD9H7
+	default 0x04000000 if FX609
+        default 0x08000000 if AD9H7
 	default 0x08000000 if S121B_SPIx4 || RCXVUP || S241
 	default 0x01002000 if U200
 
