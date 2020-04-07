@@ -3,7 +3,6 @@
 9H7 cards contains VU37P with an HBM.
 Note : 
 capi-flash mecanism is not working yet, so only JTAG programmation is available for this card
-Factory / user switching mecanism is not working yet
 
 The following URL defines how to get the PSL 
 [image-and-model-build](../../../hardware/README.md#power9)
