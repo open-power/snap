@@ -85,6 +85,7 @@ choice
 		select CAPI20
 		select DISABLE_NVME
 		select DISABLE_SDRAM_AND_BRAM
+		select ENABLE_ACTION_CLK_DERATE
 		help
 		  Xilinx U50 FPGA board (IN DEVELOPMENT).
 
@@ -179,7 +180,7 @@ config FPGACHIP
 	default "xcvu9p-flgb2104-2l-e" if S241
 	default "xcvu3p-ffvc1517-2-i"  if AD9V3
 	default "xcu200-fsgd2104-2-e"  if U200
-	default "xcu50-fsvh2104-2L-e"  if U50
+	default "xcu50-fsvh2104-2-e"  if U50
         default "xcvu33p-fsvh2104-2-e" if AD9H3
 
 config FPGABOARD

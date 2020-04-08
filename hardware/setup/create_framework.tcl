@@ -28,6 +28,7 @@ set hdl_dir        $root_dir/hdl
 set sim_dir        $root_dir/sim
 set fpga_part      $::env(FPGACHIP)
 set fpga_card      $::env(FPGACARD)
+set fpga_board     $::env(FPGABOARD)
 set capi_bsp_dir   $root_dir/capi2-bsp/$fpga_card/build/ip
 set capi_ver       $::env(CAPI_VER)
 set action_dir     $::env(ACTION_ROOT)
@@ -73,12 +74,8 @@ if { [info exists ::env(PSL_DCP)] == 1 } {
 puts "\[CREATE_FRAMEWORK....\] start [clock format [clock seconds] -format {%T %a %b %d %Y}]"
 create_project framework $root_dir/viv_project -part $fpga_part -force >> $log_file
 
-if { $fpga_card eq "U200" } {
-  set_property board_part xilinx.com:au200:part0:1.0 [current_project]
-}
-
-if { $fpga_card eq "U50" } {
-  set_property board_part xilinx.com:au50:part0:1.0 [current_project]
+if { ($fpga_card == "U50" ) || ($fpga_card == "U50")} {
+  set_property board_part $fpga_board [current_project]
 }
 
 # Project Settings

@@ -20,6 +20,7 @@ set vivadoVer    [version -short]
 set root_dir    $::env(SNAP_HARDWARE_ROOT)
 set denali_used $::env(DENALI_USED)
 set fpga_part   $::env(FPGACHIP)
+set fpga_card   $::env(FPGACARD)
 set fpga_board  $::env(FPGABOARD)
 set log_dir     $::env(LOGS_DIR)
 set log_file    $log_dir/create_hbm_host.log
@@ -54,7 +55,9 @@ set  HBM_MEM_NUM 8
 # Create HBM project
 create_project   $prj_name $root_dir/ip/hbm -part $fpga_part -force >> $log_file
 set_property target_language VHDL [current_project]
-set_property BOARD_PART $fpga_board [current_project]
+if { ($fpga_card == "U200" ) || ($fpga_card == "U50") } {
+  set_property board_part $fpga_board [current_project]
+}
 
 #Create block design
 create_bd_design $bd_name  >> $log_file
@@ -98,7 +101,7 @@ set_property -dict [list CONFIG.CONST_WIDTH {32} CONFIG.CONST_VAL {0}] [get_bd_c
 #create the clocks and the reset signals for the design
 create_bd_cell -type ip -vlnv {xilinx.com:ip:util_ds_buf:*} refclk_bufg_div4
 set_property -dict [list CONFIG.C_BUF_TYPE {BUFGCE_DIV} CONFIG.C_BUFGCE_DIV {4}] [get_bd_cells refclk_bufg_div4]
-upgrade_bd_cells [get_bd_cells refclk_bufg_div4]
+# generates an info message upgrade_bd_cells [get_bd_cells refclk_bufg_div4]
 
 set port [create_bd_port -dir I ARESETN]
 
