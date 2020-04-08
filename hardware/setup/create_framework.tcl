@@ -419,8 +419,7 @@ if { $fpga_card == "ADKU3" } {
     #cirumventing unconnected clock for hbm Xilinx AR#72607
     add_files -fileset constrs_1 -norecurse  $root_dir/setup/AD9H3/AR72607.xdc
     add_files -fileset constrs_1 -norecurse  $root_dir/setup/AD9H3/capi_hbm_pblock.xdc
- } 
- elseif { ($fpga_card == "AD9H7") } {
+} elseif { ($fpga_card == "AD9H7") } {
    if { $eth_used == "TRUE" } { 
       add_files -fileset constrs_1 -norecurse $root_dir/setup/AD9H7/snap_qsfpdd_pins.xdc
       set_property used_in_synthesis false [get_files $root_dir/setup/AD9H7/snap_qsfpdd_pins.xdc]
@@ -428,8 +427,7 @@ if { $fpga_card == "ADKU3" } {
     #cirumventing unconnected clock for hbm Xilinx AR#72607
     add_files -fileset constrs_1 -norecurse  $root_dir/setup/AD9H7/AR72607.xdc
     add_files -fileset constrs_1 -norecurse  $root_dir/setup/AD9H7/capi_hbm_pblock.xdc
- }
- elseif { ($fpga_card == "U50") } {
+} elseif { ($fpga_card == "U50") } {
     if { $eth_used == "TRUE" } { 
       # TODO for a production sample 2 following lines enabled
       add_files -fileset constrs_1 -norecurse $root_dir/setup/U50/snap_qsfpdd_pins.xdc
@@ -438,7 +436,7 @@ if { $fpga_card == "ADKU3" } {
     #cirumventing unconnected clock for hbm Xilinx AR#72607
     add_files -fileset constrs_1 -norecurse  $root_dir/setup/U50/AR72607.xdc
     add_files -fileset constrs_1 -norecurse  $root_dir/setup/U50/capi_hbm_pblock.xdc
- }
+}
 
 if { $ila_debug == "TRUE" } {
   add_files -fileset constrs_1 -norecurse  $::env(ILA_SETUP_FILE)

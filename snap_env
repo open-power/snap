@@ -96,11 +96,11 @@ while [ -z "$SETUP_DONE" ]; do
       SETUP_INFO="$SETUP_INFO\n### WARNING ### Building an image with Vivado 2018.2 or 2018.3 for CAPI1.0 cards will drive to errors."
       SETUP_INFO="$SETUP_INFO\n###    It is highly recommended to use Vivado 2018.1 with CAPI1.0 cards."
     fi
-    if [ "$FPGACARD" == "U200" ] && ([ $RESP != "2018.3.1" ] || [ $RESP != "2019.1" ] || [ $RESP != "2019.2" ]); then
+    if [ "$FPGACARD" == "U200" ] && ([ $RESP != "2018.3.1" ] && [ $RESP != "2019.1" ] && [ $RESP != "2019.2" ]); then
       SETUP_INFO="$SETUP_INFO\n### WARNING ### Building a U200 image requires Vivado 2018.3 or later."
     fi
-    if [ "$FPGACARD" == "U50" ] && ([ $RESP != "2019.1" ] || [ $RESP != "2019.2" ]); then
-      SETUP_INFO="$SETUP_INFO\n### WARNING ### Building a U200 image requires Vivado 2019.1 or later."
+    if [ "$FPGACARD" == "U50" ] && ([ $RESP != "2019.1" ] && [ $RESP != "2019.2" ]); then
+      SETUP_INFO="$SETUP_INFO\n### WARNING ### Building a U50 image requires Vivado 2019.1 or later."
     fi
     if [ "$FPGACARD" == "U200" ]; then
       SETUP_INFO="$SETUP_INFO\n### WARNING ### The porting of this card U200 is still in development."
@@ -400,9 +400,14 @@ while [ -z "$SETUP_DONE" ]; do
   fi
 
   # Note: HBM is defined via snap_config
-  if [ "$HBM_USED" == "TRUE" ] && [ "$BRAM_USED" == "TRUE" ]; then
-    #echo "=====HBM setup========================================="
+  if [ "$HBM_USED" == "TRUE" ]; then
+    if [ "$BRAM_USED" == "TRUE" ]; then
       SETUP_INFO="$SETUP_INFO\n### INFO ### Setting of HBM is NOT with real HBM!"
+    else
+      if [ "$SIMULATOR" == "xsim" ]; then
+        SETUP_WARNING="$SETUP_WARNING\n### WARNING ### xsim simulator doesn't support HBM! You can however continue building an image."
+      fi
+    fi
   fi
 
   # Note: ETHERNET_USED is defined via snap_config
