@@ -110,7 +110,13 @@ choice
                 select DISABLE_SDRAM_AND_BRAM
 		help
                   AlphaData AD9H3 with 8x10G/25G or 2x100GbE, 8GB HBM and Xilinx VU33P FPGA in CAPI2.0 mode
-
+        config AD9H7
+                bool "CAPI2.0: AlphaData AD9H7 with 8x10G/25G or 2x100GbE, 8GB HBM and Xilinx VU37P FPGA"
+                select CAPI20
+                select DISABLE_NVME
+                select DISABLE_SDRAM_AND_BRAM
+                help
+                  AlphaData AD9H7 with 4 QSFP28, 8GB HBM, with Xilinx VU37P FPGA in CAPI2.0 mode
 endchoice
 
 config FPGACARD
@@ -127,17 +133,19 @@ config FPGACARD
 	default "U50"    if U50
         default "AD9V3"  if AD9V3
         default "AD9H3"  if AD9H3
+        default "AD9H7"  if AD9H7
 
 config FLASH_INTERFACE
 	string
 	default "BPIx16" if S121B_BPIx16 || N250S || N250SP || ADKU3 || AD8K5
 	default "SPIx4"  if S121B_SPIx4 || FX609 || S241 || U200 || U50
-	default "SPIx8"  if RCXVUP || AD9V3 || AD9H3
+	default "SPIx8"  if RCXVUP || AD9V3 || AD9H3 || AD9H7
 
 #FLASH_SIZE: in MB, will be used by build_mcs.tcl
+#SPI8: add the sizes of the 2 SPI4, as addresses are counted as 8 bits words 
 config FLASH_SIZE
 	string
-	default 256 if S121B_SPIx4  || RCXVUP || S241
+	default 256 if S121B_SPIx4  || RCXVUP || S241 || AD9H7
 	default 128 if S121B_BPIx16 || N250SP || AD8K5 || ADKU3 || FX609 || U200 || U50
 	default 64  if N250S || AD9V3 || AD9H3
 
@@ -147,13 +155,16 @@ config FLASH_FACTORYADDR
         default 0x00000000
 
 #FLASH_USERADDR: For BPIx16, it is two-bytes address;
-#                For SPI, it is byte address.
+#                For SPI8, it is byte address (build with 2 4bits nibbles)
+#                         we need to provide twice the desired final SPI8 User region address
+#                         as we count the nibble position
+#                         for example for 9H7 User address being 0x400 0000 we provide 0x800 0000
 config FLASH_USERADDR
 	string
 	default 0x01000000 if N250S || ADKU3
 	default 0x02000000 if S121B_BPIx16 || AD8K5 || N250SP || AD9V3 || AD9H3
 	default 0x04000000 if FX609
-	default 0x08000000 if S121B_SPIx4 || RCXVUP || S241
+	default 0x08000000 if S121B_SPIx4 || RCXVUP || S241 || AD9H7
 	default 0x01002000 if U200 || U50
 
 
@@ -182,6 +193,8 @@ config FPGACHIP
 	default "xcu200-fsgd2104-2-e"  if U200
 	default "xcu50-fsvh2104-2-e"  if U50
         default "xcvu33p-fsvh2104-2-e" if AD9H3
+        default "xcvu37p-fsvh2892-2-e" if AD9H7
+
 
 config FPGABOARD
 	string
@@ -263,7 +276,7 @@ choice
 
 	config HLS_MEMCOPY
 		bool "HLS Memcopy"
-		depends on ! (AD9H3 ||U50)
+		depends on ! (AD9H3 || AD9H7 || U50)
 		help
 		  This is a basic example to start accessing data:
 		  - Read data from the server memory or from the card DDR
@@ -277,7 +290,7 @@ choice
 
 	config HLS_HBM_MEMCOPY
 		bool "HLS HBM Memcopy"
-		depends on (AD9H3 || U50)
+		depends on (AD9H3 || AD9H7 || U50)
 		help
 		  This is a basic example to start accessing data:
 		  - Read data from the server memory or from the FPGA HBM (High Bandwidth Memory)
@@ -442,7 +455,7 @@ choice
 
     config HLS_RX100G
 		bool "HLS 100G receiver"
-		depends on AD9H3
+		depends on ( AD9H3 || AD9H7 )
         	help
             	  This example is written in C and compiled with HLS
         	select ENABLE_HLS_SUPPORT
@@ -501,16 +514,16 @@ config DISABLE_HBM
 config FORCE_HBM
 	bool
 	default n
-	depends on (AD9H3 || U50)
+	depends on (AD9H3 || AD9H7 || U50)
 	select ENABLE_HBM
 
 config ENABLE_HBM
 	bool
 	prompt "Enable HBM"
         default N
-	depends on ((AD9H3 || U50) && !DISABLE_HBM)
+	depends on ((AD9H3 || AD9H7 || U50) && !DISABLE_HBM)
 	help
-	  This option enables the on-card HBM on AD9H3 and U50 card.
+	  This option enables the on-card HBM on AD9H3, AD9H7 and U50 cards.
 
 config HBM_USED
 	string
@@ -532,7 +545,7 @@ config ENABLE_BRAM
 config REPLACE_HBM_BY_BRAM
 	bool
 	prompt "Replace HBM by 32K BRAM (mandatory when simulating with xsim)"
-	depends on ((AD9H3 || U50) && ENABLE_HBM)
+	depends on ((AD9H3 || AD9H7 || U50) && ENABLE_HBM)
 	help
 	  This is a development option. The AXI attached on-FPGA HBM will be replaced by 32K URAM.
 
@@ -596,7 +609,7 @@ config NVME_USED
 config ENABLE_ETHERNET
 	bool "Enable Ethernet support"
 	default N
-	depends on ((AD9H3 || U50) && !DISABLE_ETHERNET )
+	depends on ((AD9H3 ||AD9H7 || U50) && !DISABLE_ETHERNET )
 	help
 	  This option controls the instantiation of an Ethernet IP 
 	  together with the AXI interfaces for MMIO control and action access.
@@ -609,7 +622,7 @@ config ENABLE_ETH_LOOP_BACK
          bool "Ethernet loopback in the action wrapper (removes ETH IP)"
          default "TRUE"  if  ENABLE_SIMU_WO_ETH
          default "FALSE" if !ENABLE_SIMU_WO_ETH
-         depends on ((AD9H3 ||U50) && ENABLE_ETHERNET)
+         depends on ((AD9H3 || AD9H7 || U50) && ENABLE_ETHERNET)
          help
            This option prevent the instantiation of an Ethernet IP
            Instead it shortens the action ethernet AXI out interface to ethernet input interface.

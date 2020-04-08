@@ -2,7 +2,7 @@
 ############################################################################
 ############################################################################
 ##
-## Copyright 2016,2019 International Business Machines
+## Copyright 2016,2020 International Business Machines
 ##
 ## Licensed under the Apache License, Version 2.0 (the "License");
 ## you may not use this file except in compliance with the License.
@@ -66,9 +66,12 @@ elif [ "$FPGACARD" == "U200"  ]; then
 elif [ "$FPGACARD" == "AD9H3"  ]; then
   DMA_XFER_SIZE="x\"6\""
   CARD_TYPE="x\"16\""
-elif [ "$FPGACARD" == "U50"  ]; then
+elif [ "$FPGACARD" == "AD9H7"  ]; then
   DMA_XFER_SIZE="x\"6\""
   CARD_TYPE="x\"17\""
+elif [ "$FPGACARD" == "U50"  ]; then
+  DMA_XFER_SIZE="x\"6\""
+  CARD_TYPE="x\"18\""
 fi
 
 if [ "${BRAM_USED^^}" == "TRUE" ]; then
