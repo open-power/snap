@@ -21,7 +21,6 @@
 set root_dir     $::env(SNAP_HARDWARE_ROOT)
 set fpga_part    $::env(FPGACHIP)
 set fpga_card    $::env(FPGACARD)
-set fpga_board   $::env(FPGABOARD)
 set ip_dir       $root_dir/ip
 
 set sdram_used   $::env(SDRAM_USED)
@@ -34,6 +33,7 @@ set log_file     $log_dir/create_snap_ip.log
 puts "\[CREATE SNAP IPs.....\] start [clock format [clock seconds] -format {%T %a %b %d %Y}]"
 create_project snap_ip_project $ip_dir/snap_ip_project -force -part $fpga_part -ip >> $log_file
 if { ($fpga_card == "U200" ) || ($fpga_card == "U50") } {
+  set fpga_board   $::env(FPGABOARD)
   set_property board_part $fpga_board [current_project]
 }
 

@@ -21,7 +21,6 @@ set root_dir    $::env(SNAP_HARDWARE_ROOT)
 set denali_used $::env(DENALI_USED)
 set fpga_part   $::env(FPGACHIP)
 set fpga_card   $::env(FPGACARD)
-set fpga_board  $::env(FPGABOARD)
 set log_dir     $::env(LOGS_DIR)
 set log_file    $log_dir/create_hbm_host.log
 
@@ -56,6 +55,7 @@ set  HBM_MEM_NUM 8
 create_project   $prj_name $root_dir/ip/hbm -part $fpga_part -force >> $log_file
 set_property target_language VHDL [current_project]
 if { ($fpga_card == "U200" ) || ($fpga_card == "U50") } {
+  set fpga_board  $::env(FPGABOARD)
   set_property board_part $fpga_board [current_project]
 }
 

@@ -28,7 +28,6 @@ set hdl_dir        $root_dir/hdl
 set sim_dir        $root_dir/sim
 set fpga_part      $::env(FPGACHIP)
 set fpga_card      $::env(FPGACARD)
-set fpga_board     $::env(FPGABOARD)
 set capi_bsp_dir   $root_dir/capi2-bsp/$fpga_card/build/ip
 set capi_ver       $::env(CAPI_VER)
 set action_dir     $::env(ACTION_ROOT)
@@ -75,6 +74,7 @@ puts "\[CREATE_FRAMEWORK....\] start [clock format [clock seconds] -format {%T %
 create_project framework $root_dir/viv_project -part $fpga_part -force >> $log_file
 
 if { ($fpga_card == "U50" ) || ($fpga_card == "U50")} {
+  set fpga_board     $::env(FPGABOARD)
   set_property board_part $fpga_board [current_project]
 }
 
