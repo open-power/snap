@@ -1,7 +1,7 @@
 ----------------------------------------------------------------------------
 ----------------------------------------------------------------------------
 --
--- Copyright 2017 International Business Machines
+-- Copyright 2020 International Business Machines
 --
 -- Licensed under the Apache License, Version 2.0 (the "License");
 -- you may not use this file except in compliance with the License.
@@ -202,7 +202,7 @@ ENTITY psl_accel IS
     ha_pclock                           : IN    STD_LOGIC;
     pci_user_reset                      : IN    std_logic;  --PCI hip user_reset signal if needed
     pci_clock_125MHz                    : IN    std_logic   --125MHz clock if needed
-    -- 300MHz clock for HBM
+    -- 300MHz clock unused
 --    refclk300_p                         : IN    std_logic;
 --    refclk300_n                         : IN    std_logic
   );
@@ -892,10 +892,15 @@ SIGNAL tmp_sdram_axi_bid              : STD_LOGIC_VECTOR (5 downto 0);
   signal nx_d                           : NX_D_T := ('0','0', "00",'0','0', (31 downto 0 => '0'),
                                                      "00",'0');
 #ifdef CONFIG_ENABLE_HBM
+  SIGNAL hbm_ctrl_reset_n               : STD_LOGIC;
+  SIGNAL hbm_ctrl_apb_complete          : STD_LOGIC;
+
   -- HBM
   COMPONENT hbm_top_wrapper is
   PORT (
     ARESETN                             : in STD_LOGIC;
+    CRESETN                             : in STD_LOGIC;
+    APB_COMPLETE                        : out STD_LOGIC;
 --CHANGE_HBM_INTERFACES_NUMBER
 -- copy/paste these 36 signals for a new AXI interface
     S_AXI_p0_HBM_ACLK : in STD_LOGIC;
@@ -1233,9 +1238,6 @@ SIGNAL tmp_sdram_axi_bid              : STD_LOGIC_VECTOR (5 downto 0);
     S_AXI_p7_HBM_wready : out STD_LOGIC;
     S_AXI_p7_HBM_wstrb : in STD_LOGIC_VECTOR ( C_M_AXI_CARD_HBM_DATA_WIDTH/8-1 downto 0 );
     S_AXI_p7_HBM_wvalid : in STD_LOGIC
---
---    refclk300_n                         : in STD_LOGIC;
---    refclk300_p                         : in STD_LOGIC
   );
   END COMPONENT;
 #endif
@@ -1627,6 +1629,10 @@ BEGIN
       action_reset_n_q   <= NOT action_reset;
 #if defined(CONFIG_ENABLE_ETHERNET) && !defined(CONFIG_ENABLE_ETH_LOOP_BACK)
       eth_rst            <= pci_user_reset;
+#endif
+-- if HBM + (AD9H3 or AD9H7 or U50) : resets the logic before HBM
+#ifdef CONFIG_ENABLE_HBM
+      hbm_ctrl_reset_n <= hbm_ctrl_apb_complete AND action_reset_n_q;
 #endif
       pci_user_reset_q   <= pci_user_reset;
       pci_user_reset_qq  <= pci_user_reset_q;      
@@ -2319,6 +2325,8 @@ BEGIN
   hbm_top_wrapper_i : hbm_top_wrapper
     PORT MAP (
     ARESETN                => action_reset_n_q,
+    CRESETN                => hbm_ctrl_reset_n,
+    APB_COMPLETE           => hbm_ctrl_apb_complete,
 --CHANGE_HBM_INTERFACES_NUMBER
 -- copy/paste these 36 signals for a new AXI interface
     S_AXI_p0_HBM_ACLK         => ha_pclock, -- 250MHz clock 
@@ -2656,9 +2664,6 @@ BEGIN
     S_AXI_p7_HBM_wready         => m_axi_card_hbm_p7_wready,
     S_AXI_p7_HBM_wstrb          => m_axi_card_hbm_p7_wstrb,
     S_AXI_p7_HBM_wvalid         => m_axi_card_hbm_p7_wvalid
--- 
---    refclk300_n                => refclk300_p,
---    refclk300_p                => refclk300_n
   );
 #endif
 #if defined(CONFIG_ENABLE_ETHERNET) && !defined(CONFIG_ENABLE_ETH_LOOP_BACK)

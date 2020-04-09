@@ -72,30 +72,7 @@ if {[string equal [get_filesets -quiet sources_1] ""]} {
   set_property "generic" "" $source_set
 
 
-#====================
-#create the buffer to propagate the clocks
-#create_bd_cell -type ip -vlnv xilinx.com:ip:util_ds_buf:2.1 refclk_ibufds_inst
-#set_property -dict [list CONFIG.C_BUF_TYPE {IBUFDS}] [get_bd_cells refclk_ibufds_inst]
-
-
 set port [create_bd_port -dir I ARESETN]
-
-#if { ($vivadoVer >= "2019.2")} {
-#  set port [create_bd_port -dir I -type clk -freq_hz 300000000 refclk300_n]
-#} else {
-#  set port [create_bd_port -dir I -type clk refclk300_n]
-#  set_property {CONFIG.FREQ_HZ} {300000000} $port
-#}
-
-#if { ($vivadoVer >= "2019.2")} {
-#  set port [create_bd_port -dir I -type clk -freq_hz 300000000 refclk300_p]
-#} else {
-#  set port [create_bd_port -dir I -type clk refclk300_p]
-#  set_property {CONFIG.FREQ_HZ} {300000000} $port 
-#}
-#connect_bd_net [get_bd_ports refclk300_p] [get_bd_pins refclk_ibufds_inst/IBUF_DS_P] >> $log_file
-#connect_bd_net [get_bd_ports refclk300_n] [get_bd_pins refclk_ibufds_inst/IBUF_DS_N] >> $log_file
-
 
 #====================
 #

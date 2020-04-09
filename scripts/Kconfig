@@ -241,8 +241,6 @@ choice
 
         config HDL_EXAMPLE
                 bool "HDL Example"
-	        select DISABLE_HBM
-	        select DISABLE_ETHERNET
 
 	config HDL_NVME_EXAMPLE
 		bool "HDL NVMe Example"

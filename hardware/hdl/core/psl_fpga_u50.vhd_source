@@ -83,10 +83,6 @@ ENTITY psl_fpga IS
 --    spi_mosi_secondary    : out   std_logic;
 --    spi_cen_secondary     : out   std_logic;
 
--- 300MHz clock for HBM
---    refclk300_p           : in    std_logic;
---    refclk300_n           : in    std_logic
-
 
 -- PTMON PMBUS
 --    b_basei2c_scl         : inout std_logic;  -- clock
@@ -256,9 +252,6 @@ Component psl_accel
     ha_pclock                           : IN    STD_LOGIC;
     pci_user_reset                      : IN    std_logic;                      --PCI hip user_reset signal if required
     pci_clock_125MHz                    : IN    std_logic                       --125MHz clock if required
-    -- 300MHz clock for HBM
---    refclk300_p                         : IN    std_logic;                      --300MHz clock if required
---    refclk300_n                         : IN    std_logic                       --300MHz clock if required
   );
 End Component psl_accel;
 
@@ -630,8 +623,6 @@ BEGIN
       ha_pclock                         => ha0_pclock,
       pci_user_reset                    => pci_user_reset,
       pci_clock_125MHz                  => pci_clock_125MHz,
---      refclk300_p			=> refclk300_p,
---      refclk300_n			=> refclk300_n,
       -- DMA port 0 Req
       d0h_dvalid                        => d0h_dvalid,
       d0h_req_utag                      => d0h_req_utag,
