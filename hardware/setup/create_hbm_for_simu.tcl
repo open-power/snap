@@ -84,12 +84,9 @@ set port [create_bd_port -dir I ARESETN]
 #CRESETN is used for converters reset
 set port [create_bd_port -dir I CRESETN]
 
-create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant:1.1 constant_1_one
-set_property -dict [list CONFIG.CONST_WIDTH {1} CONFIG.CONST_VAL {1}] [get_bd_cells constant_1_one]
-
-# Send 1 to output port 
+# Create output port  - copy reset
 set port [create_bd_port -dir O apb_complete]
-connect_bd_net [get_bd_ports apb_complete] [get_bd_pins constant_1_one/dout]
+connect_bd_net [get_bd_ports apb_complete] [get_bd_ports ARESETN]
 
 
 #====================

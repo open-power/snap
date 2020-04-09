@@ -900,7 +900,7 @@ SIGNAL tmp_sdram_axi_bid              : STD_LOGIC_VECTOR (5 downto 0);
   PORT (
     ARESETN                             : in STD_LOGIC;
     CRESETN                             : in STD_LOGIC;
-    APB_COMPLETE                        : out STD_LOGIC_VECTOR ( 0 to 0 );
+    APB_COMPLETE                        : out STD_LOGIC;
 --CHANGE_HBM_INTERFACES_NUMBER
 -- copy/paste these 36 signals for a new AXI interface
     S_AXI_p0_HBM_ACLK : in STD_LOGIC;
@@ -2326,7 +2326,7 @@ BEGIN
     PORT MAP (
     ARESETN                => action_reset_n_q,
     CRESETN                => hbm_ctrl_reset_n,
-    APB_COMPLETE(0)        => hbm_ctrl_apb_complete,
+    APB_COMPLETE           => hbm_ctrl_apb_complete,
 --CHANGE_HBM_INTERFACES_NUMBER
 -- copy/paste these 36 signals for a new AXI interface
     S_AXI_p0_HBM_ACLK         => ha_pclock, -- 250MHz clock 
