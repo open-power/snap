@@ -102,7 +102,7 @@ ENTITY psl_fpga IS
 -- Flash Interface
     spi_miso_secondary    : in    std_logic;
     spi_mosi_secondary    : out   std_logic;
-    spi_cen_secondary     : out   std_logic;
+    spi_cen_secondary     : out   std_logic
 
 -- 300MHz clock unused
 --    refclk300_p           : in    std_logic;
