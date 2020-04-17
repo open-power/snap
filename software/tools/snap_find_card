@@ -305,12 +305,6 @@ while getopts ":vA:C:Vdh" opt; do
 		echo "CAPI /sys/class/cxl directory:"
 		ls -la /sys/class/cxl
 		echo
-		echo "OPENCAPI /dev/ocxl directory:"
-		ls -la /dev/ocxl
-		echo
-		echo "CAPI /sys/class/ocxl directory:"
-		ls -la /sys/class/ocxl
-		echo
 		echo "EEH_MAX_FREEZES: default number of resets allowed per PCI device per hour (/sys/kernel/debug/powerpc/eeh_max_freezes)"
 		PCIMaxReset=`[ -f /sys/kernel/debug/powerpc/eeh_max_freezes ] && cat /sys/kernel/debug/powerpc/eeh_max_freezes`
 		printf "%d ($PCIMaxReset)\n" $PCIMaxReset
@@ -324,11 +318,6 @@ while getopts ":vA:C:Vdh" opt; do
 		echo "Looking for 'degraded':"
 		grep -i degraded /sys/firmware/opal/msglog
 		echo
-		echo "Looking for 'OCAPI':"
-		grep OCAPI /sys/firmware/opal/msglog
-		echo
-		echo "OCAPI link information:"
-		grep OCAPI /sys/firmware/opal/msglog | grep link
 
 		echo
 		echo "More info could be found in /sys/firmware/opal/msglog rolling file (firmware journal)"
