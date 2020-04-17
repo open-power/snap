@@ -28,7 +28,8 @@ bold=$(tput bold)
 normal=$(tput sgr0)
 
 # modified jan 16th 2018 to have -v option providing extra information
-version=2.0
+# modified April 17th 2020: Added -d debug option
+version=2.1
 accel=UNKNOWN
 VERBOSE=0
 DEBUG=0
