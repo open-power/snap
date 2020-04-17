@@ -31,11 +31,13 @@ normal=$(tput sgr0)
 version=2.0
 accel=UNKNOWN
 VERBOSE=0
+DEBUG=0
 
 # Print usage message helper function
 function usage() {
 	echo "Usage: $PROGRAM"
 	echo "    [-v] Prints extra information (to be put as first param)"
+	echo "    [-d] Debug mode to display additional system info"
 	echo "    [-A] <accelerator> use either ADKU3, N250S, S121B_BPIx16, S121B_SPIx4, AD8K5, RCXVUP, FX609, S241, N250SP, AD9V3, AD9H3, AD9H7, U200 or ALL"
 	echo "    [-C] <0..3> Print accelerator name for this Card"
 	echo "    [-V] provides version"
@@ -162,7 +164,7 @@ function detect_card_name()
 # Parse any options given on the command line
 
 PROGRAM=$0
-while getopts ":vA:C:Vh" opt; do
+while getopts ":vA:C:Vdh" opt; do
 	case ${opt} in
 	v)
 		VERBOSE=1
@@ -242,6 +244,97 @@ while getopts ":vA:C:Vh" opt; do
 	V)
 		echo "${version}" >&2
 		exit 0
+		;;
+
+        d)
+		DEBUG=1
+		DistribLike=`{ [ -f /etc/os-release ] && grep '^ID=' /etc/os-release | cut -d= -f2 ; } || { [ -f /etc/system-release ] && cat /etc/system-release ; }`
+		if (echo $DistribLike | egrep -qi 'centos|fedora|rhel'); then DistribLike=fedora; PackageCmd="rpm -qva | grep -i"
+		elif (echo $DistribLike | egrep -qi 'ubuntu|debian'); then DistribLike=debian; PackageCmd="dpkg -l | grep -i"
+		else DistribLike=unknown; PackageCmd="echo 'Unknown Distribution !'"
+		fi
+
+		echo;echo "###########################################################################################################"
+		echo;echo "( ͡° ͜ʖ ͡°) DEBUG INFO (more info if run as root)"
+		echo
+		echo "-----------------------------------------------------------------------------------------------------------"
+		echo "FIRMWARE INFO:"
+		echo "--------------"
+		echo
+		echo "SKIBOOT firmware release:      `cat /proc/device-tree/ibm,opal/firmware/version | tr -d '\0'`  (/proc/device-tree/ibm,opal/firmware/version)"  # tr strips NUL bytes (ubuntu warns if not doing) 
+		echo
+                echo "LSMCODE output:"
+		lsmcode
+		echo
+		echo "Testing /proc/device-tree/ibm,secureboot/secure-enabled existence:"
+		if [ -f /proc/device-tree/ibm,secureboot/secure-enabled ]; then 
+			echo "  --> Secure-Boot ENABLED"
+		else 
+			echo "  --> Secure-Boot DISABLED"
+		fi
+
+                echo
+		echo "-----------------------------------------------------------------------------------------------------------"
+		echo "OS INFO:"
+		echo "--------"
+		echo
+                echo "LINUX distribution:            `{ [ -f /etc/os-release ] && grep PRETTY_NAME /etc/os-release | cut -d= -f2 ; } || { [ -f /etc/system-release ] && cat /etc/system-release ; }`"
+                echo "LINUX version:                 `{ [ -f /etc/os-release ] && grep '^VERSION=' /etc/os-release | cut -d= -f2 ; } || { [ -f /etc/system-release ] && cat /etc/system-release ; }`"
+                echo "OS KERNEL release:             `uname -r`"; echo
+
+		echo
+		echo "CXL / OCXL installed packages:"
+		eval $PackageCmd cxl
+
+		echo
+		echo "-----------------------------------------------------------------------------------------------------------"
+		echo "PCI ACCELERATOR CARDS:"
+		echo "----------------------"
+		echo
+		echo "PCI cards detected (lspci):"
+		lspci -nn | grep -i accelerator
+		echo "(0632: CAPI card, 062b: OPENCAPI card)"
+		echo
+		echo "Card installed on non-CAPI PCI slot (dmesg):"
+		dmesg | grep incompatible
+		echo
+		echo "CAPI /dev/cxl directory:"
+		ls -la /dev/cxl
+		echo
+		echo "CAPI /sys/class/cxl directory:"
+		ls -la /sys/class/cxl
+		echo
+		echo "OPENCAPI /dev/ocxl directory:"
+		ls -la /dev/ocxl
+		echo
+		echo "CAPI /sys/class/ocxl directory:"
+		ls -la /sys/class/ocxl
+		echo
+		echo "EEH_MAX_FREEZES: default number of resets allowed per PCI device per hour (/sys/kernel/debug/powerpc/eeh_max_freezes)"
+		PCIMaxReset=`[ -f /sys/kernel/debug/powerpc/eeh_max_freezes ] && cat /sys/kernel/debug/powerpc/eeh_max_freezes`
+		printf "%d ($PCIMaxReset)\n" $PCIMaxReset
+		echo
+
+                echo
+		echo "-----------------------------------------------------------------------------------------------------------"
+		echo "OPAL MSGLOG:"
+		echo "------------"
+		echo
+		echo "Looking for 'degraded':"
+		grep -i degraded /sys/firmware/opal/msglog
+		echo
+		echo "Looking for 'OCAPI':"
+		grep OCAPI /sys/firmware/opal/msglog
+		echo
+		echo "OCAPI link information:"
+		grep OCAPI /sys/firmware/opal/msglog | grep link
+
+		echo
+		echo "More info could be found in /sys/firmware/opal/msglog rolling file (firmware journal)"
+		echo "or with dmesg (kernel journal) or journalctl (systemd journal) commands"
+		echo
+		echo "( ͡° ͜ʖ ͡°) END OF DEBUG INFO"
+		echo;echo "###########################################################################################################"
 		;;
 	h)
 		usage;
