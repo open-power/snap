@@ -78,17 +78,14 @@ fi
 function test_helloworld {
     local size=$1
 
-    cmd="echo \"Hello world. This is my first CAPI SNAP experience. It's real fun.\" > tin"
+    cmd="action_test"
     echo "cmd: ${cmd}"
     eval ${cmd}
-    cmd="echo \"HELLO WORLD. THIS IS MY FIRST CAPI SNAP EXPERIENCE. IT'S REAL FUN.\" > tCAP"
-    echo "cmd: ${cmd}"
-    eval ${cmd}
-    echo -n "Doing snap_helloworld "
-    cmd="snap_helloworld -C${snap_card} -i tin -o tout >> snap_helloworld.log 2>&1"
+    echo -n "doing action_test"
+    cmd="action_test >> hls_udp.log 2>&1"
     eval ${cmd}
     if [ $? -ne 0 ]; then
-	cat snap_helloworld.log
+	cat hls_udp.log
 	echo "cmd: ${cmd}"
 	echo "failed"
 	exit 1
