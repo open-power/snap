@@ -433,15 +433,25 @@ choice
 
     config HLS_PARALLEL_MEMCPY
 		bool "HLS Parallel Memcpy example"
-        	help
-            	  This example is written in C and compiled with HLS
-        	select ENABLE_HLS_SUPPORT
-        	select DISABLE_SDRAM_AND_BRAM
-        	select DISABLE_NVME
-		select DISABLE_HBM
-		select DISABLE_ETHERNET
+                help
+                  This example is written in C and compiled with HLS 
+                select ENABLE_HLS_SUPPORT
+                select DISABLE_SDRAM_AND_BRAM
+                select DISABLE_NVME
+                select DISABLE_HBM
+                select DISABLE_ETHERNET
 
-    config HLS_RX100G
+   config HLS_IMAGE_FILTER
+                bool "HLS Image filtering example"
+	        help
+         	  This example is written in C and compiled with HLS
+	        select ENABLE_HLS_SUPPORT
+	        select DISABLE_SDRAM_AND_BRAM
+	        select DISABLE_NVME
+	        select DISABLE_HBM
+       		select DISABLE_ETHERNET
+
+   config HLS_RX100G
 		bool "HLS 100G receiver"
 		depends on ( AD9H3 || AD9H7 )
         	help

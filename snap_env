@@ -243,6 +243,8 @@ while [ -z "$SETUP_DONE" ]; do
     AR='${SNAP_ROOT}/actions/hls_vector_generator'
   elif [ -n "$HLS_PARALLEL_MEMCPY" ]; then
     AR='${SNAP_ROOT}/actions/hls_parallel_memcpy'
+  elif [ -n "$HLS_IMAGE_FILTER" ]; then
+    AR='${SNAP_ROOT}/actions/hls_image_filter'
   elif [ -n "$HLS_RX100G" ]; then
     AR='${SNAP_ROOT}/actions/hls_rx100G'
   elif [ -n "$HLS_HBM_MEMCOPY" ]; then
