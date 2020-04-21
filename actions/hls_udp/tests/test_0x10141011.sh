@@ -1,5 +1,4 @@
 #!/bin/bash
-
 #
 # Copyright 2017 International Business Machines
 #
