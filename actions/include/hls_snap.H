@@ -52,6 +52,7 @@
 #define BPERDW (MEMDW/8)   // Bytes per Data Word    if MEMDW=512 => BPERDW = 64
 #define WPERDW (64/BPERDW) // Number of words per DW if MEMDW=512 => WPERDW =  1
 #define ADDR_RIGHT_SHIFT 6
+#define ADDR_RIGHT_SHIFT_256 5
 #define SNAP_HLS_JOBSIZE SNAP_JOBSIZE
 
 typedef ap_uint<MEMDW> snap_membus_t;  /* snap memory access */

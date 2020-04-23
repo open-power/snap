@@ -20,10 +20,12 @@ set vivadoVer    [version -short]
 set root_dir    $::env(SNAP_HARDWARE_ROOT)
 set denali_used $::env(DENALI_USED)
 set fpga_part   $::env(FPGACHIP)
+set fpga_card   $::env(FPGACARD)
 set log_dir     $::env(LOGS_DIR)
 set log_file    $log_dir/create_hbm_host.log
 
 # user can set a specific value for the Action clock lower than the 250MHz nominal clock
+# as of now, only 3 clock frequencies are enabled in this file: 200MHz, 225MHz and 250MHz
 set action_clock_freq "250MHz"
 #overide default value if variable exist
 set action_clock_freq $::env(FPGA_ACTION_CLK)
@@ -35,7 +37,7 @@ set bd_name  hbm_top
 # _______________________________________________________________________________
 # In this file, we define all the logic to have independent 256MB/2Gb memories
 # each with an independent AXI interfaces which will be connected to the action
-# Default is HBM_MEM_NUM = 2 interfaces
+# Default is HBM_MEM_NUM = 8 interfaces
 # TO increase/decrease the number of memory needed, just look to #CHANGE_HBM_INTERFACES_NUMBER
 # param and 1) change HBM_MEM_NUM value
 # with a value between 1 and 16. If you need more memories, you need to add the 2nd stack
@@ -53,6 +55,10 @@ set  HBM_MEM_NUM 8
 # Create HBM project
 create_project   $prj_name $root_dir/ip/hbm -part $fpga_part -force >> $log_file
 set_property target_language VHDL [current_project]
+if { ($fpga_card == "U200" ) || ($fpga_card == "U50") } {
+  set fpga_board  $::env(FPGABOARD)
+  set_property board_part $fpga_board [current_project]
+}
 
 #Create block design
 create_bd_design $bd_name  >> $log_file
@@ -88,64 +94,99 @@ set_property -dict [list CONFIG.CONST_WIDTH {32} CONFIG.CONST_VAL {0}] [get_bd_c
 
 
 #====================
-#create the buffer to propagate the clocks
-create_bd_cell -type ip -vlnv xilinx.com:ip:util_ds_buf:2.1 refclk_ibufds_inst
-set_property -dict [list CONFIG.C_BUF_TYPE {IBUFDS}] [get_bd_cells refclk_ibufds_inst]
-
+#create the clock for the APB clock (must be between 50 and 100MHz)
+#  AXI clk = 200MHz => divide by 2 => APB clk = 100MHz
+#  AXI clk = 225MHz => divide by 3 => APB clk =  75MHz
+#  AXI clk = 250MHz => divide by 5 => APB clk =  50MHz
+create_bd_cell -type ip -vlnv {xilinx.com:ip:util_ds_buf:*} refclk_bufg_apb_clk
+if { $action_clock_freq == "200MHZ" } {
+   set_property -dict [list             \
+      CONFIG.C_BUF_TYPE {BUFGCE_DIV}    \
+      CONFIG.C_BUFGCE_DIV {2}           \
+   ] [get_bd_cells refclk_bufg_apb_clk]
+} elseif { $action_clock_freq == "225MHZ" } {
+   set_property -dict [list             \
+      CONFIG.C_BUF_TYPE {BUFGCE_DIV}    \
+      CONFIG.C_BUFGCE_DIV {3}           \
+   ] [get_bd_cells refclk_bufg_apb_clk]
+} else { 
+   set_property -dict [list             \
+      CONFIG.C_BUF_TYPE {BUFGCE_DIV}    \
+      CONFIG.C_BUFGCE_DIV {5}           \
+   ] [get_bd_cells refclk_bufg_apb_clk]
+}
 #====================
-#create the clocks and the reset signals for the design
-#create_bd_cell -type ip -vlnv xilinx.com:ip:util_ds_buf:2.1 refclk_bufg_div3
-#set_property -dict [list CONFIG.C_BUF_TYPE {BUFGCE_DIV} CONFIG.C_BUFGCE_DIV {3}] [get_bd_cells refclk_bufg_div3]
+connect_bd_net [get_bd_pins constant_1_zero/dout] [get_bd_pins refclk_bufg_apb_clk/BUFGCE_CLR]
+connect_bd_net [get_bd_pins constant_1_one/dout] [get_bd_pins refclk_bufg_apb_clk/BUFGCE_CE]
 
-create_bd_cell -type ip -vlnv xilinx.com:ip:util_ds_buf:2.1 refclk_bufg_div4
-set_property -dict [list CONFIG.C_BUF_TYPE {BUFGCE_DIV} CONFIG.C_BUFGCE_DIV {4}] [get_bd_cells refclk_bufg_div4]
-
-#====================
-#connect_bd_net [get_bd_pins constant_1_zero/dout] [get_bd_pins refclk_bufg_div3/BUFGCE_CLR]
-#connect_bd_net [get_bd_pins constant_1_one/dout] [get_bd_pins refclk_bufg_div3/BUFGCE_CE]
-connect_bd_net [get_bd_pins constant_1_zero/dout] [get_bd_pins refclk_bufg_div4/BUFGCE_CLR]
-connect_bd_net [get_bd_pins constant_1_one/dout] [get_bd_pins refclk_bufg_div4/BUFGCE_CE]
-
+#ARESETN is used for HBM reset
 set port [create_bd_port -dir I ARESETN]
-
-if { ($vivadoVer >= "2019.2")} {
-  set port [create_bd_port -dir I -type clk -freq_hz 300000000 refclk300_n]
-} else {
-  set port [create_bd_port -dir I -type clk refclk300_n]
-  set_property {CONFIG.FREQ_HZ} {300000000} $port
-}
-
-if { ($vivadoVer >= "2019.2")} {
-  set port [create_bd_port -dir I -type clk -freq_hz 300000000 refclk300_p]
-} else {
-  set port [create_bd_port -dir I -type clk refclk300_p]
-  set_property {CONFIG.FREQ_HZ} {300000000} $port 
-}
-connect_bd_net [get_bd_ports refclk300_p] [get_bd_pins refclk_ibufds_inst/IBUF_DS_P] >> $log_file
-connect_bd_net [get_bd_ports refclk300_n] [get_bd_pins refclk_ibufds_inst/IBUF_DS_N] >> $log_file
-
-connect_bd_net [get_bd_pins refclk_ibufds_inst/IBUF_OUT] [get_bd_pins refclk_bufg_div4/BUFGCE_I]
-
+#CRESETN is used for converters reset 
+set port [create_bd_port -dir I CRESETN]
 
 #====================
 #Use the HBM left stack 0 only (16 modules of 256MB/2Gb = 4GB)
 set cell [create_bd_cell -quiet -type ip -vlnv {xilinx.com:ip:hbm:*} hbm]
 
 #Common params for the HBM not depending on the number of memories enabled
-# The reference clock provided to HBM is at 100MHz (output of refclk_bufg_div3)
-# and HBM IP logic generates internally the 800MHz which HBM operates at
-#(params provided by AlphaData)
+# The reference clock provided to HBM is AXI clock
+#  AXI clk = 200MHz => HBM refclk = 900MHz
+#  AXI clk = 225MHz => HBM refclk = 875MHz
+#  AXI clk = 250MHz => HBM refclk = 875MHz
+#LEFT stack is used for SNAP/CAPI2.0 since BSP/PSL logic is using right resources of the FPGA
 
-#Setting for Production chips: HBM_REF_CLK=300MHz => HBM Mem freq=900MHz
+#Setting for Production chips: HBM_REF_CLK=200 or 225 or 250MHz
 set_property -dict [list                               \
   CONFIG.USER_HBM_DENSITY {4GB}                        \
   CONFIG.USER_HBM_STACK {1}                            \
   CONFIG.USER_AUTO_POPULATE {yes}                      \
   CONFIG.USER_SWITCH_ENABLE_00 {FALSE}                 \
-  CONFIG.USER_APB_PCLK_0 {75}                          \
+  CONFIG.USER_SINGLE_STACK_SELECTION {LEFT}            \
   ] $cell >> $log_file
 
-if { $action_clock_freq == "225MHZ" } {
+if { $action_clock_freq == "200MHZ" } {
+  set_property -dict [list                               \
+    CONFIG.USER_HBM_REF_CLK_0 {200}                      \
+    CONFIG.USER_HBM_REF_CLK_PS_0 {2500.00}               \
+    CONFIG.USER_HBM_REF_CLK_XDC_0 {5.00}                 \
+    CONFIG.USER_HBM_FBDIV_0 {18}                         \
+    CONFIG.USER_HBM_CP_0 {6}                             \
+    CONFIG.USER_HBM_RES_0 {9}                            \
+    CONFIG.USER_HBM_LOCK_REF_DLY_0 {20}                  \
+    CONFIG.USER_HBM_LOCK_FB_DLY_0 {20}                   \
+    CONFIG.USER_HBM_HEX_CP_RES_0 {0x00009600}            \
+    CONFIG.USER_HBM_HEX_LOCK_FB_REF_DLY_0 {0x00001414}   \
+    CONFIG.USER_HBM_HEX_FBDIV_CLKOUTDIV_0 {0x00000482}   \
+    CONFIG.USER_HBM_TCK_0 {900}                          \
+    CONFIG.USER_HBM_TCK_0_PERIOD {1.1111111111111112}    \
+    CONFIG.USER_tRC_0 {0x2B}                             \
+    CONFIG.USER_tRAS_0 {0x1E}                            \
+    CONFIG.USER_tRCDRD_0 {0xD}                           \
+    CONFIG.USER_tRCDWR_0 {0x9}                           \
+    CONFIG.USER_tRRDL_0 {0x4}                            \
+    CONFIG.USER_tRRDS_0 {0x4}                            \
+    CONFIG.USER_tFAW_0 {0xF}                             \
+    CONFIG.USER_tRP_0 {0xD}                              \
+    CONFIG.USER_tWR_0 {0xF}                              \
+    CONFIG.USER_tXP_0 {0x7}                              \
+    CONFIG.USER_tRFC_0 {0xEA}                            \
+    CONFIG.USER_tRFCSB_0 {0x90}                          \
+    CONFIG.USER_tRREFD_0 {0x8}                           \
+    CONFIG.USER_APB_PCLK_0 {100}                         \
+    CONFIG.USER_APB_PCLK_PERIOD_0 {10.0}                 \
+    CONFIG.USER_TEMP_POLL_CNT_0 {100000}                 \
+    CONFIG.USER_HBM_REF_OUT_CLK_0 {1800}                 \
+    CONFIG.USER_MC0_REF_CMD_PERIOD {0x0DB6}              \
+    CONFIG.USER_MC1_REF_CMD_PERIOD {0x0DB6}              \
+    CONFIG.USER_MC2_REF_CMD_PERIOD {0x0DB6}              \
+    CONFIG.USER_MC3_REF_CMD_PERIOD {0x0DB6}              \
+    CONFIG.USER_MC4_REF_CMD_PERIOD {0x0DB6}              \
+    CONFIG.USER_MC5_REF_CMD_PERIOD {0x0DB6}              \
+    CONFIG.USER_MC6_REF_CMD_PERIOD {0x0DB6}              \
+    CONFIG.USER_MC7_REF_CMD_PERIOD {0x0DB6}              \
+    CONFIG.USER_DFI_CLK0_FREQ {450.000}                  \
+    ] $cell >> $log_file
+} elseif { $action_clock_freq == "225MHZ" } {
   set_property -dict [list                               \
     CONFIG.USER_HBM_REF_CLK_0 {225}                      \
     CONFIG.USER_HBM_REF_CLK_PS_0 {2222.22}               \
@@ -173,6 +214,9 @@ if { $action_clock_freq == "225MHZ" } {
     CONFIG.USER_tRFC_0 {0xEA}                            \
     CONFIG.USER_tRFCSB_0 {0x90}                          \
     CONFIG.USER_tRREFD_0 {0x8}                           \
+    CONFIG.USER_APB_PCLK_0 {75}                          \
+    CONFIG.USER_APB_PCLK_PERIOD_0 {13.333333333333334}   \
+    CONFIG.USER_TEMP_POLL_CNT_0 {75000}                  \
     CONFIG.USER_HBM_REF_OUT_CLK_0 {1800}                 \
     CONFIG.USER_MC0_REF_CMD_PERIOD {0x0DB6}              \
     CONFIG.USER_MC1_REF_CMD_PERIOD {0x0DB6}              \
@@ -212,6 +256,9 @@ if { $action_clock_freq == "225MHZ" } {
     CONFIG.USER_tRFC_0 {0xE4}                            \
     CONFIG.USER_tRFCSB_0 {0x8C}                          \
     CONFIG.USER_tRREFD_0 {0x7}                           \
+    CONFIG.USER_APB_PCLK_0 {50}                          \
+    CONFIG.USER_APB_PCLK_PERIOD_0 {20.0}                 \
+    CONFIG.USER_TEMP_POLL_CNT_0 {50000}                  \
     CONFIG.USER_HBM_REF_OUT_CLK_0 {1750}                 \
     CONFIG.USER_MC0_REF_CMD_PERIOD {0x0D54}              \
     CONFIG.USER_MC1_REF_CMD_PERIOD {0x0D54}              \
@@ -230,18 +277,9 @@ if { $action_clock_freq == "225MHZ" } {
 #===============================================================================
 #Define here the configuration you request 
 #
-#Config below is enabling 2 independent 256MB memory using 2 MC => 1024MB
-# MC0 contains S_AXI_00 and MC1 contains S_AXI_02
-# Each memory is accessible using address from <0x0000_0000> to <0x0FFF_FFFF> [ 256M ]
-#Slave segment </hbm/SAXI_00/HBM_MEM00> is being mapped into address space </S_AXI_0> at <0x0000_0000 [ 256M ]>
-#Slave segment </hbm/SAXI_00/HBM_MEM01> is being mapped into address space </S_AXI_0> at <0x1000_0000 [ 256M ]>
-#Slave segment </hbm/SAXI_01/HBM_MEM00> is being mapped into address space </S_AXI_1> at <0x0000_0000 [ 256M ]>
-#Slave segment </hbm/SAXI_01/HBM_MEM01> is being mapped into address space </S_AXI_1> at <0x1000_0000 [ 256M ]>
-#   
 #CHANGE_HBM_INTERFACES_NUMBER
-#  CONFIG.USER_MEMORY_DISPLAY {1024}  => set the value to 512 by MC used (1024 = 2 MC used)
+#  CONFIG.USER_MEMORY_DISPLAY {2048}  => set the value to 512 by MC used (2048 = 4 MC used)
 #  CONFIG.USER_MC_ENABLE_00 {TRUE}    => enable/disable the MC
-#  CONFIG.USER_SAXI_00 {true}         => enable/disable each of the AXI interface/HBM memory
 set_property -dict [list \
   CONFIG.USER_MEMORY_DISPLAY {2048}  \
   CONFIG.USER_CLK_SEL_LIST0 {AXI_00_ACLK}  \
@@ -258,18 +296,20 @@ set_property -dict [list \
 
 #add log_file to remove the warning on screen
 connect_bd_net [get_bd_pins constant_1_zero/dout] [get_bd_pins hbm/APB_0_PENABLE] >> $log_file
-connect_bd_net [get_bd_pins constant_22_zero/dout] [get_bd_pins hbm/APB_0_PADDR] >> $log_file
-connect_bd_net [get_bd_pins constant_1_zero/dout] [get_bd_pins hbm/APB_0_PSEL] >> $log_file
+connect_bd_net [get_bd_pins constant_22_zero/dout] [get_bd_pins hbm/APB_0_PADDR]  >> $log_file
+connect_bd_net [get_bd_pins constant_1_zero/dout] [get_bd_pins hbm/APB_0_PSEL]    >> $log_file
 connect_bd_net [get_bd_pins constant_32_zero/dout] [get_bd_pins hbm/APB_0_PWDATA] >> $log_file
-connect_bd_net [get_bd_pins constant_1_zero/dout] [get_bd_pins hbm/APB_0_PWRITE] >> $log_file
+connect_bd_net [get_bd_pins constant_1_zero/dout] [get_bd_pins hbm/APB_0_PWRITE]  >> $log_file
 
-#connect_bd_net [get_bd_pins refclk_bufg_div3/BUFGCE_O] [get_bd_pins hbm/HBM_REF_CLK_0]
-connect_bd_net [get_bd_pins hbm/HBM_REF_CLK_0] [get_bd_pins refclk_ibufds_inst/IBUF_OUT]  
-connect_bd_net [get_bd_pins refclk_bufg_div4/BUFGCE_O] [get_bd_pins hbm/APB_0_PCLK]
+connect_bd_net [get_bd_pins refclk_bufg_apb_clk/BUFGCE_O] [get_bd_pins hbm/APB_0_PCLK]
 connect_bd_net [get_bd_pins ARESETN] [get_bd_pins hbm/APB_0_PRESET_N]
 
+#======
+# Connect output ports
+set port [create_bd_port -dir O apb_complete]
+connect_bd_net [get_bd_ports apb_complete] [get_bd_pins hbm/apb_complete_0]
+
 #====================
-#
 #-- Set the upper bound of the loop to the number of memory you use --
 
 #--------------------- start loop ------------------
@@ -281,20 +321,6 @@ for {set i 0} {$i < $HBM_MEM_NUM} {incr i} {
     CONFIG.ADDR_WIDTH {64}        \
   } $cell
   
-
-  #create the axi_register_slice converters
-  set cell [create_bd_cell -type ip -vlnv {xilinx.com:ip:axi_register_slice:*} axi_register_slice_$i ]
-  set_property -dict {     \
-    CONFIG.ADDR_WIDTH {33}              \
-    CONFIG.DATA_WIDTH {256}             \
-    CONFIG.ID_WIDTH {6}                 \
-    CONFIG.REG_AW {10}                  \
-    CONFIG.REG_AR {10}                  \
-    CONFIG.REG_W {10}                   \
-    CONFIG.REG_R {10}                   \
-    CONFIG.REG_B {10}                   \
-    }  $cell
-
   #create the ports
   create_bd_intf_port -mode Slave -vlnv xilinx.com:interface:aximm_rtl:1.0 S_AXI_p$i\_HBM
   set_property -dict [list \
@@ -306,6 +332,8 @@ for {set i 0} {$i < $HBM_MEM_NUM} {incr i} {
 
   if { $action_clock_freq == "225MHZ" } {
     set_property -dict [list CONFIG.FREQ_HZ {225000000}] [get_bd_intf_ports S_AXI_p$i\_HBM]
+  } elseif { $action_clock_freq == "225MHZ" } {
+    set_property -dict [list CONFIG.FREQ_HZ {225000000}] [get_bd_intf_ports S_AXI_p$i\_HBM]
   } else {
     set_property -dict [list CONFIG.FREQ_HZ {250000000}] [get_bd_intf_ports S_AXI_p$i\_HBM]
   }
@@ -313,55 +341,58 @@ for {set i 0} {$i < $HBM_MEM_NUM} {incr i} {
 
 
   if { ($vivadoVer >= "2019.2")} {
-    if { $action_clock_freq == "225MHZ" } {
+    if { $action_clock_freq == "200MHZ" } {
+      set port [create_bd_port -dir I -type clk -freq_hz 200000000 S_AXI_p$i\_HBM_ACLK]
+    } elseif { $action_clock_freq == "225MHZ" } {
       set port [create_bd_port -dir I -type clk -freq_hz 225000000 S_AXI_p$i\_HBM_ACLK]
     } else {
       set port [create_bd_port -dir I -type clk -freq_hz 250000000 S_AXI_p$i\_HBM_ACLK]
     }
   } else {
     set port [create_bd_port -dir I -type clk S_AXI_p$i\_HBM_ACLK]
-    if { $action_clock_freq == "225MHZ" } {
+    if { $action_clock_freq == "200MHZ" } {
+      set_property {CONFIG.FREQ_HZ} {200000000} $port
+    } elseif { $action_clock_freq == "225MHZ" } {
       set_property {CONFIG.FREQ_HZ} {225000000} $port
     } else {
       set_property {CONFIG.FREQ_HZ} {250000000} $port
     }
   }
   connect_bd_net $port [get_bd_pins axi4_to_axi3_$i/aclk]
-  connect_bd_net [get_bd_pins ARESETN] [get_bd_pins axi4_to_axi3_$i/aresetn]
+  connect_bd_net [get_bd_pins CRESETN] [get_bd_pins axi4_to_axi3_$i/aresetn]
   
-  #connect aaxi4_to_axi3 to axi_register_slice
-  connect_bd_net [get_bd_pins ARESETN] [get_bd_pins axi_register_slice_$i/aresetn]
-  connect_bd_net [get_bd_pins axi4_to_axi3_$i/aclk] [get_bd_pins axi_register_slice_$i/aclk]
-  connect_bd_intf_net [get_bd_intf_pins axi4_to_axi3_$i/M_AXI] [get_bd_intf_pins axi_register_slice_$i/S_AXI]
-  
-  #connect axi_register_slice to hbm
+  #connect axi4_to_axi3 to hbm
   #Manage 1 vs 2 digits
   if { $i < 10} {
     connect_bd_net [get_bd_pins ARESETN] [get_bd_pins hbm/AXI_0$i\_ARESET_N]
     connect_bd_net [get_bd_pins axi4_to_axi3_$i/aclk] [get_bd_pins hbm/AXI_0$i\_ACLK]
-    connect_bd_intf_net [get_bd_intf_pins axi_register_slice_$i/M_AXI] [get_bd_intf_pins hbm/SAXI_0$i]
+    connect_bd_intf_net [get_bd_intf_pins axi4_to_axi3_$i/M_AXI] [get_bd_intf_pins hbm/SAXI_0$i]
+    
   } else {
     connect_bd_net [get_bd_pins ARESETN] [get_bd_pins hbm/AXI_$i\_ARESET_N]
     connect_bd_net [get_bd_pins axi4_to_axi3_$i/aclk] [get_bd_pins hbm/AXI_$i\_ACLK]
-    connect_bd_intf_net [get_bd_intf_pins axi_register_slice_$i/M_AXI] [get_bd_intf_pins hbm/SAXI_$i]
+    connect_bd_intf_net [get_bd_intf_pins axi4_to_axi3_$i/M_AXI] [get_bd_intf_pins hbm/SAXI_$i]
   }
 }
 #--------------------- end loop ------------------
 
-# In Vivado 2018.3, there are 32 segments of 256 MiB each in the HBM.
+#This line need to be added after the loop since the S_AXI_p0_HBM_ACLK is not defined before
+connect_bd_net [get_bd_pins hbm/HBM_REF_CLK_0] [get_bd_pins S_AXI_p0_HBM_ACLK]
+connect_bd_net [get_bd_pins S_AXI_p0_HBM_ACLK] [get_bd_pins refclk_bufg_apb_clk/BUFGCE_I]
+
 assign_bd_address >> $log_file
 
 regenerate_bd_layout
 #comment following line if you want to debug this file
 validate_bd_design >> $log_file
 save_bd_design >> $log_file
-#return $bd
 
 #====================
 # Generate the Output products of the HBM block design.
 # It is important that this are Verilog files and set the synth_checkpoint_mode to None (Global synthesis) before generating targets
 puts "                        generating HBM output products"
 set_property synth_checkpoint_mode None [get_files  $root_dir/ip/hbm/hbm.srcs/sources_1/bd/hbm_top/hbm_top.bd] >> $log_file
+
 #comment following line if you want to debug this file
 generate_target all                     [get_files  $root_dir/ip/hbm/hbm.srcs/sources_1/bd/hbm_top/hbm_top.bd] >> $log_file
 
