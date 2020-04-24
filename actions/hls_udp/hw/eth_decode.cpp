@@ -14,14 +14,11 @@
  * limitations under the License.
  */
 
-#include "hw_action_rx100G.h"
+#include "hls_udp.h"
 #include <unistd.h>
 #include "snap_hls_if.h"
 #include "ap_int.h"
-
 #include <iostream>
-#include "../hw/hw_action_rx100G.h"
-
 
 enum rcv_state_t {RCV_INIT, RCV_JF_HEADER, RCV_GOOD, RCV_BAD, RCV_IGNORE};
 

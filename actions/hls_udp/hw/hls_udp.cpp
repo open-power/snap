@@ -17,8 +17,6 @@
 
 #include <string.h>
 #include "ap_int.h"
-
-//#include "hw_action_rx100G.h"
 #include <unistd.h>
 #include "snap_hls_if.h"
 

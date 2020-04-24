@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "hw_action_rx100G.h"
+#include "hls_udp.h"
 
 void convert_and_shuffle(ap_uint<512> data_in, ap_uint<512>& data_out,
 		packed_pedeG0_t& packed_pedeG0, ap_uint<512> packed_pedeG0RMS, ap_uint<512> packed_gainG0,

@@ -15,12 +15,11 @@
  */
 
 
-#include "hw_action_rx100G.h"
+#include "hls_udp.h"
 #include <unistd.h>
 #include "ap_int.h"
 #include "snap_hls_if.h"
 #include <iostream>
-#include "../hw/hw_action_rx100G.h"
 
 void write_data(DATA_STREAM &in, snap_membus_t *dout_gmem, size_t out_frame_buffer_addr) {
 	data_packet_t packet_in;
