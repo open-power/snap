@@ -37,9 +37,9 @@ endif
 endif
 
 # This is solution specific. Check if we can replace this by generics too.
-SOLUTION_NAME ?= rx100G
-SOLUTION_DIR ?= hlsRX100G
-srcs += eth_decode.cpp hw_action_rx100G.cpp convert.cpp write_data.cpp pack.cpp
+SOLUTION_NAME ?= hls_udp
+SOLUTION_DIR ?= hls_UDP
+srcs += eth_decode.cpp hls_udp.cpp convert.cpp write_data.cpp pack.cpp
 
 # If you have the action code outside of the default snap directory structure, 
 # change to /path/to/snap/actions/hls.mk

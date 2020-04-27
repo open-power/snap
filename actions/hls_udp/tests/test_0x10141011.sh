@@ -72,16 +72,13 @@ if [ -z "$SNAP_CONFIG" ]; then
 	echo
 fi
 
-#### HELLOWORLD ##########################################################
+#### HLS_UDP ##########################################################
 
-function test_helloworld {
+function test_udp {
     local size=$1
 
-    cmd="action_test"
-    echo "cmd: ${cmd}"
-    eval ${cmd}
-    echo -n "doing action_test"
-    cmd="action_test >> hls_udp.log 2>&1"
+    echo -n "doing action_test hls_udp"
+    cmd="hls_udp >> hls_udp.log 2>&1"
     eval ${cmd}
     if [ $? -ne 0 ]; then
 	cat hls_udp.log
@@ -90,23 +87,13 @@ function test_helloworld {
 	exit 1
     fi
     echo "ok"
-
-    echo -n "Check results ... "
-    diff tout tCAP 2>&1 > /dev/null
-    if [ $? -ne 0 ]; then
-	echo "failed"
-	echo "  Out and expected files are different!"
-	exit 1
-    fi
-    echo "ok"
-
 }
 
-rm -f snap_helloworld.log
-touch snap_helloworld.log
+rm -f hls_udp.log
+touch hls_udp.log
 
 if [ "$duration" = "NORMAL" ]; then
-  test_helloworld 
+  test_udp 
   fi
 
 rm -f *.bin *.bin *.out

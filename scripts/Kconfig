@@ -462,6 +462,32 @@ choice
         	select DISABLE_SDRAM_AND_BRAM
         	select DISABLE_NVME
 		select ENABLE_SIMU_WO_ETH 
+
+   config HLS_UDP
+                bool "HLS UDP"
+                depends on ( AD9H3 || AD9H7 )
+                help
+                  This example is written in C and compiled with HLS
+                select ENABLE_HLS_SUPPORT
+	        select DISABLE_HBM
+                select ENABLE_ETHERNET
+                select DISABLE_SDRAM_AND_BRAM
+                select DISABLE_NVME
+                select ENABLE_SIMU_WO_ETH
+
+   config HLS_UDP_IMAGE
+                bool "HLS UDP IMAGE"
+                help
+                  This example is written in C and compiled with HLS
+                select ENABLE_HLS_SUPPORT
+	        select DISABLE_HBM
+                select DISABLE_SDRAM_AND_BRAM
+                select DISABLE_NVME
+                select ENABLE_ETHERNET
+		select DISABLE_NVME
+		select ENABLE_SIMU_WO_ETH
+
+
 endchoice
 
 config ENABLE_HLS_SUPPORT

@@ -60,7 +60,6 @@ static void snap_prepare_rx100G(struct snap_job *cjob,
 
 	mjob->packets_to_read = NPACKETS;
 	mjob->fpga_mac_addr = 0xAABBCCDDEEF1;
-	//mjob->fpga_ipv4_addr = 0x0532010A;
 	mjob->fpga_ipv4_addr = 0x0A013205;
 	snap_job_set(cjob, mjob, sizeof(*mjob), NULL, 0);
 }
@@ -101,6 +100,10 @@ int main()
 	type_out = SNAP_ADDRTYPE_HOST_DRAM;
 	addr_out = (unsigned long)obuff;
 
+
+	printf("HLS_UDP program\n");
+	printf("     this program is an example of use of udp \n\n"); 
+
 	/* Display the parameters that will be used for the example */
 	printf("PARAMETERS:\n"
 	       "  type_out:    %x %s\n"
@@ -132,12 +135,13 @@ int main()
 	snap_prepare_rx100G(&cjob, &mjob,
 			     (void *)addr_out, size, type_out);
 	printf("  mac :    %08llx\n"
-		   "  ip  :    %08llx\n",
+	       "  ip  :    %08llx\n",
 		   (long long)mjob.fpga_mac_addr, (long long)mjob.fpga_ipv4_addr);
 
 
 
 	// uncomment to dump the job structure
+	printf("\n Dump of the job structure\n");
 	__hexdump(stderr, &mjob, sizeof(mjob));
 
 
@@ -149,7 +153,7 @@ int main()
 	//  + start the action 
 	//  + wait for completion
 	//  + read all the registers from the action (MMIO) 
-	printf("before snap_action\n");
+	printf("\ncall snap_action\n");
 	rc = snap_action_sync_execute_job(action, &cjob, timeout);
 
 	// Collect the timestamp AFTER the call of the action
@@ -159,11 +163,11 @@ int main()
 			strerror(errno));
 		goto out_error2;
 	}
-    __hexdump(stdout, obuff, 130*64);
+	printf("\nDump of the output buff ( onlythe first 512 bytes )\n");
+    	__hexdump(stdout, obuff, 512);
 
-	__hexdump(stderr, &mjob, sizeof(mjob));
 
-	printf(" Loaded bytes %ld\n", mjob.read_size);
+
 	printf(" Good packets %ld\n", mjob.good_packets);
 	printf(" Bad packets %ld\n", mjob.bad_packets);
 	printf(" Ignored Packets %ld\n", mjob.ignored_packets);
