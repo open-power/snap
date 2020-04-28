@@ -102,7 +102,7 @@ int main()
 
 
 	printf("HLS_UDP program\n");
-	printf("     this program is an example of use of udp \n\n"); 
+	printf("     this program is an example of use of udp in snap\n\n");
 
 	/* Display the parameters that will be used for the example */
 	printf("PARAMETERS:\n"
@@ -171,8 +171,6 @@ int main()
 	printf(" Good packets %ld\n", mjob.good_packets);
 	printf(" Bad packets %ld\n", mjob.bad_packets);
 	printf(" Ignored Packets %ld\n", mjob.ignored_packets);
-	printf(" User %x\n", mjob.user);
-	printf(" MAC %lx\n", mjob.fpga_mac_addr);
 
 	// test return code
 	(cjob.retc == SNAP_RETC_SUCCESS) ? fprintf(stdout, "SUCCESS\n") : fprintf(stdout, "FAILED\n");
@@ -182,7 +180,7 @@ int main()
 	}
 
 	// Display the time of the action call (MMIO registers filled + execution)
-	fprintf(stdout, "SNAP helloworld took %lld usec\n",
+	fprintf(stdout, "HLS UDP took %lld usec\n",
 		(long long)timediff_usec(&etime, &stime));
 
 	// Detach action + disallocate the card
