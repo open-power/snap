@@ -140,6 +140,7 @@ struct card_2_name snap_card_2_name_tab[] = {
         {.card_id = AD9H3_CARD,  .card_name = "AD9H3"},
         {.card_id = AD9H7_CARD,  .card_name = "AD9H7"},
 	{.card_id = U200_CARD,   .card_name = "U200"},
+        {.card_id = U50_CARD,    .card_name = "U50"},
 	{.card_id = -1,          .card_name = "INVALID"}
 };
 
