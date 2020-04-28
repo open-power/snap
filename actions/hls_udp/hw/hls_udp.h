@@ -1,5 +1,5 @@
-#ifndef __HW_ACTION_RX100G_H__
-#define __HW_ACTION_RX100G_H__
+#ifndef __HLS_UDP_H__
+#define __HLS_UDP_H__
 
 /*
  * Copyright 2017 International Business Machines
