@@ -102,9 +102,12 @@ static void *snap_open(struct mdev_ctx *mctx)
 	if (NULL == handle) {
 		VERBOSE0("Error: Can not open CAPI-SNAP Device: %s\n",
 			device);
-                VERBOSE0("  If directory doesn't exist, card may not contain a valid CAPI image\n");
-		VERBOSE0("  Make sure Root rights are set for this directory\n");
-		VERBOSE0("  You may type: sudo chmod -R ugo+rw /dev/cxl\n");
+                VERBOSE0("  => If directory doesn't exist, card may not contain a valid CAPI image\n");
+		VERBOSE0("  => Make sure Root rights are set for this directory\n");
+		VERBOSE0("     To set rights, we propose 2 options:\n");
+		VERBOSE0("      1- Temporarily: You may type: sudo chmod -R ugo+rw /dev/cxl\n");
+                VERBOSE0("      2- Permanently: You may create /etc/udev/rules.d/20-snap.rules\n"); 
+		VERBOSE0("                      including: SUBSYSTEM==\"cxl\", MODE=\"666\" and reboot\n");
 	}
 	return handle;
 }

@@ -85,6 +85,8 @@ switch $fpgacard {
   AD9H7 { set flashdevice mt25qu01g-spi-x1_x2_x4_x8
           set fpgapartnum xcvu37p
         }
+  U50   { set flashdevice mt25qu01g-spi-x1_x2_x4
+	  set fpgapartnum xcu50
 
   default {
     puts "Error: Environment FPGACARD must be set to N250S, ADKU3, AD8K5, S121B, N250SP, RCXVUP, FX609, S241, AD9V3, AD9H3 or AD9H7"

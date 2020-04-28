@@ -72,6 +72,7 @@ while [ -z "$SETUP_DONE" ]; do
   echo "======================================================="
 
 
+
   ####### checking Xilinx Vivado
   if [ ! -d "$XILINX_VIVADO" ]; then
     SETUP_WARNING="$SETUP_WARNING\n### WARNING ### XILINX_VIVADO  (set to  \"$XILINX_VIVADO\") is not pointing to a directory:"
@@ -90,19 +91,37 @@ while [ -z "$SETUP_DONE" ]; do
   else
     echo "Path to vivado          is set to: `which vivado`"
     echo "Vivado version          is set to: `vivado -version|head -n1`"
-    RESP=`vivado -version|head -n1 |cut -d' ' -f2`
-    if [ "$CAPI10" == "y" ] && ([ $RESP == "v2018.2" ] || [ $RESP == "v2018.3" ]); then
+    RESP=`vivado -version|head -n1 |cut -d' ' -f2|cut -c2-`
+    if [ "$CAPI10" == "y" ] && ([ $RESP == "2018.2" ] || [ $RESP == "2018.3" ]); then
       SETUP_INFO="$SETUP_INFO\n### WARNING ### Building an image with Vivado 2018.2 or 2018.3 for CAPI1.0 cards will drive to errors."
       SETUP_INFO="$SETUP_INFO\n###    It is highly recommended to use Vivado 2018.1 with CAPI1.0 cards."
     fi
-    if [ "$FPGACARD" == "U200" ] && [ $RESP != "v2018.3.1" ]; then
+    if [ "$FPGACARD" == "U200" ] && ([ $RESP != "2018.3.1" ] && [ $RESP != "2019.1" ] && [ $RESP != "2019.2" ]); then
       SETUP_INFO="$SETUP_INFO\n### WARNING ### Building a U200 image requires Vivado 2018.3 or later."
+    fi
+    if [ "$FPGACARD" == "U50" ] && ([ $RESP != "2019.1" ] && [ $RESP != "2019.2" ]); then
+      SETUP_INFO="$SETUP_INFO\n### WARNING ### Building a U50 image requires Vivado 2019.1 or later."
     fi
     if [ "$FPGACARD" == "U200" ]; then
       SETUP_INFO="$SETUP_INFO\n### WARNING ### The porting of this card U200 is still in development."
     fi
     echo "Vivado HLS version      is set to:        `vivado_hls -version|head -n1|cut -d " " -f 11`"
   fi
+
+  # checking board definition existence for U50 and U200 boards
+  if [ "$FPGACARD" == "U50" ] && [ ! -d "$XILINX_VIVADO/data/boards/board_files/au50" ]; then
+    SETUP_WARNING="$SETUP_WARNING\n### WARNING ### XILINX U50 Board definition is not present"
+    SETUP_WARNING="$SETUP_WARNING\n    Please reinstall the latest update of Vivado tool"
+    SETUP_WARNING="$SETUP_WARNING\n or update the board catalog (open Vivado  Menu > Tools > Downaload latest board)"
+    SETUP_WARNING="$SETUP_WARNING\n and then cp -r ~.Xilinx/Vivado/2019.2/xhub/board_store/XilinxBoardStore/Vivado/2019.2/boards/Xilinx/au* to $XILINX_VIVADO/data/boards/board_files/."
+  fi
+  if [ "$FPGACARD" == "U200" ] && [ ! -d "$XILINX_VIVADO/data/boards/board_files/au200" ]; then
+    SETUP_WARNING="$SETUP_WARNING\n### WARNING ### XILINX U200 Board definition is not present"
+    SETUP_WARNING="$SETUP_WARNING\n    Please reinstall the latest update of Vivado tool"
+    SETUP_WARNING="$SETUP_WARNING\n or update the board catalog (open Vivado  Menu > Tools > Downaload latest board)"
+    SETUP_WARNING="$SETUP_WARNING\n and then cp -r ~.Xilinx/Vivado/2019.2/xhub/board_store/XilinxBoardStore/Vivado/2019.2/boards/Xilinx/au* to $XILINX_VIVADO/data/boards/board_files/."
+  fi
+
 
   ####### checking default variables
   if [ "$CAPI20" == "y" ]; then 
@@ -383,9 +402,14 @@ while [ -z "$SETUP_DONE" ]; do
   fi
 
   # Note: HBM is defined via snap_config
-  if [ "$HBM_USED" == "TRUE" ] && [ "$BRAM_USED" == "TRUE" ]; then
-    #echo "=====HBM setup========================================="
+  if [ "$HBM_USED" == "TRUE" ]; then
+    if [ "$BRAM_USED" == "TRUE" ]; then
       SETUP_INFO="$SETUP_INFO\n### INFO ### Setting of HBM is NOT with real HBM!"
+    else
+      if [ "$SIMULATOR" == "xsim" ]; then
+        SETUP_WARNING="$SETUP_WARNING\n### WARNING ### xsim simulator doesn't support HBM! You can however continue building an image."
+      fi
+    fi
   fi
 
   # Note: ETHERNET_USED is defined via snap_config
@@ -393,6 +417,7 @@ while [ -z "$SETUP_DONE" ]; do
     #echo "=====Ethernet setup===================================="
       SETUP_INFO="$SETUP_INFO\n### INFO ### Setting of ETHERNET is a loopback with NO MAC"
   fi
+
 
   ####### Print warning messages and create $snap_env_sh
   echo -e "======================================================="

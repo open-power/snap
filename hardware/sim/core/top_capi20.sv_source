@@ -1187,15 +1187,6 @@ module top (
 #endif
 #endif
 #endif
-#ifdef CONFIG_ENABLE_HBM
-  // SDRAM System Clock generation
-  reg       refclk300_p;
-  initial   refclk300_p <= 0;
-  // 300.MHz DDR4 system clock
-  always begin
-     refclk300_p = !refclk300_p; #(3.332ns / 2.0); // a line can not start with "#", because SNAP is unsing the C preprocessor
-  end
-#endif
 #if CONFIG_ENABLE_NVME
   // NVME Reference Clock generation
   reg refclk_nvme_p;
@@ -1297,11 +1288,6 @@ module top (
   //  .ah_jyield(ah_jyield),    //- mcp004 does not seem to have this port
     .ah_tbreq(ah_tbreq),
     .ah_paren(ah_paren),
-#ifdef CONFIG_ENABLE_HBM
-    // HBM
-    .refclk300_p           (refclk300_p),
-    .refclk300_n           (~refclk300_p),
-#endif
 #ifdef CONFIG_ENABLE_DDR3
     // DDR3
     .c0_sys_clk_p           (sys_clk_p),

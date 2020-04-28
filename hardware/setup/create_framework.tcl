@@ -73,8 +73,9 @@ if { [info exists ::env(PSL_DCP)] == 1 } {
 puts "\[CREATE_FRAMEWORK....\] start [clock format [clock seconds] -format {%T %a %b %d %Y}]"
 create_project framework $root_dir/viv_project -part $fpga_part -force >> $log_file
 
-if { $fpga_card eq "U200" } {
-  set_property board_part xilinx.com:au200:part0:1.0 [current_project]
+if { ($fpga_card == "U50" ) || ($fpga_card == "U50")} {
+  set fpga_board     $::env(FPGABOARD)
+  set_property board_part $fpga_board [current_project]
 }
 
 # Project Settings
@@ -220,7 +221,7 @@ if { $simulator != "nosim" } {
     add_files    -fileset sim_1 -norecurse -scan_for_includes $sim_dir/core/ddr4_dimm_s121b.sv  >> $log_file
     set_property used_in_synthesis false           [get_files $sim_dir/core/ddr4_dimm_s121b.sv]
   }
-  # NOTE AD9H3 & AD9H7 have no DDR attached, use HBM instead
+  # NOTE U50, AD9H3 & AD9H7 have no DDR attached, use HBM instead
 }
 
 # Add IP
@@ -280,6 +281,10 @@ if { $hbm_used == TRUE } {
 
 
   add_files -norecurse $ip_dir/hbm/hbm.srcs/sources_1/bd/hbm_top/hbm_top.bd  >> $log_file
+#  upgrade_ip -vlnv xilinx.com:ip:util_ds_buf:2.1 [get_ips  hbm_top_refclk_bufg_div4_0] -log ip_upgrade.log
+#  export_ip_user_files -of_objects [get_ips hbm_top_refclk_bufg_div4_0] -no_script -sync -force -quiet
+#  generate_target all [get_files  /afs/apd.pok.ibm.com/func/vlsi/eclipz/ct6/usr/hnaser/p10d1/capi_lab/github_checkin_trial_hbm/snap/hardware/ip/hbm/hbm.srcs/sources_1/bd/hbm_top/hbm_top.bd] -force
+
   export_ip_user_files -of_objects  [get_files  $ip_dir/hbm/hbm.srcs/sources_1/bd/hbm_top/hbm_top.bd] -lib_map_path [list {{ies=$root_dir/viv_project/framework.cache/compile_simlib/ies}}] -no_script -sync -force -quiet
 
   #puts "                        adding HBM initialization files "
@@ -413,9 +418,7 @@ if { $fpga_card == "ADKU3" } {
     }
     #cirumventing unconnected clock for hbm Xilinx AR#72607
     add_files -fileset constrs_1 -norecurse  $root_dir/setup/AD9H3/AR72607.xdc
-#    set_property used_in_synthesis false [get_files $root_dir/setup/AD9H3/AR72607.xdc]
     add_files -fileset constrs_1 -norecurse  $root_dir/setup/AD9H3/capi_hbm_pblock.xdc
-#    set_property used_in_synthesis false [get_files $root_dir/setup/AD9H3/capi_hbm_pblock.xdc]
 } elseif { ($fpga_card == "AD9H7") } {
    if { $eth_used == "TRUE" } { 
       add_files -fileset constrs_1 -norecurse $root_dir/setup/AD9H7/snap_qsfpdd_pins.xdc
@@ -423,9 +426,16 @@ if { $fpga_card == "ADKU3" } {
     }   
     #cirumventing unconnected clock for hbm Xilinx AR#72607
     add_files -fileset constrs_1 -norecurse  $root_dir/setup/AD9H7/AR72607.xdc
-#    set_property used_in_synthesis false [get_files $root_dir/setup/AD9H7/AR72607.xdc]
     add_files -fileset constrs_1 -norecurse  $root_dir/setup/AD9H7/capi_hbm_pblock.xdc
-#    set_property used_in_synthesis false [get_files $root_dir/setup/AD9H7/capi_hbm_pblock.xdc]
+} elseif { ($fpga_card == "U50") } {
+    if { $eth_used == "TRUE" } { 
+      # TODO for a production sample 2 following lines enabled
+      add_files -fileset constrs_1 -norecurse $root_dir/setup/U50/snap_qsfpdd_pins.xdc
+      set_property used_in_synthesis false [get_files $root_dir/setup/U50/snap_qsfpdd_pins.xdc]
+    }
+    #cirumventing unconnected clock for hbm Xilinx AR#72607
+    add_files -fileset constrs_1 -norecurse  $root_dir/setup/U50/AR72607.xdc
+    add_files -fileset constrs_1 -norecurse  $root_dir/setup/U50/capi_hbm_pblock.xdc
 }
 
 if { $ila_debug == "TRUE" } {
