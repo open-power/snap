@@ -86,6 +86,8 @@ static int process_action(snap_membus_t *din_gmem,
 	//AXI_STREAM d_simu;
 
 	for (int i = 0; i < 4096; i++) data[i] = i;
+	// set code in the first 512 bytes for test check
+	data[20] = 0x31; data[21] = 0x39; data[22] = 0x36; data[23]= 0x36;
 
 	size_t out_frame_buffer_addr = act_reg->Data.out_frame_buffer.addr >> ADDR_RIGHT_SHIFT;
 
