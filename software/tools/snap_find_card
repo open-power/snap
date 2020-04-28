@@ -258,24 +258,25 @@ while getopts ":vA:C:Vdh" opt; do
 		echo;echo "###########################################################################################################"
 		echo;echo "( ͡° ͜ʖ ͡°) DEBUG INFO (more info if run as root)"
 		echo
-		echo "-----------------------------------------------------------------------------------------------------------"
+		echo "==========================================================================================================="
 		echo "FIRMWARE INFO:"
 		echo "--------------"
 		echo
-		echo "SKIBOOT firmware release:      `cat /proc/device-tree/ibm,opal/firmware/version | tr -d '\0'`  (/proc/device-tree/ibm,opal/firmware/version)"  # tr strips NUL bytes (ubuntu warns if not doing) 
+		echo "Active SKIBOOT firmware release:      `cat /proc/device-tree/ibm,opal/firmware/version | tr -d '\0'`  (/proc/device-tree/ibm,opal/firmware/version)"  # tr strips NUL bytes (ubuntu warns if not doing) 
+		echo "(Active and LSMCode SKIBOOT may be different if a custom SKIBOOT has been applyied. The 'Active' one is the really running one)"
 		echo
                 echo "LSMCODE output:"
 		lsmcode
 		echo
 		echo "Testing /proc/device-tree/ibm,secureboot/secure-enabled existence:"
 		if [ -f /proc/device-tree/ibm,secureboot/secure-enabled ]; then 
-			echo "  --> Secure-Boot ENABLED"
+			echo "  file exists ==> Secure-Boot ENABLED"
 		else 
-			echo "  --> Secure-Boot DISABLED"
+			echo "  file doesn't exist ==> Secure-Boot DISABLED"
 		fi
 
                 echo
-		echo "-----------------------------------------------------------------------------------------------------------"
+		echo "==========================================================================================================="
 		echo "OS INFO:"
 		echo "--------"
 		echo
@@ -284,11 +285,11 @@ while getopts ":vA:C:Vdh" opt; do
                 echo "OS KERNEL release:             `uname -r`"; echo
 
 		echo
-		echo "CXL / OCXL installed packages:"
-		eval $PackageCmd cxl
+		echo "CXL installed packages:"
+		eval $PackageCmd cxl | grep -v ocxl
 
 		echo
-		echo "-----------------------------------------------------------------------------------------------------------"
+		echo "==========================================================================================================="
 		echo "PCI ACCELERATOR CARDS:"
 		echo "----------------------"
 		echo
@@ -311,7 +312,7 @@ while getopts ":vA:C:Vdh" opt; do
 		echo
 
                 echo
-		echo "-----------------------------------------------------------------------------------------------------------"
+		echo "==========================================================================================================="
 		echo "OPAL MSGLOG:"
 		echo "------------"
 		echo
@@ -320,6 +321,7 @@ while getopts ":vA:C:Vdh" opt; do
 		echo
 
 		echo
+		echo "==========================================================================================================="
 		echo "More info could be found in /sys/firmware/opal/msglog rolling file (firmware journal)"
 		echo "or with dmesg (kernel journal) or journalctl (systemd journal) commands"
 		echo
