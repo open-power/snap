@@ -260,7 +260,7 @@ void hls_action(snap_membus_t *din_gmem,
 //-----------------------------------------------------------------------------
 #ifdef NO_SYNTH
 
-#include "img_test.h"
+#include <tigre.h>
 
 int main(void)
 {
@@ -269,7 +269,7 @@ int main(void)
     unsigned int i;
     static snap_membus_t  din_gmem[BPERDW];
     static snap_membus_t  dout_gmem[BPERDW];
-    int size;
+    int size, dsize;
     char *cve_out;
 
     action_reg act_reg;
@@ -290,24 +290,24 @@ int main(void)
 
     // Processing Phase .....
     // Fill the memory with 'c' characters
-    printf("size %d\n", sizeof(cve_map));
-    size = MIN(sizeof(cve_map), sizeof(din_gmem));
-    memcpy( din_gmem, cve_map, size);
+    printf("size %d\n", sizeof(tigre_map));
+    dsize = MIN(sizeof(tigre_map)-54, sizeof(din_gmem));
+    memcpy( din_gmem, &tigre_map[53], dsize);
 
 	//sprintf((char*)din_gmem, "%s","abcdefghijklmnopqrstuvwxyz0123456789abcdefghijklmopqrstuvwxyz0123456789abcdefghijklmnopqrstuvwxyz0123456789abcdefghijklmopqrstuvwxyz0123456789");
 
-    for ( int x = 0; x < size; x++) printf("[%02d]=%03d ", x, cve_map[x]);
+    for ( int x = 0; x < dsize; x++) printf("[%02d]=%03d ", x, tigre_map[x]);
     printf("\n");
 
     // set flags != 0 to have action processed
     act_reg.Control.flags = 0x1; /* just not 0x0 */
 
     act_reg.Data.in.addr = 0;
-    act_reg.Data.in.size = size/BPERDW * BPERDW + BPERDW;
+    act_reg.Data.in.size = dsize/BPERDW * BPERDW + BPERDW;
     act_reg.Data.in.type = SNAP_ADDRTYPE_HOST_DRAM;
 
     act_reg.Data.out.addr = 0;
-    act_reg.Data.out.size = size/BPERDW * BPERDW + BPERDW;;
+    act_reg.Data.out.size = dsize/BPERDW * BPERDW + BPERDW;;
     act_reg.Data.out.type = SNAP_ADDRTYPE_HOST_DRAM;
 
     printf("\n Action call \n");
@@ -317,15 +317,24 @@ int main(void)
 	return 1;
     }
 
-    cve_out = (char *)malloc(size);
-    memcpy(cve_out, dout_gmem, size );
-    for ( int x = 0; x < size; x++) printf("[%02d]=%03d ", x, (unsigned char)cve_out[x]);
+    cve_out = (char *)malloc(dsize);
+    memcpy(cve_out, dout_gmem, dsize );
+    for ( int x = 0; x < dsize; x++) printf("[%02d]=%03d ", x, (unsigned char)cve_out[x]);
     //printf("Output is : %s\n", (char *)((unsigned long)dout_gmem + 0));
     printf("\n >> ACTION TYPE = %08lx - RELEASE_LEVEL = %08lx <<\n",
 		    (unsigned int)Action_Config.action_type,
 		    (unsigned int)Action_Config.release_level);
-    return 0;
+
+    FILE *pFileOut = NULL;
+
+	pFileOut=fopen("tigre_out.bmp", "w");
+	fwrite(tigre_map, 54, 1, pFileOut);
+	fwrite(cve_out, dsize, 1, pFileOut);
+	fclose(pFileOut);
+
     free(cve_out);
+    return 0;
+
 }
 
 #endif
