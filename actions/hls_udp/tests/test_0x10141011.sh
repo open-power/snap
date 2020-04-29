@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2017 International Business Machines
+# Copyright 2020 International Business Machines
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -66,7 +66,7 @@ export PATH=$PATH:${SNAP_ROOT}/software/tools:${ACTION_ROOT}/sw
 
 if [ -z "$SNAP_CONFIG" ]; then
 	echo "Get CARD VERSION"
-	snap_maint -C ${snap_card} -v || exit 1;
+        snap_maint -C ${snap_card} -v || exit 1;
 	snap_peek -C ${snap_card} 0x0 || exit 1;
 	snap_peek -C ${snap_card} 0x8 || exit 1;
 	echo
@@ -85,6 +85,15 @@ function test_udp {
 	echo "cmd: ${cmd}"
 	echo "failed"
 	exit 1
+    fi
+
+    # check result contains 1966 to validate result
+    cmd="grep '1.9.6.6.' hls_udp.log"
+    if [ $? -ne 0 ]; then
+        cat hls_udp.log
+        echo "cmd: ${cmd}"
+        echo "failed"
+        exit 1
     fi
     echo "ok"
 }
