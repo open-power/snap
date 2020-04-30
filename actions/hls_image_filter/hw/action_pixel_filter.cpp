@@ -183,7 +183,7 @@ static int pAction(snap_membus_t *din_gmem,
 	  fprintf(stdout, "\ni_idx=%016llu o_idx=%016llu\n",i_idx, o_idx);
 	#endif
 
-	//#pragma HLS DATAFLOW
+	#pragma HLS DATAFLOW
 	//#pragma HLS INLINE region // bring loops in sub-functions to this DATAFLOW region
 	nb = remainingPayLoadSize;
 	nbPixel = (nb / 3 )* 3;
