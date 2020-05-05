@@ -35,7 +35,7 @@ extern "C" {
 #endif
 
 /* This number is unique and is declared in ~snap/ActionTypes.md */
-#define RX100G_ACTION_TYPE 0x52320100
+#define RX100G_ACTION_TYPE 0x10141011
 
 /* Data structure used to exchange information between action and application */
 /* Size limit is 108 Bytes */

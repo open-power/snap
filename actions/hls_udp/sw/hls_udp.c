@@ -64,13 +64,23 @@ static void snap_prepare_rx100G(struct snap_job *cjob,
 	snap_job_set(cjob, mjob, sizeof(*mjob), NULL, 0);
 }
 
+/**
+ * @brief	prints valid command line options
+ *
+ * @param prog	current program's name
+ */
+static void usage(const char *prog)
+{
+	printf("Usage: %s -C, --card <cardno>       can be (0...3)\n", prog);
+}
+
 /* main program of the application for the hls_helloworld example        */
 /* This application will always be run on CPU and will call either       */
 /* a software action (CPU executed) or a hardware action (FPGA executed) */
-int main()
+int main(int argc, char *argv[])
 {
 	// Init of all the default values used 
-	int rc = 0;
+	int ch, rc = 0;
 	int card_no = 0;
 	struct snap_card *card = NULL;
 	struct snap_action *action = NULL;
@@ -95,6 +105,32 @@ int main()
 	obuff = snap_malloc(size); //64Bytes aligned malloc
 	if (obuff == NULL) goto out_error;
 	memset(obuff, 0x0, size);
+
+	
+	// collecting the command line arguments
+	while (1) {
+		int option_index = 0;
+		static struct option long_options[] = {
+			{ "card",	 required_argument, NULL, 'C' },
+			{ "help",	 no_argument, NULL, 'h' },
+		};
+
+		ch = getopt_long(argc, argv, "C:h", long_options, &option_index);
+		if (ch == -1)
+			break;
+		switch (ch) {
+			case 'C':
+				card_no = strtol(optarg, (char **)NULL, 0);
+				break;
+			case 'h':
+				usage(argv[0]);
+				exit(EXIT_SUCCESS);
+				break;
+			default:
+				usage(argv[0]);
+				exit(EXIT_FAILURE);
+		}
+	}
 
 	// prepare params to be written in MMIO registers for action
 	type_out = SNAP_ADDRTYPE_HOST_DRAM;
