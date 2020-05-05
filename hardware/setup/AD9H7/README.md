@@ -1,8 +1,6 @@
 # Add family support to PSL9 ZIP package:
 
 9H7 cards contains VU37P with an HBM.
-Note : 
-capi-flash mecanism is not working yet, so only JTAG programmation is available for this card
 
 The following URL defines how to get the PSL 
 [image-and-model-build](../../../hardware/README.md#power9)
