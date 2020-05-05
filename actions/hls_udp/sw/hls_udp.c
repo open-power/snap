@@ -151,6 +151,9 @@ int main(int argc, char *argv[])
 
 	// Allocate the card that will be used
 	snprintf(device, sizeof(device)-1, "/dev/cxl/afu%d.0s", card_no);
+
+	printf("  device: %s\n", device );
+
 	card = snap_card_alloc_dev(device, SNAP_VENDOR_ID_IBM,
 				   SNAP_DEVICE_ID_SNAP);
 	if (card == NULL) {
