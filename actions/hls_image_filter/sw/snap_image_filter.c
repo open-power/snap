@@ -147,7 +147,9 @@ static int call_FPGA_Action( BMPImage *Image)
                 fprintf(stderr, "Default mode is FPGA mode.\n");
                 fprintf(stderr, "Did you want to run CPU mode ? => add SNAP_CONFIG=CPU before your command.\n");
                 fprintf(stderr, "Otherwise make sure you ran snap_find_card and snap_maint for your selected card.\n");
-		exit(0);
+        snap_card_free(card);
+        __free(actionBuff);
+    	exit(0);
 	}
 
 	// Attach the action that will be used on the allocated card
@@ -155,25 +157,17 @@ static int call_FPGA_Action( BMPImage *Image)
 	if (action == NULL) {
 		fprintf(stderr, "err: failed to attach action %u: %s\n",
 			card_no, strerror(errno));
+		snap_detach_action(action);
+		snap_card_free(card);
 		exit(0);
 	}
 
 	// prepare output buffer
 	addr_out = snap_malloc(dataSize); //64Bytes aligned malloc containing pixels only (no header)
-        if (addr_out == NULL) exit(0);
-        memset(addr_out, 0, dataSize);
+	if (addr_out == NULL) exit(0);
+	memset(addr_out, 0, dataSize);
 	
-
-	// Fill the stucture of data exchanged with the action
 	
-	/* Display the parameters that will be used for the example */
-	/*printf("PARAMETERS:\n"
-	       "  addr_in:     %016llx\n"
-	       "  addr_out:    %016llx\n",
-	       (long long)addr_in,
-	       (long long)addr_out);*/
-
-	//
 	snap_prepare_image_filter(&cjob, &mjob,
 			     (void *)addr_in, dataSize, SNAP_ADDRTYPE_HOST_DRAM,
 			     (void *)addr_out,dataSize, SNAP_ADDRTYPE_HOST_DRAM,
@@ -188,6 +182,13 @@ static int call_FPGA_Action( BMPImage *Image)
 		fwrite(addr_out, imageSize, 1, pFileOut);
 		fclose(pFileOut);
 	}
+
+	// Detach action + disallocate the card
+	snap_detach_action(action);
+	snap_card_free(card);
+	__free(actionBuff);
+	__free(addr_out);
+
 	return(rc);
 }	
 
