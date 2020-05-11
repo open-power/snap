@@ -106,11 +106,10 @@ static void snap_prepare_image_filter(struct snap_job *cjob,
         mjob->pixel_map_type = pixel_map_type;
 }
 
-static int call_FPGA_Action( BMPImage *Image) 
+static int call_FPGA_Action( BMPImage *Image, int card_no )
 {
 	FILE *pFileOut = NULL;
 	uint8_t *actionBuff = NULL;
-	int card_no = 0;
 	struct snap_action *action = NULL;
 	struct snap_job cjob;
 	struct image_filtering_job mjob;
@@ -126,30 +125,6 @@ static int call_FPGA_Action( BMPImage *Image)
 	unsigned long timeout = 6000;
 		
 
-	// collecting the command line arguments
-	while (1) {
-		int option_index = 0;
-		static struct option long_options[] = {
-			{ "card",	 required_argument, NULL, 'C' },
-			{ "help",	 no_argument, NULL, 'h' },
-		};
-
-		ch = getopt_long(argc, argv, "C:h", long_options, &option_index);
-		if (ch == -1)
-			break;
-		switch (ch) {
-			case 'C':
-				card_no = strtol(optarg, (char **)NULL, 0);
-				break;
-			case 'h':
-				usage(argv[0]);
-				exit(EXIT_SUCCESS);
-				break;
-			default:
-				usage(argv[0]);
-				exit(EXIT_FAILURE);
-		}
-	}
 
     //__hexdump(stdout, input_data, 200);
 
@@ -236,7 +211,7 @@ int main(int argc, char *argv[])
 	Image = read_image(filename, &error);
 	printf("Bitmap size: %d\n",(int)Image->header.size);
 	
-	rc = call_FPGA_Action( Image ); 
+	rc = call_FPGA_Action( Image, params->card_no );
 	
 	return(rc);
 }
