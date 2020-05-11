@@ -260,7 +260,7 @@ void hls_action(snap_membus_t *din_gmem,
 //-----------------------------------------------------------------------------
 #ifdef NO_SYNTH
 
-#include <tigre.h>
+#include <tiger.h>
 
 int main(void)
 {
@@ -290,13 +290,13 @@ int main(void)
 
     // Processing Phase .....
     // Fill the memory with 'c' characters
-    printf("size %d\n", sizeof(tigre_map));
-    dsize = MIN(sizeof(tigre_map)-54, sizeof(din_gmem));
-    memcpy( din_gmem, &tigre_map[53], dsize);
+    printf("size %d\n", sizeof(tiger_map));
+    dsize = MIN(sizeof(tiger_map)-54, sizeof(din_gmem));
+    memcpy( din_gmem, &tiger_map[53], dsize);
 
 	//sprintf((char*)din_gmem, "%s","abcdefghijklmnopqrstuvwxyz0123456789abcdefghijklmopqrstuvwxyz0123456789abcdefghijklmnopqrstuvwxyz0123456789abcdefghijklmopqrstuvwxyz0123456789");
 
-    for ( int x = 0; x < dsize; x++) printf("[%02d]=%03d ", x, tigre_map[x]);
+    for ( int x = 0; x < dsize; x++) printf("[%02d]=%03d ", x, tiger_map[x]);
     printf("\n");
 
     // set flags != 0 to have action processed
@@ -327,8 +327,8 @@ int main(void)
 
     FILE *pFileOut = NULL;
 
-	pFileOut=fopen("tigre_out.bmp", "w");
-	fwrite(tigre_map, 54, 1, pFileOut);
+	pFileOut=fopen("tiger_out.bmp", "w");
+	fwrite(tiger_map, 54, 1, pFileOut);
 	fwrite(cve_out, dsize, 1, pFileOut);
 	fclose(pFileOut);
 

@@ -47,13 +47,13 @@ void usage(const char *prog)
         "snap_maint -vv\n"
         "\n"
         "echo clean possible temporary old files \n"
-	"rm tigre_small_sim.bmp\n"
+	"rm tiger_small_sim.bmp\n"
 	"\n"
 	"echo Run the application + hardware action on the FPGA emulated on CPU\n"
 	"snap_image_filter -i ../../../../actions/hls_image_filter/sw/tiger_small.bmp -o tiger_small_sim.bmp\n"
 	"\n"
 	"echo Run the application + software action on with trace ON\n"
-	"SNAP_TRACE=0xF snap_image_filter -i ../../../../actions/hls_image_filter/sw/tigre_small.bmp -o tigre_small_sim.bmp\n"
+	"SNAP_TRACE=0xF snap_image_filter -i ../../../../actions/hls_image_filter/sw/tiger_small.bmp -o tiger_small_sim.bmp\n"
 	"\n",
         prog);
 }

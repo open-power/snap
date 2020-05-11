@@ -78,9 +78,9 @@ function test_image_filter {
     local size=$1
 
     echo -n "doing action_test hls_image_filer"
-    cp ../sw/tigre.bmp /tmp/.
+    cp ../sw/tiger.bmp /tmp/.
     
-    cmd="snap_image_filter -i /tmp/tigre_small.bmp -o /tmp/tigre_new.bmp >> hls_image_filter.log 2>&1"
+    cmd="snap_image_filter -i /tmp/tiger_small.bmp -o /tmp/tiger_new.bmp >> hls_image_filter.log 2>&1"
     eval ${cmd}
     if [ $? -ne 0 ]; then
 	cat hls_udp.log
