@@ -126,6 +126,31 @@ static int call_FPGA_Action( BMPImage *Image)
 	unsigned long timeout = 6000;
 		
 
+	// collecting the command line arguments
+	while (1) {
+		int option_index = 0;
+		static struct option long_options[] = {
+			{ "card",	 required_argument, NULL, 'C' },
+			{ "help",	 no_argument, NULL, 'h' },
+		};
+
+		ch = getopt_long(argc, argv, "C:h", long_options, &option_index);
+		if (ch == -1)
+			break;
+		switch (ch) {
+			case 'C':
+				card_no = strtol(optarg, (char **)NULL, 0);
+				break;
+			case 'h':
+				usage(argv[0]);
+				exit(EXIT_SUCCESS);
+				break;
+			default:
+				usage(argv[0]);
+				exit(EXIT_FAILURE);
+		}
+	}
+
     //__hexdump(stdout, input_data, 200);
 
 	parms.type_in = SNAP_ADDRTYPE_HOST_DRAM;
