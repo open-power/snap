@@ -106,11 +106,10 @@ static void snap_prepare_image_filter(struct snap_job *cjob,
         mjob->pixel_map_type = pixel_map_type;
 }
 
-static int call_FPGA_Action( BMPImage *Image) 
+static int call_FPGA_Action( BMPImage *Image, int card_no )
 {
 	FILE *pFileOut = NULL;
 	uint8_t *actionBuff = NULL;
-	int card_no = 0;
 	struct snap_action *action = NULL;
 	struct snap_job cjob;
 	struct image_filtering_job mjob;
@@ -125,6 +124,7 @@ static int call_FPGA_Action( BMPImage *Image)
 	int rc =0;
 	unsigned long timeout = 6000;
 		
+
 
     //__hexdump(stdout, input_data, 200);
 
@@ -211,7 +211,7 @@ int main(int argc, char *argv[])
 	Image = read_image(filename, &error);
 	printf("Bitmap size: %d\n",(int)Image->header.size);
 	
-	rc = call_FPGA_Action( Image ); 
+	rc = call_FPGA_Action( Image, params->card_no );
 	
 	return(rc);
 }
