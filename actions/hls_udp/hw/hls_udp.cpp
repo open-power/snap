@@ -126,15 +126,12 @@ void hls_action(snap_membus_t *din_gmem,
 		snap_membus_t *dout_gmem,
 		AXI_STREAM &din_eth,
 		AXI_STREAM &dout_eth,
-		/* snap_membus_t *d_ddrmem, // CAN BE COMMENTED IF UNUSED */
 		action_reg *act_reg,
 		action_RO_config_reg *Action_Config)
 {
 //----------------------------------------------------------------------
 //---- din_gmem  is the 512b/64B bus to read data from host memory -----
 //---- dout_gmem is the 512b/64B bus to write data to host memory ------
-//---- d_ddrmem  is the 512b/64B bus to read & write data to FPGA DDR --
-//---- d_hbm_p0/../7 are the 256b/32B bus to read & write data to HBM --
 //----------------------------------------------------------------------
 	// Host Memory AXI Interface - CANNOT BE REMOVED - NO CHANGE BELOW
 #pragma HLS INTERFACE m_axi port=din_gmem bundle=host_mem offset=slave depth=512 \
@@ -145,11 +142,6 @@ void hls_action(snap_membus_t *din_gmem,
 		max_read_burst_length=64  max_write_burst_length=64 latency=16
 #pragma HLS INTERFACE s_axilite port=dout_gmem bundle=ctrl_reg offset=0x040
 
-	/*  // DDR memory Interface - CAN BE COMMENTED IF UNUSED
-	 * #pragma HLS INTERFACE m_axi port=d_ddrmem bundle=card_mem0 offset=slave depth=512 \
-	 *   max_read_burst_length=64  max_write_burst_length=64
-	 * #pragma HLS INTERFACE s_axilite port=d_ddrmem bundle=ctrl_reg offset=0x050
-	 */
 	// Host Memory AXI Lite Master Interface - NO CHANGE BELOW
 #pragma HLS DATA_PACK variable=Action_Config
 #pragma HLS INTERFACE s_axilite port=Action_Config bundle=ctrl_reg offset=0x010
@@ -173,17 +165,16 @@ void hls_action(snap_membus_t *din_gmem,
 		return;
 		break;
 	default:
-		/* process_action(din_gmem, dout_gmem, d_ddrmem, act_reg); */
-		// process_action(din_gmem, dout_gmem, din_eth, dout_eth, act_reg);
 
 		process_action(din_gmem, dout_gmem, din_eth, dout_eth, act_reg);
 		break;
 	}
 }
 
+//--------------------------------------------------------------------------------------//
+// All code below is for self-test/debug purpose only. This code will not be synthesize //
+//--------------------------------------------------------------------------------------//
 #ifdef NO_SYNTH
-
-
 
 // From snap_tools.h - gcc doesn't like something in this file :(
 static inline void __hexdump(FILE *fp, const void *buff, unsigned int size)

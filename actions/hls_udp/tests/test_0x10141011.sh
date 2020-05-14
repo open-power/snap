@@ -78,7 +78,7 @@ function test_udp {
     local size=$1
 
     echo -n "doing action_test hls_udp"
-    cmd="hls_udp >> hls_udp.log 2>&1"
+    cmd="hls_udp -C ${snap_card} >> hls_udp.log 2>&1"
     eval ${cmd}
     if [ $? -ne 0 ]; then
 	cat hls_udp.log

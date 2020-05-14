@@ -1,5 +1,5 @@
-#ifndef __ACTION_RX100G_H__
-#define __ACTION_RX100G_H__
+#ifndef __ACTION_UDP_H
+#define __ACTION_UDP_H
 
 /*
  * Copyright 2017 International Business Machines
@@ -55,4 +55,4 @@ typedef struct rx100G_job {
 }
 #endif
 
-#endif	/* __ACTION_CHANGECASE_H__ */
+#endif	/* __ACTION_UDP_H */

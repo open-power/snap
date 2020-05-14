@@ -1,5 +1,6 @@
 /*
  * Copyright 2017 International Business Machines
+ * Copyright 2019 Paul Scherrer Institute
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +29,7 @@
 
 #include <snap_tools.h>
 #include <libsnap.h>
-#include <action_rx100G.h>
+#include <action_udp.H>
 #include <snap_hls_if.h>
 #include <inttypes.h>
 
@@ -74,9 +75,10 @@ static void usage(const char *prog)
 	printf("Usage: %s -C, --card <cardno>       can be (0...3)\n", prog);
 }
 
-/* main program of the application for the hls_helloworld example        */
+/* main program of the application for the hls_udp example        */
 /* This application will always be run on CPU and will call either       */
 /* a software action (CPU executed) or a hardware action (FPGA executed) */
+/* ==> This code was extracted from hls_rx100G action written by PSI with their kind authorization <== */
 int main(int argc, char *argv[])
 {
 	// Init of all the default values used 
