@@ -80,6 +80,15 @@ choice
 		help
 		  Xilinx U200 FPGA board (IN DEVELOPMENT).
 
+	config U50
+		bool "CAPI2.0: Xilinx U50 board (in development)"
+		select CAPI20
+		select DISABLE_NVME
+		select DISABLE_SDRAM_AND_BRAM
+		select ENABLE_ACTION_CLK_DERATE
+		help
+		  Xilinx U50 FPGA board (IN DEVELOPMENT).
+
 	config FX609
 		bool "CAPI2.0: Flyslice FX609 Card with Ethernet, 8GB DDR4 SDRAM and Xilinx VU9P FPGA"
 		select CAPI20
@@ -121,6 +130,7 @@ config FPGACARD
 	default "FX609"  if FX609
 	default "S241"   if S241
 	default "U200"   if U200
+	default "U50"    if U50
         default "AD9V3"  if AD9V3
         default "AD9H3"  if AD9H3
         default "AD9H7"  if AD9H7
@@ -128,7 +138,7 @@ config FPGACARD
 config FLASH_INTERFACE
 	string
 	default "BPIx16" if S121B_BPIx16 || N250S || N250SP || ADKU3 || AD8K5
-	default "SPIx4"  if S121B_SPIx4 || FX609 || S241 || U200
+	default "SPIx4"  if S121B_SPIx4 || FX609 || S241 || U200 || U50
 	default "SPIx8"  if RCXVUP || AD9V3 || AD9H3 || AD9H7
 
 #FLASH_SIZE: in MB, will be used by build_mcs.tcl
@@ -136,7 +146,7 @@ config FLASH_INTERFACE
 config FLASH_SIZE
 	string
 	default 256 if S121B_SPIx4  || RCXVUP || S241 || AD9H7
-	default 128 if S121B_BPIx16 || N250SP || AD8K5 || ADKU3 || FX609 || U200
+	default 128 if S121B_BPIx16 || N250SP || AD8K5 || ADKU3 || FX609 || U200 || U50
 	default 64  if N250S || AD9V3 || AD9H3
 
 #FLASH_FACTORYADDR: For all cards, factory address is 0x0
@@ -155,7 +165,7 @@ config FLASH_USERADDR
 	default 0x02000000 if S121B_BPIx16 || AD8K5 || N250SP || AD9V3 || AD9H3
 	default 0x04000000 if FX609
 	default 0x08000000 if S121B_SPIx4 || RCXVUP || S241 || AD9H7
-	default 0x01002000 if U200
+	default 0x01002000 if U200 || U50
 
 
 config S121B
@@ -181,13 +191,15 @@ config FPGACHIP
 	default "xcvu9p-flgb2104-2l-e" if S241
 	default "xcvu3p-ffvc1517-2-i"  if AD9V3
 	default "xcu200-fsgd2104-2-e"  if U200
+	default "xcu50-fsvh2104-2-e"  if U50
         default "xcvu33p-fsvh2104-2-e" if AD9H3
         default "xcvu37p-fsvh2892-2-e" if AD9H7
 
 
 config FPGABOARD
 	string
-	default "xilinx.com:au200:part0:1.0" if U200 
+	default "xilinx.com:au200:part0:1.0" if U200
+	default "xilinx.com:au50:part0:1.0" if U50 
 
 config NUM_OF_ACTIONS
 	int
@@ -229,8 +241,6 @@ choice
 
         config HDL_EXAMPLE
                 bool "HDL Example"
-	        select DISABLE_HBM
-	        select DISABLE_ETHERNET
 
 	config HDL_NVME_EXAMPLE
 		bool "HDL NVMe Example"
@@ -264,7 +274,7 @@ choice
 
 	config HLS_MEMCOPY
 		bool "HLS Memcopy"
-		depends on ( !AD9H3 && !AD9H7 )
+		depends on ! (AD9H3 || AD9H7 || U50)
 		help
 		  This is a basic example to start accessing data:
 		  - Read data from the server memory or from the card DDR
@@ -278,7 +288,7 @@ choice
 
 	config HLS_HBM_MEMCOPY
 		bool "HLS HBM Memcopy"
-		depends on ( AD9H3 || AD9H7 )
+		depends on (AD9H3 || AD9H7 || U50)
 		help
 		  This is a basic example to start accessing data:
 		  - Read data from the server memory or from the FPGA HBM (High Bandwidth Memory)
@@ -528,7 +538,8 @@ config ENABLE_SDRAM
 	                8GB DDR4 SDRAM on the ReflexCES XpressVUP card and
 	                8GB DDR4 SDRAM on the Flyslice FX609 card.
 	                8GB DDR4 SDRAM on the AlphaData AD9V3 card.
-	               16GB DDR4 SDRAM on the Xilinx U200 card.
+	                16GB DDR4 SDRAM on the Xilinx U200 card.
+			8GB HBM SDRAM on the Xilinx 50 card (TBD)
 
 config DISABLE_HBM
 	bool
@@ -537,16 +548,16 @@ config DISABLE_HBM
 config FORCE_HBM
 	bool
 	default n
-	depends on ( AD9H3 || AD9H7 )
+	depends on (AD9H3 || AD9H7 || U50)
 	select ENABLE_HBM
 
 config ENABLE_HBM
 	bool
 	prompt "Enable HBM"
         default N
-	depends on ( (AD9H3 || AD9H7)  && !DISABLE_HBM)
+	depends on ((AD9H3 || AD9H7 || U50) && !DISABLE_HBM)
 	help
-	  This option enables the on-card HBM on AD9H3 or AD9H7 cards.
+	  This option enables the on-card HBM on AD9H3, AD9H7 and U50 cards.
 
 config HBM_USED
 	string
@@ -568,7 +579,7 @@ config ENABLE_BRAM
 config REPLACE_HBM_BY_BRAM
 	bool
 	prompt "Replace HBM by 32K BRAM (mandatory when simulating with xsim)"
-	depends on ( ( AD9H3 || AD9H7 ) && ENABLE_HBM)
+	depends on ((AD9H3 || AD9H7 || U50) && ENABLE_HBM)
 	help
 	  This is a development option. The AXI attached on-FPGA HBM will be replaced by 32K URAM.
 
@@ -632,7 +643,7 @@ config NVME_USED
 config ENABLE_ETHERNET
 	bool "Enable Ethernet support"
 	default N
-	depends on ( ( AD9H3 || AD9H7 )  && !DISABLE_ETHERNET )
+	depends on ((AD9H3 ||AD9H7 || U50) && !DISABLE_ETHERNET )
 	help
 	  This option controls the instantiation of an Ethernet IP 
 	  together with the AXI interfaces for MMIO control and action access.
@@ -645,7 +656,7 @@ config ENABLE_ETH_LOOP_BACK
          bool "Ethernet loopback in the action wrapper (removes ETH IP)"
          default "TRUE"  if  ENABLE_SIMU_WO_ETH
          default "FALSE" if !ENABLE_SIMU_WO_ETH
-         depends on ( (AD9H3 || AD9H7 ) && ENABLE_ETHERNET)
+         depends on ((AD9H3 || AD9H7 || U50) && ENABLE_ETHERNET)
          help
            This option prevent the instantiation of an Ethernet IP
            Instead it shortens the action ethernet AXI out interface to ethernet input interface.

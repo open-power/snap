@@ -202,7 +202,6 @@ ENTITY psl_accel IS
     ha_pclock                           : IN    STD_LOGIC;
     pci_user_reset                      : IN    std_logic;  --PCI hip user_reset signal if needed
     pci_clock_125MHz                    : IN    std_logic   --125MHz clock if needed
-
     -- 300MHz clock unused
 --    refclk300_p                         : IN    std_logic;
 --    refclk300_n                         : IN    std_logic

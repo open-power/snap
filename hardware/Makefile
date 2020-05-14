@@ -303,7 +303,7 @@ create_project: snap_preprocess
 
 hw_project_start:
 	@echo -e "======================================================="
-	@echo -e "== Precompiling the Action logic                     =="
+	@echo -e "== Precompiling the Action logic: `cat $(SNAP_ROOT)/snap_env.sh|grep actions|cut -f3- -d/`"
 	@echo -e "======================================================="
 	@echo -e "[HW PROJECT..........] start `date +"%T %a %b %d %Y"`"
 
