@@ -80,10 +80,10 @@ function test_image_filter {
     echo -n "doing action_test hls_image_filer"
     cp ../sw/tiger.bmp /tmp/.
     
-    cmd="snap_image_filter -i /tmp/tiger_small.bmp -o /tmp/tiger_new.bmp >> hls_image_filter.log 2>&1"
+    cmd="snap_image_filter -i /tmp/tiger.bmp -o /tmp/tiger_new.bmp >> hls_image_filter.log 2>&1"
     eval ${cmd}
     if [ $? -ne 0 ]; then
-	cat hls_udp.log
+	cat hls_image_filter.log
 	echo "cmd: ${cmd}"
 	echo "failed"
 	exit 1
