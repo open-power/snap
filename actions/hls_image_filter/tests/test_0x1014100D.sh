@@ -77,11 +77,13 @@ fi
 function test_image_filter {
     local size=$1
 
+
     echo -n "doing action_test hls_image_filer"
-    cp ../sw/tiger.bmp /tmp/.
-    
-    cmd="snap_image_filter -i /tmp/tiger.bmp -o /tmp/tiger_new.bmp >> hls_image_filter.log 2>&1"
+    cp ../sw/tiger.bmp .
+
+    cmd="snap_image_filter -i tiger.bmp -o ../tests/tiger_new.bmp -C ${snap_card}  >> hls_image_filter.log 2>&1"
     eval ${cmd}
+
     if [ $? -ne 0 ]; then
 	cat hls_image_filter.log
 	echo "cmd: ${cmd}"
