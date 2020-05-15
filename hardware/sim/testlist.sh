@@ -126,6 +126,7 @@
         "1014100e") a0="hls_vector_generator";;
         "1014100f") a0="hls_parallel_memcpy";;
         "10141010") a0="hls_hbm_memcopy";;
+        "10141011") a0="hls_udp";;
         *) echo "unknown action0 type=$t0l, exiting";exit 1;;
       esac; echo "action0 type0s=$t0s type0l=$t0l $a0"
       t="snap_peek 0x180       ";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # action0 counter reg"
@@ -157,6 +158,7 @@
         "1014100e") a0="hls_vector_generator";;
         "1014100f") a0="hls_parallel_memcpy";;
         "10141010") a0="hls_hbm_memcopy";;
+        "10141011") a0="hls_udp";;
         *) echo "unknown action1 type=$t1l, exiting";exit 1;;
       esac; echo "action0 type1s=$t1s type1l=$t1l $a1"
       t="snap_peek 0x188       ";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # action1 counter reg"
