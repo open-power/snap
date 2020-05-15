@@ -89,7 +89,6 @@ function test_image_filter {
 	exit 1
     fi
 
-    echo "ok"
 }
 
 rm -f hls_image_filter.log
