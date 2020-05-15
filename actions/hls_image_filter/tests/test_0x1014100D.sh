@@ -78,10 +78,11 @@ function test_image_filter {
     local size=$1
 
 
-    echo -n "doing action_test hls_image_filter"
-    cp ${ACTION_ROOT}/sw/tiger.bmp .
+    echo  "Executing action_test hls_image_filter"
+    echo  "converting image: ${ACTION_ROOT}/sw/tiger.bmp"
+    echo  "resulting image:  ${ACTION_ROOT}/sw/tiger_new.bmp"
 
-    cmd="snap_image_filter -i tiger.bmp -o tiger_new.bmp -C ${snap_card}  >> hls_image_filter.log 2>&1"
+    cmd="snap_image_filter -i ${ACTION_ROOT}/sw/tiger.bmp -o ${ACTION_ROOT}/sw/tiger_new.bmp -C ${snap_card}  >> hls_image_filter.log 2>&1"
     eval ${cmd}
 
     if [ $? -ne 0 ]; then
