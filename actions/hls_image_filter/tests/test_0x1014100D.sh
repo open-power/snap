@@ -79,9 +79,9 @@ function test_image_filter {
 
 
     echo -n "doing action_test hls_image_filer"
-    cp ../sw/tiger.bmp .
+    cp ~/snap/actions/hls_image_filter/sw/tiger.bmp .
 
-    cmd="snap_image_filter -i tiger.bmp -o ../tests/tiger_new.bmp -C ${snap_card}  >> hls_image_filter.log 2>&1"
+    cmd="snap_image_filter -i tiger.bmp -o tiger_new.bmp -C ${snap_card}  >> hls_image_filter.log 2>&1"
     eval ${cmd}
 
     if [ $? -ne 0 ]; then
@@ -101,5 +101,5 @@ if [ "$duration" = "NORMAL" ]; then
   fi
 
 rm -f *.bin *.bin *.out
-echo "Test OK"
+echo -e "\nTest OK\n"
 exit 0
