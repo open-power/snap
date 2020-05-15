@@ -22,7 +22,7 @@
 #include <ap_int.h>
 
 #include "hls_snap.H"
-#include <action_pixel_filtering.h> /* HelloWorld Job definition */
+#include <action_pixel_filtering.h> /* action struture definition */
 
 #define PATTERN_SIZE BPERDW
 #define CARD_DRAM_SIZE (1 * 1024 *1024 * 1024)  //Maximum size in bytes (depends on the card used)
