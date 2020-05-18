@@ -409,7 +409,7 @@ while [ -z "$SETUP_DONE" ]; do
       SETUP_INFO="$SETUP_INFO\n### INFO ### Setting of HBM is NOT with real HBM!"
     else
       if [ "$SIMULATOR" == "xsim" ]; then
-        SETUP_WARNING="$SETUP_WARNING\n### WARNING ### xsim simulator doesn't support HBM! You can however continue building an image."
+        SETUP_INFO="$SETUP_INFO\n### WARNING ### xsim simulator doesn't support HBM! You can however continue building an image."
       fi
     fi
   fi
