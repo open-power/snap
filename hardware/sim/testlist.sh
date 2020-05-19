@@ -123,6 +123,7 @@
         "1014100a") a0="hls_mm_test";;
         "1014100b") a0="hls_decimal_mult";;
         "1014100c") a0="hls_scatter_gather";;
+        "1014100d") a0="hls_image_filter";;
         "1014100e") a0="hls_vector_generator";;
         "1014100f") a0="hls_parallel_memcpy";;
         "10141010") a0="hls_hbm_memcopy";;
@@ -155,6 +156,7 @@
         "1014100a") a1="hls_mm_test";;
         "1014100b") a1="hls_decimal_mult";;
         "1014100c") a1="hls_scatter_gather";;
+        "1014100d") a1="hls_image_filter";;
         "1014100e") a0="hls_vector_generator";;
         "1014100f") a0="hls_parallel_memcpy";;
         "10141010") a0="hls_hbm_memcopy";;
@@ -572,6 +574,12 @@
       step "snap_scatter_gather -n256 -s256 -m2"
       step "snap_scatter_gather -n256 -s256 -m3"
     fi # hls_scatter_gather
+
+     if [[ "$t0l" == "1014100d" || "${env_action}" == "hls_image_filter" ]];then echo -e "$del\ntesting image filter"
+       step "snap_image_filter -h"
+       step "snap_image_filter  $ACTION_ROOT/sw/tiger_small.bmp -o $ACTION_ROOT/sw/tiger_out.bmp"
+     fi # hls_mage_filter
+
  #
     if [[ "$t0l" == "1014100e" || "${env_action}" == "hls_vector_generator" ]];then echo -e "$del\ntesting vector_generator"
       step "snap_vector_generator -h"
@@ -583,6 +591,12 @@
       step "snap_parallel_memcpy -s 1024 -n 10 -v"
     fi # hls_parallel_memcpy
  #
+
+     if [[ "$t0l" == "10141011" || "${env_action}" == "hls_udp" ]];then echo -e "$del\ntesting hls_udp"
+        step "hls_udp -h"
+        step "hls_udp" "
+      fi # hls_udp
+
     ts2=$(date +%s); looptime=`expr $ts2 - $ts1`; echo "looptime=$looptime"  # end of loop
   done; l=""; ts3=$(date +%s); totaltime=`expr $ts3 - $ts0`; echo "loops=$loops tests=$n total_time=$totaltime" # end of test
 
