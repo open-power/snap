@@ -55,7 +55,7 @@ set  HBM_MEM_NUM 8
 # Create HBM project
 create_project   $prj_name $root_dir/ip/hbm -part $fpga_part -force >> $log_file
 set_property target_language VHDL [current_project]
-if { ($fpga_card == "U200" ) || ($fpga_card == "U50") } {
+if { $fpga_card == "U50" } {
   set fpga_board  $::env(FPGABOARD)
   set_property board_part $fpga_board [current_project]
 }
