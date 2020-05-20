@@ -577,7 +577,7 @@
 
      if [[ "$t0l" == "1014100d" || "${env_action}" == "hls_image_filter" ]];then echo -e "$del\ntesting image filter"
        step "snap_image_filter -h"
-       step "snap_image_filter  $ACTION_ROOT/sw/tiger_small.bmp -o $ACTION_ROOT/sw/tiger_out.bmp"
+       step "snap_image_filter -i $ACTION_ROOT/sw/tiger_small.bmp -o $ACTION_ROOT/sw/tiger_out.bmp"
      fi # hls_mage_filter
 
  #
