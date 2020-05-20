@@ -594,7 +594,7 @@
 
      if [[ "$t0l" == "10141011" || "${env_action}" == "hls_udp" ]];then echo -e "$del\ntesting hls_udp"
         step "hls_udp -h"
-        step "hls_udp" "
+        step "hls_udp"
       fi # hls_udp
 
     ts2=$(date +%s); looptime=`expr $ts2 - $ts1`; echo "looptime=$looptime"  # end of loop
