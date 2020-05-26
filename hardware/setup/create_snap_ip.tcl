@@ -549,28 +549,52 @@ if { $create_ddr4_u200 == "TRUE" } {
   puts "                        generating IP ddr4sdram for $fpga_card"
   create_ip -name ddr4 -vendor xilinx.com -library ip -version 2.* -module_name ddr4sdram -dir $ip_dir >> $log_file
   set_property -dict [list                                                                    \
-   CONFIG.ADDN_UI_CLKOUT1_FREQ_HZ {100} \
-   CONFIG.C0.BANK_GROUP_WIDTH {2} \
-   CONFIG.C0.CKE_WIDTH {1} \
-   CONFIG.C0.CS_WIDTH {1} \
-   CONFIG.C0.ODT_WIDTH {1} \
-   CONFIG.C0.ControllerType {DDR4_SDRAM} \
-   CONFIG.C0.DDR4_AxiAddressWidth {34} \
-   CONFIG.C0.DDR4_AxiDataWidth {512} \
-   CONFIG.C0.DDR4_CLKOUT0_DIVIDE {5} \
-   CONFIG.C0.DDR4_CasLatency {17} \
-   CONFIG.C0.DDR4_CasWriteLatency {12} \
-   CONFIG.C0.DDR4_DataMask {NONE} \
-   CONFIG.C0.DDR4_DataWidth {72} \
-   CONFIG.C0.DDR4_Ecc {true} \
-   CONFIG.C0.DDR4_InputClockPeriod {3332} \
-   CONFIG.C0.DDR4_MemoryPart {MTA18ASF2G72PZ-2G3} \
-   CONFIG.C0.DDR4_MemoryType {RDIMMs} \
-   CONFIG.C0.DDR4_TimePeriod {833} \
-   CONFIG.C0.DDR4_AUTO_AP_COL_A3 {true} \
-   CONFIG.C0.DDR4_Mem_Add_Map {ROW_COLUMN_BANK_INTLV} \
+   CONFIG.RESET_BOARD_INTERFACE {pcie_perstn}    \
+   CONFIG.C0_CLOCK_BOARD_INTERFACE {default_300mhz_clk0}    \
+   CONFIG.C0_DDR4_BOARD_INTERFACE {ddr4_sdram_c0}    \
+   CONFIG.C0.DDR4_TimePeriod {833}    \ok
+   CONFIG.C0.DDR4_InputClockPeriod {3332}    \
+   CONFIG.C0.DDR4_CLKOUT0_DIVIDE {5}    \
+   CONFIG.C0.DDR4_MemoryType {RDIMMs}    \
+   CONFIG.C0.DDR4_MemoryPart {MTA18ASF2G72PZ-2G3}    \
+   CONFIG.C0.DDR4_DataWidth {72}    \
+   CONFIG.C0.DDR4_DataMask {NONE}    \
+   CONFIG.C0.DDR4_Ecc {true}    \
+   CONFIG.C0.DDR4_AUTO_AP_COL_A3 {true}    \
+   CONFIG.C0.DDR4_CasLatency {17}    \
+   CONFIG.C0.DDR4_CasWriteLatency {12}    \
+   CONFIG.C0.DDR4_AxiDataWidth {512}    \
+   CONFIG.C0.DDR4_AxiAddressWidth {34}    \ok
+   CONFIG.C0.DDR4_Mem_Add_Map {ROW_COLUMN_BANK_INTLV}    \
+   CONFIG.ADDN_UI_CLKOUT1_FREQ_HZ {100}    \
+   CONFIG.C0.CKE_WIDTH {1}    \
+   CONFIG.C0.CS_WIDTH {1}    \
+   CONFIG.C0.ODT_WIDTH {1}]  \
    CONFIG.C0.DDR4_AxiSelection {true} \
                      ] [get_ips ddr4sdram] >> $log_file
+
+   #CONFIG.ADDN_UI_CLKOUT1_FREQ_HZ {100} \
+   #CONFIG.C0.BANK_GROUP_WIDTH {2} \
+   #CONFIG.C0.CKE_WIDTH {1} \
+   #CONFIG.C0.CS_WIDTH {1} \
+   #CONFIG.C0.ODT_WIDTH {1} \
+   #CONFIG.C0.ControllerType {DDR4_SDRAM} \
+   #CONFIG.C0.DDR4_AxiAddressWidth {34} \
+   #CONFIG.C0.DDR4_AxiDataWidth {512} \
+   #CONFIG.C0.DDR4_CLKOUT0_DIVIDE {5} \
+   #CONFIG.C0.DDR4_CasLatency {17} \
+   #CONFIG.C0.DDR4_CasWriteLatency {12} \
+   #CONFIG.C0.DDR4_DataMask {NONE} \
+   #CONFIG.C0.DDR4_DataWidth {72} \
+   #CONFIG.C0.DDR4_Ecc {true} \
+   #CONFIG.C0.DDR4_InputClockPeriod {3332} \
+   #CONFIG.C0.DDR4_MemoryPart {MTA18ASF2G72PZ-2G3} \
+   #CONFIG.C0.DDR4_MemoryType {RDIMMs} \
+   #CONFIG.C0.DDR4_TimePeriod {833} \
+   #CONFIG.C0.DDR4_AUTO_AP_COL_A3 {true} \
+   #CONFIG.C0.DDR4_Mem_Add_Map {ROW_COLUMN_BANK_INTLV} \
+   #CONFIG.C0.DDR4_AxiSelection {true} \
+                     #] [get_ips ddr4sdram] >> $log_file
   set_property generate_synth_checkpoint false [get_files $ip_dir/ddr4sdram/ddr4sdram.xci]
   generate_target {instantiation_template}     [get_files $ip_dir/ddr4sdram/ddr4sdram.xci] >> $log_file
   generate_target all                          [get_files $ip_dir/ddr4sdram/ddr4sdram.xci] >> $log_file
