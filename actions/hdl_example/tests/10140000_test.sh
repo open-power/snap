@@ -259,6 +259,12 @@ case $CARD in
 "AD9V3" )
 	echo "-> AlphaData $CARD Card"
 	;;	
+"AD9H3" )
+	echo "-> AlphaData $CARD Card"
+	;;
+"AD9H7" )
+	echo "-> AlphaData $CARD Card"
+	;;
 "U200" )
 	echo "-> Xilinx $CARD Card"
 	;;	
