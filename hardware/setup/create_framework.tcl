@@ -73,9 +73,9 @@ if { [info exists ::env(PSL_DCP)] == 1 } {
 puts "\[CREATE_FRAMEWORK....\] start [clock format [clock seconds] -format {%T %a %b %d %Y}]"
 create_project framework $root_dir/viv_project -part $fpga_part -force >> $log_file
 
-if { ($fpga_card == "U50" ) || ($fpga_card == "U50")} {
+if { ($fpga_card == "U50" ) || ($fpga_card == "U200")} {
   set fpga_board     $::env(FPGABOARD)
-  set_property board_part $fpga_board [current_project]
+  set_property BOARD_PART $fpga_board [current_project]
 }
 
 # Project Settings

@@ -42,7 +42,7 @@ module ddr4_dimm_u200
   input             c0_ddr4_act_n,
   input  [16:0]     c0_ddr4_adr,
   input  [1:0]      c0_ddr4_ba,
-  input  [0:0]      c0_ddr4_bg,
+  input  [1:0]      c0_ddr4_bg,
   input  [0:0]      c0_ddr4_cke,
   input  [0:0]      c0_ddr4_odt,
   input  [0:0]      c0_ddr4_cs_n,
