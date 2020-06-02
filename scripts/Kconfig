@@ -485,17 +485,16 @@ choice
                 select DISABLE_NVME
                 select ENABLE_SIMU_WO_ETH
 
-#   config HLS_UDP_IMAGE
-#                bool "HLS UDP IMAGE"
-#                help
-#                  This example is written in C and compiled with HLS
-#                select ENABLE_HLS_SUPPORT
-#	        select DISABLE_HBM
-#                select DISABLE_SDRAM_AND_BRAM
-#                select DISABLE_NVME
-#                select ENABLE_ETHERNET
-#		select DISABLE_NVME
-#		select ENABLE_SIMU_WO_ETH
+   config HLS_UDP_IMAGE
+                bool "HLS UDP IMAGE"
+                help
+                  This example is written in C it shows how we can proceeed video transformation sent by udp
+                select ENABLE_HLS_SUPPORT
+	        select DISABLE_HBM
+                select DISABLE_SDRAM_AND_BRAM
+                select DISABLE_NVME
+                select ENABLE_ETHERNET
+		select ENABLE_SIMU_WO_ETH
 
 
 endchoice
