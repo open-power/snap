@@ -54,7 +54,7 @@ inline ap_uint<32> get_header_field_32(ap_uint<512> data, size_t position) {
 }
 
 void decode_eth_1(ap_uint<512> val_in, packet_header_t &header_out) {
-	// IP/UDP header is big endian, JF header is small endian!
+	// IP/UDP header is big endian, JF hdr is small endian!
 
 	header_out.dest_mac = get_mac_addr(val_in,0);
 	header_out.src_mac  = get_mac_addr(val_in,48);
