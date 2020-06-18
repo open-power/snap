@@ -106,13 +106,9 @@ static int process_action(snap_membus_t *din_gmem,
 		AXI_STREAM &dout_eth,
 		action_reg *act_reg)
 {
-	//uint16_t data[4096];
-    int rc = 0;
+	int rc = 0;
 	snapu64_t access_address = 0;
 	//AXI_STREAM d_simu;
-
-
-	//memcpy( data, din_gmem, 1024);
 
 	size_t out_frame_buffer_addr = act_reg->Data.out_frame_buffer.addr >> ADDR_RIGHT_SHIFT;
 
@@ -275,7 +271,6 @@ int main(int argc, char *argv[]) {
     printf("Good packets %ld\n",action_register.Data.good_packets);
     printf("Bad packets %ld\n",action_register.Data.bad_packets);
     printf("Ignored packets %ld\n",action_register.Data.ignored_packets);
-
 
 	printf("ARP out\n");
 
