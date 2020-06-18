@@ -33,27 +33,44 @@ void transformPixel(pixel_t *pixel_in_add, pixel_t *pixel_out_add);
 
 void process_frames(AXI_STREAM &din_eth, eth_settings_t eth_settings, eth_stat_t &eth_stat, snap_membus_t *dout_gmem, size_t out_frame_buffer_addr) {
 	#pragma HLS DATAFLOW
-	DATA_STREAM raw, raw_out;
+	DATA_STREAM raw;
 	pixel_t tpixel;
 	#pragma HLS STREAM variable=raw depth=2048
 	read_eth_packet(din_eth, raw, eth_settings, eth_stat);
 	char *pixel;
-	data_packet_t packet, new_packet;
+	data_packet_t packet;
+	char data_packet[64];
+	hls::stream<char> pixel_in, pixel_out;
 
-    packet = raw.read();
-    pixel = (char *)&packet.data;
-    for ( int i =0; i < 64; i=i+3) {
-    	tpixel.red = pixel[i];
-		tpixel.green = pixel[i+1];
-		tpixel.blue = pixel[i+2];
-		transformPixel(&tpixel, &tpixel);
-		pixel[i] = tpixel.red;
-		pixel[i+1] = tpixel.green;
-		pixel[i+2] = tpixel.blue;
+	// push all data into pixel_stream
+    while (!raw.empty() ) {
+		packet = raw.read();
+		pixel = (char *)&packet.data;
+		for ( int i = 0; i < 63; i++) {
+			pixel_in.write(pixel[i]);
+		}
     }
-	raw.write(packet);
-	write_data(raw, dout_gmem, out_frame_buffer_addr);
 
+    // read pixel_in / transform pixel_stream / write in pixel_out
+    while ( !pixel_in.empty()) {
+    	tpixel.red = pixel_in.read();
+		tpixel.green = pixel_in.read();
+		tpixel.blue = pixel_in.read();
+		transformPixel(&tpixel, &tpixel);
+		pixel_out.write(tpixel.red);
+		pixel_out.write(tpixel.green);
+		pixel_out.write(tpixel.blue);
+    }
+
+    // read pixel_out / write in temp data_packet / build raw buffer / write raw buff in dout_gmem
+    while( !pixel_out.empty() ) {
+    	for ( int i =0; i < 63; i=i+3) {
+    		data_packet[i] = pixel_out.read();
+    	}
+    	packet.data = (uint64_t *)data_packet;
+    	raw.write(packet);
+    	write_data(raw, dout_gmem, out_frame_buffer_addr);
+    }
 }
 
 
