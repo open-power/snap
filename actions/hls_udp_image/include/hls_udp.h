@@ -23,7 +23,7 @@
 #include <hls_stream.h>
 
 #include "hls_snap.H"
-#include "action_udp.H" /* HelloWorld Job definition */
+#include <action_udp.H>
 
 #define PEDE_G0_PRECISION 22
 
@@ -69,7 +69,7 @@ struct data_packet_t {
 	ap_uint<4> module; // 0..16
 	ap_uint<8> eth_packet; // 0..128
 	ap_uint<8> axis_packet; // 0..128
-        ap_uint<1> axis_user; // TUSER from AXIS
+    ap_uint<1> axis_user; // TUSER from AXIS
 	ap_uint<1> exit; // exit
 	ap_uint<1> trigger; // debug flag on
 };

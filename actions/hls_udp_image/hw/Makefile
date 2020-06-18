@@ -39,7 +39,8 @@ endif
 # This is solution specific. Check if we can replace this by generics too.
 SOLUTION_NAME ?= hls_udp_image
 SOLUTION_DIR ?= hls_udp_image
-srcs += hls_udp_image.cpp eth_decode.cpp write_data.cpp action_pixel_filter.cpp
+srcs +=bmp.c hls_udp_image.cpp write_data.cpp
+
 
 # If you have the action code outside of the default snap directory structure, 
 # change to /path/to/snap/actions/hls.mk

@@ -2,7 +2,7 @@
 #define __PIXEL_FILTER_H__
 
 /*
- * Copyright 2020 International Business Machines
+ * Copyright 2017 International Business Machines
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,10 @@
 
 #include <snap_types.h>
 
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 
 /* This number is unique and is declared in ~snap/ActionTypes.md */
 #define IMAGE_FILTERING_ACTION_TYPE 0x1014100D
@@ -46,7 +46,7 @@ typedef struct image_filtering_job {
 	struct snap_addr in;		/* input data */
 	struct snap_addr out;		/* offset table */
 	uint32_t totalFileSizeFromHeader;  		/* for alignment purpose */
-	uint8_t firstPixelRelLoc;		/* from bmp header */
+	uint8_t relFirstPixelLoc;		/* from bmp header */
 	uint8_t dummy_pixel_8;  		/* for alignment purpose */
 	uint16_t dummy_pixel_16;  		/* for alignment purpose */
 	uint32_t pixel_map_type;		/* organisation of pixels definition */
