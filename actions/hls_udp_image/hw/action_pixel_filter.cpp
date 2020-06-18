@@ -27,8 +27,8 @@
  */
 
 #include <string.h>
-#include "ap_int.h"
-#include "action_pixel_filter.H"
+#include <ap_int.h>
+#include <action_pixel_filter.H>
 
 typedef unsigned char uint8_t;
 

@@ -26,7 +26,7 @@
 
 #include <hls_udp.h>
 #include <tiger.h>
-
+#include "bmp.c"
 void transformPixel(pixel_t *pixel_in_add, pixel_t *pixel_out_add);
 
 
@@ -34,7 +34,7 @@ void transformPixel(pixel_t *pixel_in_add, pixel_t *pixel_out_add);
 void process_frames(AXI_STREAM &din_eth, eth_settings_t eth_settings, eth_stat_t &eth_stat, snap_membus_t *dout_gmem, size_t out_frame_buffer_addr) {
 	#pragma HLS DATAFLOW
 	DATA_STREAM raw, raw_out;
-	pixel_t current_pixel, new_pixel;
+	pixel_t tpixel;
 	#pragma HLS STREAM variable=raw depth=2048
 	read_eth_packet(din_eth, raw, eth_settings, eth_stat);
 	char *pixel;
@@ -43,20 +43,15 @@ void process_frames(AXI_STREAM &din_eth, eth_settings_t eth_settings, eth_stat_t
     packet = raw.read();
     pixel = (char *)&packet.data;
     for ( int i =0; i < 64; i=i+3) {
-    	current_pixel.red = pixel[i];
-		current_pixel.green = pixel[i+1];
-		current_pixel.blue = pixel[i+2];
-		transformPixel(&current_pixel, &new_pixel);
-		pixel[i] = new_pixel.red;
-		pixel[i+1] = new_pixel.green;
-		pixel[i+2] = new_pixel.blue;
+    	tpixel.red = pixel[i];
+		tpixel.green = pixel[i+1];
+		tpixel.blue = pixel[i+2];
+		transformPixel(&tpixel, &tpixel);
+		pixel[i] = tpixel.red;
+		pixel[i+1] = tpixel.green;
+		pixel[i+2] = tpixel.blue;
     }
-
-	ap_uint<512> *obuff;
-	obuff = (ap_uint<512> *)&(pixel[0]);
-	packet.data = *obuff;
 	raw.write(packet);
-
 	write_data(raw, dout_gmem, out_frame_buffer_addr);
 
 }
@@ -111,16 +106,13 @@ static int process_action(snap_membus_t *din_gmem,
 		AXI_STREAM &dout_eth,
 		action_reg *act_reg)
 {
-	uint16_t data[4096];
+	//uint16_t data[4096];
     int rc = 0;
 	snapu64_t access_address = 0;
 	//AXI_STREAM d_simu;
 
-	//for (int i = 0; i < 4096; i++) data[i] = i;
-	// set code in the first 512 bytes for test check
-	//data[20] = 0x31; data[21] = 0x39; data[22] = 0x36; data[23]= 0x36;
-	//data = (uint16_t *)din_gmem;
-	 memcpy( data, din_gmem, 1024);
+
+	//memcpy( data, din_gmem, 1024);
 
 	size_t out_frame_buffer_addr = act_reg->Data.out_frame_buffer.addr >> ADDR_RIGHT_SHIFT;
 
@@ -129,18 +121,13 @@ static int process_action(snap_membus_t *din_gmem,
 	eth_settings_t eth_settings;
 	eth_settings.fpga_mac_addr = act_reg->Data.fpga_mac_addr;
 	eth_settings.fpga_ipv4_addr = act_reg->Data.fpga_ipv4_addr;
-	//eth_settings.fpga_ipv4_addr = 0x0532010A;
-
+	eth_settings.fpga_ipv4_addr = 0x0532010A;
 	eth_settings.expected_packets = act_reg->Data.packets_to_read;
 
 	eth_stat_t eth_stats;
 	eth_stats.bad_packets = 0;
 	eth_stats.good_packets = 0;
 	eth_stats.ignored_packets = 0;
-
-
-		//make_packet(dout_eth, 1, 1, data); // recup data memory debug mode
-	    make_packet(din_eth, 1, 1, data); // recup data memory sim test with internal loop
 
 	process_frames(din_eth, eth_settings, eth_stats, dout_gmem, out_frame_buffer_addr);
 
@@ -247,23 +234,28 @@ static inline void __hexdump(FILE *fp, const void *buff, unsigned int size)
 }
 
 
-
 int main(int argc, char *argv[]) {
 	snap_membus_t din_gmem[1024];
 	snap_membus_t *dout_gmem = 0;
 	int dsize;
-
-	dsize = MIN(sizeof(tiger_map)-54, sizeof(din_gmem));
-    memcpy( din_gmem, &tiger_map[53], dsize);
+	BMPImage *Image;
+	char filename[256];
+	char *error = NULL;
 
 	uint64_t taille;
 	taille = FRAME_BUF_SIZE*NMODULES*MODULE_COLS*MODULE_LINES*sizeof(uint16_t);
 	void *out_frame_buffer = snap_malloc(16384);
 
+	//params = readParams(argc, argv);
+	strcpy(filename, "/afs/vlsilab.boeblingen.ibm.com/proj/fpga/framework/cvermale/snap/actions/hls_udp_image/tests/images/001.bmp");
+	Image = read_image(filename, &error);
+	dsize = Image->header.size;
+	printf("Bitmap size: %d\n",dsize);
 
 	AXI_STREAM din_eth;
 	AXI_STREAM dout_eth;
 
+	make_packet(din_eth, 1, 1, (unsigned short *)Image->data);
 	action_reg action_register;
 	action_RO_config_reg Action_Config;
 	action_register.Data.packets_to_read = 1;
@@ -284,7 +276,6 @@ int main(int argc, char *argv[]) {
     printf("Bad packets %ld\n",action_register.Data.bad_packets);
     printf("Ignored packets %ld\n",action_register.Data.ignored_packets);
 
-	//ap_axiu_for_eth packet_out;
 
 	printf("ARP out\n");
 
