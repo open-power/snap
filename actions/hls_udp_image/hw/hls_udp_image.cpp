@@ -29,52 +29,6 @@
 #include "bmp.c"
 void transformPixel(pixel_t *pixel_in_add, pixel_t *pixel_out_add);
 
-
-
-void process_frames(AXI_STREAM &din_eth, eth_settings_t eth_settings, eth_stat_t &eth_stat, snap_membus_t *dout_gmem, size_t out_frame_buffer_addr) {
-	#pragma HLS DATAFLOW
-	DATA_STREAM raw;
-	pixel_t tpixel;
-	#pragma HLS STREAM variable=raw depth=2048
-	read_eth_packet(din_eth, raw, eth_settings, eth_stat);
-	char *pixel;
-	data_packet_t packet;
-	char data_packet[64];
-	hls::stream<char> pixel_in, pixel_out;
-
-	// push all data into pixel_stream
-    while (!raw.empty() ) {
-		packet = raw.read();
-		pixel = (char *)&packet.data;
-		for ( int i = 0; i < 63; i++) {
-			pixel_in.write(pixel[i]);
-		}
-    }
-
-    // read pixel_in / transform pixel_stream / write in pixel_out
-    while ( !pixel_in.empty()) {
-    	tpixel.red = pixel_in.read();
-		tpixel.green = pixel_in.read();
-		tpixel.blue = pixel_in.read();
-		transformPixel(&tpixel, &tpixel);
-		pixel_out.write(tpixel.red);
-		pixel_out.write(tpixel.green);
-		pixel_out.write(tpixel.blue);
-    }
-
-    // read pixel_out / write in temp data_packet / build raw buffer / write raw buff in dout_gmem
-    while( !pixel_out.empty() ) {
-    	for ( int i =0; i < 63; i=i+3) {
-    		data_packet[i] = pixel_out.read();
-    	}
-    	packet.data = (uint64_t *)data_packet;
-    	raw.write(packet);
-    	write_data(raw, dout_gmem, out_frame_buffer_addr);
-    }
-}
-
-
-
 void make_packet(AXI_STREAM &stream, uint64_t frame_number, uint32_t eth_packet, uint16_t *data) {
 
 	static char buff[130*64];
@@ -111,8 +65,60 @@ void make_packet(AXI_STREAM &stream, uint64_t frame_number, uint32_t eth_packet,
 		packet_in.data = *obuff;
 		stream.write(packet_in);
 	}
-
 }
+
+
+//void process_frames(AXI_STREAM &din_eth, eth_settings_t eth_settings, eth_stat_t &eth_stat, snap_membus_t *dout_gmem, size_t out_frame_buffer_addr) {
+void process_frames(AXI_STREAM &din_eth, AXI_STREAM &dout_eth, eth_settings_t eth_settings, eth_stat_t &eth_stat ) {
+	#pragma HLS DATAFLOW
+	DATA_STREAM raw;
+	pixel_t tpixel;
+	char *pixel;
+	data_packet_t packet;
+	char data_packet[64];
+	hls::stream<char> pixel_in, pixel_out;
+	static char buff[130*64];
+
+	// read eth message into raw
+	#pragma HLS STREAM variable=raw depth=2048
+	read_eth_packet(din_eth, raw, eth_settings, eth_stat);
+
+	// push raw message into pixel_in stream
+    while (!raw.empty() ) {
+		packet = raw.read();
+		pixel = (char *)&packet.data;
+		for ( int i = 0; i < 63; i++) {
+			pixel_in.write(pixel[i]);
+		}
+    }
+
+    // read one pixel from pixel_in / transform pixel / write modified pixel into pixel_out stream
+    while ( !pixel_in.empty()) {
+    	tpixel.red = pixel_in.read();
+		tpixel.green = pixel_in.read();
+		tpixel.blue = pixel_in.read();
+		transformPixel(&tpixel, &tpixel);
+		pixel_out.write(tpixel.red);
+		pixel_out.write(tpixel.green);
+		pixel_out.write(tpixel.blue);
+    }
+
+    // read pixel_out stream / build data_packet / write data_packet into packet and write into raw
+    int i = 0;
+    while( !pixel_out.empty() ) {
+    	//for ( int i =0; i < 63; i++) {
+    		buff[i] = pixel_out.read();
+    		i++;
+    	//}
+    	//packet.data = (uint64_t *)data_packet;
+    	//raw.write(packet);
+     }
+     //     write_data(raw, dout_gmem, out_frame_buffer_addr);
+     make_packet(dout_eth, 1, 1, (uint16_t *)buff);
+}
+
+
+
 
 //----------------------------------------------------------------------
 //--- MAIN PROGRAM -----------------------------------------------------
@@ -142,7 +148,8 @@ static int process_action(snap_membus_t *din_gmem,
 	eth_stats.good_packets = 0;
 	eth_stats.ignored_packets = 0;
 
-	process_frames(din_eth, eth_settings, eth_stats, dout_gmem, out_frame_buffer_addr);
+	//process_frames(din_eth, eth_settings, eth_stats, dout_gmem, out_frame_buffer_addr);
+	process_frames(din_eth, dout_eth, eth_settings, eth_stats );
 
 	act_reg->Data.good_packets = eth_stats.good_packets;
 	act_reg->Data.bad_packets = eth_stats.bad_packets;
@@ -269,9 +276,11 @@ int main(int argc, char *argv[]) {
 	AXI_STREAM dout_eth;
 
 	make_packet(din_eth, 1, 1, (unsigned short *)Image->data);
+	make_packet(din_eth, 2, 2, (unsigned short *)&Image->data[4096]);
 	action_reg action_register;
 	action_RO_config_reg Action_Config;
-	action_register.Data.packets_to_read = 1;
+	//action_register.Data.packets_to_read = 1;
+	action_register.Data.packets_to_read = 2;
 	action_register.Control.flags = 1;
 	action_register.Data.fpga_mac_addr = 0xAABBCCDDEEF1;
 	action_register.Data.fpga_ipv4_addr = 0x0A013205; // 10.1.50.5
@@ -289,9 +298,8 @@ int main(int argc, char *argv[]) {
     printf("Bad packets %ld\n",action_register.Data.bad_packets);
     printf("Ignored packets %ld\n",action_register.Data.ignored_packets);
 
-	printf("ARP out\n");
-
-	__hexdump(stdout, (void *)out_frame_buffer,64*2);
+	//printf("ARP out\n");
+	//__hexdump(stdout, (void *)dout_eth,64*2);
 	return 0;
 }
 
