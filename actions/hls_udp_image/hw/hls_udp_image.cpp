@@ -105,16 +105,21 @@ void process_frames(AXI_STREAM &din_eth, AXI_STREAM &dout_eth, eth_settings_t et
 
     // read pixel_out stream / build data_packet / write data_packet into packet and write into raw
     int i = 0;
+    int packet_num = 1;
+    size_t taille  = pixel_out.size();
     while( !pixel_out.empty() ) {
-    	//for ( int i =0; i < 63; i++) {
-    		buff[i] = pixel_out.read();
-    		i++;
-    	//}
+    	buff[i] = pixel_out.read();
+    	i++;
+    	if ( i == 4096 ) {
+    		make_packet(dout_eth, 1, packet_num, (uint16_t *)buff);
+    		packet_num++;
+    		i = 0;
+    	}
     	//packet.data = (uint64_t *)data_packet;
     	//raw.write(packet);
      }
      //     write_data(raw, dout_gmem, out_frame_buffer_addr);
-     make_packet(dout_eth, 1, 1, (uint16_t *)buff);
+     //make_packet(dout_eth, 1, 1, (uint16_t *)buff);
 }
 
 
@@ -262,25 +267,40 @@ int main(int argc, char *argv[]) {
 	char filename[256];
 	char *error = NULL;
 
-	uint64_t taille;
-	taille = FRAME_BUF_SIZE*NMODULES*MODULE_COLS*MODULE_LINES*sizeof(uint16_t);
+	//uint64_t taille;
+	//taille = FRAME_BUF_SIZE*NMODULES*MODULE_COLS*MODULE_LINES*sizeof(uint16_t);
 	void *out_frame_buffer = snap_malloc(16384);
 
 	//params = readParams(argc, argv);
 	strcpy(filename, "/afs/vlsilab.boeblingen.ibm.com/proj/fpga/framework/cvermale/snap/actions/hls_udp_image/tests/images/001.bmp");
 	Image = read_image(filename, &error);
 	dsize = Image->header.size;
+	int rsize;
+	int packet_num;
 	printf("Bitmap size: %d\n",dsize);
+	char buff[4096];
 
 	AXI_STREAM din_eth;
 	AXI_STREAM dout_eth;
 
-	make_packet(din_eth, 1, 1, (unsigned short *)Image->data);
-	make_packet(din_eth, 2, 2, (unsigned short *)&Image->data[4096]);
+	int pos = 0;
+	rsize = dsize;
+	packet_num = 0;
+	while ( rsize >= 0 ) {
+		packet_num++;
+		if ( rsize > 4096 ) memcpy(buff, &Image->data[pos], 4096);
+		else {
+			memcpy(buff, &Image->data[pos], rsize);
+		}
+		make_packet(din_eth, 1, packet_num, (unsigned short *)buff);
+		//make_packet(din_eth, 2, 2, (unsigned short *)&Image->data[4096]);
+		pos = pos + 4096;
+		rsize = rsize - 4096;
+	}
 	action_reg action_register;
 	action_RO_config_reg Action_Config;
 	//action_register.Data.packets_to_read = 1;
-	action_register.Data.packets_to_read = 2;
+	action_register.Data.packets_to_read = packet_num;
 	action_register.Control.flags = 1;
 	action_register.Data.fpga_mac_addr = 0xAABBCCDDEEF1;
 	action_register.Data.fpga_ipv4_addr = 0x0A013205; // 10.1.50.5
@@ -291,7 +311,7 @@ int main(int argc, char *argv[]) {
 
 	ap_axiu_for_eth packet_out;
 
-	printf("Output frame buff %016llx\n",(long long)&out_frame_buffer);
+	//printf("Output frame buff %016llx\n",(long long)&out_frame_buffer);
     hls_action(din_gmem, dout_gmem, din_eth, dout_eth, &action_register, &Action_Config);
 
     printf("Good packets %ld\n",action_register.Data.good_packets);
