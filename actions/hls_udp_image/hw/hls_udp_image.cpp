@@ -27,11 +27,16 @@
 #include <hls_udp.h>
 #include <tiger.h>
 #include "bmp.c"
+
+#define buff_size 130*64
+#define data_size 128*64
+
 void transformPixel(pixel_t *pixel_in_add, pixel_t *pixel_out_add);
 
-void make_packet(AXI_STREAM &stream, uint64_t frame_number, uint32_t eth_packet, uint16_t *data) {
+// build udp packet with data ( data must have a buff_size size )
+void make_packet(AXI_STREAM &stream, uint64_t frame_number, uint32_t eth_packet, uint8_t *data) {
 
-	static char buff[130*64];
+	static char buff[buff_size];
 	RAW_JFUDP_Packet *packet = (RAW_JFUDP_Packet *)buff;
 
 	packet->dest_mac[0] = 0xAA;
@@ -50,7 +55,7 @@ void make_packet(AXI_STREAM &stream, uint64_t frame_number, uint32_t eth_packet,
 	packet->packetnum = eth_packet;
 	packet->headerVersion = 4;
 
-	for (int i = 0; i < 4096; i++) {
+	for (int i = 0; i < data_size; i++) {
 		packet->data[i] = data[i];
 	}
 
@@ -67,8 +72,7 @@ void make_packet(AXI_STREAM &stream, uint64_t frame_number, uint32_t eth_packet,
 	}
 }
 
-
-//void process_frames(AXI_STREAM &din_eth, eth_settings_t eth_settings, eth_stat_t &eth_stat, snap_membus_t *dout_gmem, size_t out_frame_buffer_addr) {
+// read udp packets, convert to pixel and write into new converted udp packets
 void process_frames(AXI_STREAM &din_eth, AXI_STREAM &dout_eth, eth_settings_t eth_settings, eth_stat_t &eth_stat ) {
 	#pragma HLS DATAFLOW
 	DATA_STREAM raw;
@@ -77,7 +81,8 @@ void process_frames(AXI_STREAM &din_eth, AXI_STREAM &dout_eth, eth_settings_t et
 	data_packet_t packet;
 	char data_packet[64];
 	hls::stream<char> pixel_in, pixel_out;
-	static char buff[130*64];
+	static char buff[buff_size];
+	int nb = 0;
 
 	// read eth message into raw
 	#pragma HLS STREAM variable=raw depth=2048
@@ -89,10 +94,12 @@ void process_frames(AXI_STREAM &din_eth, AXI_STREAM &dout_eth, eth_settings_t et
 		pixel = (char *)&packet.data;
 		for ( int i = 0; i < 63; i++) {
 			pixel_in.write(pixel[i]);
+			nb++;
 		}
     }
 
     // read one pixel from pixel_in / transform pixel / write modified pixel into pixel_out stream
+    nb = 0;
     while ( !pixel_in.empty()) {
     	tpixel.red = pixel_in.read();
 		tpixel.green = pixel_in.read();
@@ -101,29 +108,25 @@ void process_frames(AXI_STREAM &din_eth, AXI_STREAM &dout_eth, eth_settings_t et
 		pixel_out.write(tpixel.red);
 		pixel_out.write(tpixel.green);
 		pixel_out.write(tpixel.blue);
+		nb++;
     }
 
     // read pixel_out stream / build data_packet / write data_packet into packet and write into raw
     int i = 0;
     int packet_num = 1;
+    nb = 0;
     size_t taille  = pixel_out.size();
     while( !pixel_out.empty() ) {
     	buff[i] = pixel_out.read();
     	i++;
-    	if ( i == 4096 ) {
-    		make_packet(dout_eth, 1, packet_num, (uint16_t *)buff);
+    	if ( i == data_size ) {
+    		make_packet(dout_eth, 1, packet_num, (uint8_t *)buff);
     		packet_num++;
     		i = 0;
     	}
-    	//packet.data = (uint64_t *)data_packet;
-    	//raw.write(packet);
+    	nb++;
      }
-     //     write_data(raw, dout_gmem, out_frame_buffer_addr);
-     //make_packet(dout_eth, 1, 1, (uint16_t *)buff);
 }
-
-
-
 
 //----------------------------------------------------------------------
 //--- MAIN PROGRAM -----------------------------------------------------
@@ -136,10 +139,7 @@ static int process_action(snap_membus_t *din_gmem,
 {
 	int rc = 0;
 	snapu64_t access_address = 0;
-	//AXI_STREAM d_simu;
-
 	size_t out_frame_buffer_addr = act_reg->Data.out_frame_buffer.addr >> ADDR_RIGHT_SHIFT;
-
 	uint64_t bytes_written = 0;
 
 	eth_settings_t eth_settings;
@@ -161,7 +161,6 @@ static int process_action(snap_membus_t *din_gmem,
 	act_reg->Data.ignored_packets = eth_stats.ignored_packets;
 
 	act_reg->Control.Retc = SNAP_RETC_SUCCESS;
-
 
 	return 0;
 }
@@ -267,36 +266,37 @@ int main(int argc, char *argv[]) {
 	char filename[256];
 	char *error = NULL;
 
-	//uint64_t taille;
-	//taille = FRAME_BUF_SIZE*NMODULES*MODULE_COLS*MODULE_LINES*sizeof(uint16_t);
 	void *out_frame_buffer = snap_malloc(16384);
 
-	//params = readParams(argc, argv);
+	// open and read bmp file
 	strcpy(filename, "/afs/vlsilab.boeblingen.ibm.com/proj/fpga/framework/cvermale/snap/actions/hls_udp_image/tests/images/001.bmp");
 	Image = read_image(filename, &error);
 	dsize = Image->header.size;
 	int rsize;
 	int packet_num;
 	printf("Bitmap size: %d\n",dsize);
-	char buff[4096];
+	char buff[data_size];
 
 	AXI_STREAM din_eth;
 	AXI_STREAM dout_eth;
 
+	// Build udp packet into din_eth with image data
 	int pos = 0;
 	rsize = dsize;
 	packet_num = 0;
 	while ( rsize >= 0 ) {
 		packet_num++;
-		if ( rsize > 4096 ) memcpy(buff, &Image->data[pos], 4096);
+		if ( rsize > data_size ) memcpy(buff, &Image->data[pos], data_size);
 		else {
 			memcpy(buff, &Image->data[pos], rsize);
 		}
-		make_packet(din_eth, 1, packet_num, (unsigned short *)buff);
+		make_packet(din_eth, 1, packet_num, (unsigned char *)buff);
 		//make_packet(din_eth, 2, 2, (unsigned short *)&Image->data[4096]);
-		pos = pos + 4096;
-		rsize = rsize - 4096;
+		pos = pos + data_size;
+		rsize = rsize - data_size;
 	}
+
+	// prepare snap settings
 	action_reg action_register;
 	action_RO_config_reg Action_Config;
 	//action_register.Data.packets_to_read = 1;
@@ -309,17 +309,12 @@ int main(int argc, char *argv[]) {
     printf("Bad packets %ld\n",action_register.Data.bad_packets);
     printf("Ignored packets %ld\n",action_register.Data.ignored_packets);
 
-	ap_axiu_for_eth packet_out;
-
-	//printf("Output frame buff %016llx\n",(long long)&out_frame_buffer);
-    hls_action(din_gmem, dout_gmem, din_eth, dout_eth, &action_register, &Action_Config);
+	hls_action(din_gmem, dout_gmem, din_eth, dout_eth, &action_register, &Action_Config);
 
     printf("Good packets %ld\n",action_register.Data.good_packets);
     printf("Bad packets %ld\n",action_register.Data.bad_packets);
     printf("Ignored packets %ld\n",action_register.Data.ignored_packets);
 
-	//printf("ARP out\n");
-	//__hexdump(stdout, (void *)dout_eth,64*2);
 	return 0;
 }
 
