@@ -46,7 +46,6 @@ _Check OS release in deployment servers table_ / (Resources in _italic_ are not 
 
 | Manufacturer|Card Type|SNAP Code Name|FPGA|DRAM|NVME|QDR|Network|CAPI Interface|Board|CAPI support|SNAP support
 |:------------|:-------:|:------------:|:--:|:--:|:--:|:-:|:------:|:------------:|:---:|:----------:|:----------:
-|  Nallatech	|250S+|N250SP|KU15P|4GB DDR4 (1ch)|_3.8TB/6.4TB/25TB (4ch)_|-|-|PCIe Gen4 x8|LowProf\**|X|X
 |  ReflexCES	|XpressVUP-LP9PT|RCXVUP|VU9P*|8GB _/16GB_ DDR4 (1ch-_1ch_)|-|_144Mb/575Mb_|_2x(100GbE/4x25GbE)_|PCIe Gen3 x 16|LowProf|X|X
 |  Flyslice	  |FX609QL|FX609|VU9P*|8GB _/16GB_ DDR4 (1ch-_3ch_)|-|-|-|PCIe Gen3 x 16|LowProf\**|X|X
 |  Semptian 	|NSA-241|S241|VU9P*|8GB _/32GB_ DDR4 (1ch-_3ch_)|-|-|2x(25GbE)|PCIe Gen3 x 16|FullHeight|X|X
@@ -57,6 +56,7 @@ Notes :
 
 * \* : requires an auxiliary power supply connector (100W)
 * \** : requires 2 mechanical slots
+* N250SP board has been removed from the list even if it has been enabled. Indeed it is working only with a Vivado release prior to 2018.2, due to Xilinx changes in IPs.
 
 ### P9 OpenCAPI3.0 SNAP FPGA Supported Boards
 OpenCAPI environment has been renamed oc-accel and is hosted on a specific site on github. 
@@ -74,13 +74,13 @@ Please check : https://github.com/OpenCAPI/oc-accel
 |**Tool**                  |**Minimum**  |**Recommended**     |**Helpful commands**|
 |:-------------------------|:-----------:|:------------------:|:--------------------
 | gcc                      |4.4.7        |latest              |gcc -v
-| Vivado HL Design Edition |2018.1       |2019.1 (for CAPI2.0)|vivado -version
-| Vivado HLS               |2018.1       |2019.1 (for CAPI2.0)|vivado_hls -version
+| Vivado HL Design Edition |2018.1       |2019.2 (for CAPI2.0)|vivado -version
+| Vivado HLS               |2018.1       |2019.2 (for CAPI2.0)|vivado_hls -version
 | Cadence irun (required only for NVME simulation with Denali models)|15.20.046(Vivado 2018.1)|15.20.046(Vivado 2018.2)|irun -version
 
 _Vivado 2018.1 is compatible with CAPI1.0 and CAPI2.0 while Vivado 2018.2 doesn't work on CAPI1.0 cards_
 
-_Most CAPI2 cards are compatible with Vivado 2019.1_
+_All CAPI2 cards (except 250SP) are compatible with Vivado 2019.2_
 
 _2019.2 has still issues_
 
