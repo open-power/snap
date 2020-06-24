@@ -55,7 +55,7 @@ As of now, the following FPGA cards can be used with SNAP if they contain CAPI l
   * Nallatech 250S-2T with two on-card NVMe M.2 960GB drives http://www.nallatech.com/250s
   * Semptian NSA121B http://www.semptian.com/proinfo/10.html
 * for POWER9 (CAPI2.0):
-  * Nallatech 250SP  http://www.nallatech.com/250sp
+  * Nallatech 250SP  http://www.nallatech.com/250sp  _**(not recommended anymore** since Xilinx disabled Gen4 IP from Vivado 2018.3)_
   * Flyslice FX609 http://www.flyslice.com/page434?product_id=27
   * Semptian NSA241 http://www.semptian.com/proinfo/126.html
   * ReflexCES XpressVUP LP9P https://www.reflexces.com/products-solutions/other-cots-boards/xilinx/xpressvup
