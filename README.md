@@ -73,7 +73,7 @@ See examples of [supported development configurations](./doc#p8-development-envi
 The required tools and packages are listed below. Web access to github is recommended to follow the build instructions. A real FPGA card is not required for the plain hardware development.
 
 ### (a) Install Xilinx Vivado Design Suite: the tool to build and program the FPGA.
-SNAP currently supports Xilinx FPGA devices, exclusively. For synthesis, simulation model and FPGA/image build, the [Xilinx Vivado HL Design Edition 2018.1 tool suite](https://www.xilinx.com/products/design-tools/vivado.html) is recommended. Different **licenses** are available. Some licenses are limiting the components that can be used; check the FPGA you target. (CAPI1.0 cards use UltraScale family components and CAPI2.0 cards use UltraScale+ family components).
+SNAP currently supports Xilinx FPGA devices, exclusively. For synthesis, simulation model and FPGA/image build, the [Xilinx Vivado HL Design Edition 2018.1 tool suite](https://www.xilinx.com/support/download/index.html/content/xilinx/en/downloadNav/vivado-design-tools/archive.html) for CAPI1.0 boards and [Xilinx Vivado HL Design Edition 2019.2 tool suite](https://www.xilinx.com/support/download/index.html/content/xilinx/en/downloadNav/vivado-design-tools/2019-2.html) is recommended. Different **licenses** are available. Some licenses are limiting the components that can be used; check the FPGA you target. (CAPI1.0 cards use UltraScale family components and CAPI2.0 cards use UltraScale+ family components).
 This Design Suite includes a C synthesizer (Vivado HLS), a simulator (xsim), a synthesizer and FPGA/Image build tools (Vivado).
 
 ### (b) Download CAPI1.0 PSL or CAPI2.0 BSP: the "connection box" between the POWER server and the FPGA.
