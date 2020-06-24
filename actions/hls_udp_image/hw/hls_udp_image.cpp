@@ -22,11 +22,11 @@
 #include "snap_hls_if.h"
 
 #include <action_test.h>
-#include "action_pixel_filtering.h"
+#include <action_pixel_filtering.h>
 
 #include <hls_udp.h>
 #include <tiger.h>
-#include "bmp.c"
+#include <bmp.h>
 
 #define buff_size 130*64
 #define data_size 128*64

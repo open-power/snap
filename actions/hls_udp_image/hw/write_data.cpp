@@ -15,7 +15,7 @@
  */
 
 
-#include "hls_udp.h"
+#include <hls_udp.h>
 #include <unistd.h>
 #include "ap_int.h"
 #include "snap_hls_if.h"
