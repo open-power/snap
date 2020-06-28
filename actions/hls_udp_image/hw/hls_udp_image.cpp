@@ -84,11 +84,11 @@ void process_frames(AXI_STREAM &din_eth, AXI_STREAM &dout_eth, eth_settings_t et
 	static char buff[buff_size];
 	int nb = 0;
 
-	// read eth message into raw
+	// Read eth message into raw
 	#pragma HLS STREAM variable=raw depth=2048
 	read_eth_packet(din_eth, raw, eth_settings, eth_stat);
 
-	// push raw message into pixel_in stream
+	// Push raw message into pixel_in stream
     while (!raw.empty() ) {
 		packet = raw.read();
 		pixel = (char *)&packet.data;
@@ -98,7 +98,7 @@ void process_frames(AXI_STREAM &din_eth, AXI_STREAM &dout_eth, eth_settings_t et
 		}
     }
 
-    // read one pixel from pixel_in / transform pixel / write modified pixel into pixel_out stream
+    // Update pixel : read one pixel from pixel_in / transform pixel / write modified pixel into pixel_out stream
     nb = 0;
     while ( !pixel_in.empty()) {
     	tpixel.red = pixel_in.read();
@@ -111,11 +111,11 @@ void process_frames(AXI_STREAM &din_eth, AXI_STREAM &dout_eth, eth_settings_t et
 		nb++;
     }
 
-    // read pixel_out stream / build data_packet / write data_packet into packet and write into raw
+    // Build output eth packet : read pixel_out stream / build data_packet / write data_packet into packet and write into raw
     int i = 0;
     int packet_num = 1;
     nb = 0;
-    size_t taille  = pixel_out.size();
+    //size_t taille  = pixel_out.size();
     while( !pixel_out.empty() ) {
     	buff[i] = pixel_out.read();
     	i++;

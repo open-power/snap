@@ -38,10 +38,10 @@ endif
 
 # This is solution specific. Check if we can replace this by generics too.
 
-snap_udp_image: params.o bmp.o 
-snap_udp_image_objs = bmp.o params.o
+udp_client: params.o bmp.o 
+udp_client_objs = bmp.o params.o
 
-projs += snap_udp_image
+projs += udp_client
 
 # If you have the host code outside of the default snap directory structure, 
 # change to /path/to/snap/actions/software.mk
