@@ -34,9 +34,9 @@ typedef struct {
 STRparam;
 
 void usage(const char *prog);
-STRparam* readParams(int argc, char *argv[]);
+void readParams(int argc, char *argv[]);
 
-static STRparam parms;
+STRparam parms;
 	
 
 #endif	

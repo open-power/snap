@@ -95,9 +95,8 @@ static void snap_prepare_image_filter(struct snap_job *cjob,
         mjob->pixel_map_type = pixel_map_type;
 }
 
-static int call_FPGA_Action( BMPImage *Image, int card_no )
+static int call_FPGA_Action( int card_no )
 {
-	FILE *pFileOut = NULL;
 	uint8_t *actionBuff = NULL;
 	struct snap_action *action = NULL;
 	struct snap_job cjob;
@@ -105,27 +104,16 @@ static int call_FPGA_Action( BMPImage *Image, int card_no )
 	char device[128];
 	struct snap_card *card = NULL;
 	snap_action_flag_t action_irq = (SNAP_ACTION_DONE_IRQ | SNAP_ATTACH_IRQ);
-	//snap_action_flag_t action_irq  = 0;
 	void *addr_in = NULL, *addr_out = NULL;
-	uint32_t imageSize = Image->header.image_size_bytes;
-	uint32_t *input_data = (uint32_t *)Image->data;
 	uint32_t dataSize;
 	int rc =0;
 	unsigned long timeout = 6000;
 		
-
-
     //__hexdump(stdout, input_data, 200);
 
 	parms.type_in = SNAP_ADDRTYPE_HOST_DRAM;
-	dataSize = (imageSize / 64)*64+64;
-	// reading the first bytes of the pixel Map to check file size and first pixels values
-	actionBuff = snap_malloc(dataSize); //64Bytes aligned malloc  // adding 64 bytes to anticipate alignment
-	if (actionBuff == NULL)
-		exit(0);
-	memcpy ( actionBuff, input_data, dataSize);
-	addr_in = (void *)actionBuff;
-	
+	dataSize = 64;
+
 	// Allocate the card that will be used
 	snprintf(device, sizeof(device)-1, "/dev/cxl/afu%d.0s", card_no);
 	card = snap_card_alloc_dev(device, SNAP_VENDOR_ID_IBM,
@@ -165,13 +153,6 @@ static int call_FPGA_Action( BMPImage *Image, int card_no )
 	rc = snap_action_sync_execute_job(action, &cjob, timeout);
 	stop_chrono();
 
-	if (parms.output != NULL) {
-		pFileOut=fopen(parms.output, "w");
-		fwrite(Image, sizeof(Image->header), 1, pFileOut);
-		fwrite(addr_out, imageSize, 1, pFileOut);
-		fclose(pFileOut);
-	}
-
 	// Detach action + disallocate the card
 	snap_detach_action(action);
 	snap_card_free(card);
@@ -188,19 +169,11 @@ int main(int argc, char *argv[])
 {
 	// Init of all the default values used 
 	int rc = 0;
-	BMPImage *Image;
-	char filename[256];
-	char *error = NULL;
+	//char *error = NULL;
 	
 	readParams(argc, argv);
-	printf("input %s\n", parms.input);
-	printf("output %s\n", parms.output);
-	strcpy(filename, parms.input);
 	
-	Image = read_image(filename, &error);
-	printf("Bitmap size: %d\n",(int)Image->header.size);
-	
-	rc = call_FPGA_Action( Image, parms.card_no );
+	rc = call_FPGA_Action( parms.card_no );
 	
 	return(rc);
 }

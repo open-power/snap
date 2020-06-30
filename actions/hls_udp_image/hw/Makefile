@@ -37,9 +37,9 @@ endif
 endif
 
 # This is solution specific. Check if we can replace this by generics too.
-SOLUTION_NAME ?= hls_udp_image
-SOLUTION_DIR ?= hls_udp_image
-srcs +=bmp.c hls_udp_image.cpp write_data.cpp
+SOLUTION_NAME ?= hlsudpimage
+SOLUTION_DIR ?= hlsudpimage
+srcs += action_pixel_filter.cpp eth_decode.cpp bmp.cpp hls_udp_image.cpp write_data.cpp
 
 
 # If you have the action code outside of the default snap directory structure, 

@@ -9,8 +9,27 @@
 void usage(const char *prog)
 {
 	printf("Usage: %s [-h] \n"
-	"  -i, --input <file.bin>    input file.\n"
-	"  -o, --output <file.bin>   output file.\n", prog);
+	"  -C, --card <cardno>       can be (0...3)\n"
+        "\n"
+        "Useful parameters (to be placed before the command):\n"
+        "----------------------------------------------------\n"
+        "SNAP_TRACE=0x0   no debug trace  (default mode)\n"
+        "SNAP_TRACE=0xF   full debug trace\n"
+        "SNAP_CONFIG=FPGA hardware execution   (default mode)\n"
+        "SNAP_CONFIG=CPU  software execution\n"
+        "\n"
+        "Example on a real card:\n"
+        "-----------------------\n"
+        "cd ~/snap && export ACTION_ROOT=~/snap/actions/hls_udp_image\n"
+        "source snap_path.sh\n"
+        "echo locate the slot number used by your card\n"
+        "snap_find_card -v -AALL\n"
+        "echo discover the actions in card in slot 0\n"
+        "snap_maint -vv -C0\n"
+        "\n"
+        "echo Run the application + hardware action on FPGA\n"
+        "snap_udp_image -c 0\n"
+        "...\n"	, prog);
 }
 
 /* main program of the application for the hls_image_filter example        */
@@ -27,24 +46,20 @@ void  readParams(int argc, char *argv[])
 	while (1) {
 		int option_index = 0;
 		static struct option long_options[] = {
-			{ "input",	 required_argument, NULL, 'i' },
-			{ "output",	 required_argument, NULL, 'o' },
+			{ "card",	 required_argument, NULL, 'c' },
 			{ "help",	 no_argument,	    NULL, 'h' },
 			{ 0,		 no_argument,	    NULL, 0   },
 		};
 
 		ch = getopt_long(argc, argv,
-                                 "i:o::h",
+                                 "c:h",
 				 long_options, &option_index);
 		if (ch == -1)
 			break;
 
 		switch (ch) {
-		case 'i':
-			parms.input = optarg;
-			break;
-		case 'o':
-			parms.output = optarg;
+		case 'c':
+			parms.card_no = strtol(optarg, (char **)NULL, 0);
 			break;
 			/* input data */
 			break;

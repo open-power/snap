@@ -61,6 +61,7 @@ void make_packet(AXI_STREAM &stream, uint64_t frame_number, uint32_t eth_packet,
 
 	ap_axiu_for_eth packet_in;
 	ap_uint<512> *obuff;
+
 	for (int i = 0; i < 130; i++) {
 		if (i == 129) packet_in.last = 1;
 		else packet_in.last = 0;
@@ -81,11 +82,19 @@ void process_frames(AXI_STREAM &din_eth, AXI_STREAM &dout_eth, eth_settings_t et
 	data_packet_t packet;
 	char data_packet[64];
 	hls::stream<char> pixel_in, pixel_out;
-	static char buff[buff_size];
+	char buff[buff_size];
 	int nb = 0;
+
 
 	// Read eth message into raw
 	#pragma HLS STREAM variable=raw depth=2048
+
+	// add make packet on second port eth
+
+	// for test with simulator; comment theses 2 lines to use the debugger
+	eth_settings.expected_packets = 1;
+	make_packet(din_eth, 1, 1, (unsigned char *)tiger_map);
+
 	read_eth_packet(din_eth, raw, eth_settings, eth_stat);
 
 	// Push raw message into pixel_in stream
@@ -115,17 +124,20 @@ void process_frames(AXI_STREAM &din_eth, AXI_STREAM &dout_eth, eth_settings_t et
     int i = 0;
     int packet_num = 1;
     nb = 0;
-    //size_t taille  = pixel_out.size();
+
+
     while( !pixel_out.empty() ) {
     	buff[i] = pixel_out.read();
     	i++;
-    	if ( i == data_size ) {
+    	if ( i == data_size || pixel_out.empty()) {
     		make_packet(dout_eth, 1, packet_num, (uint8_t *)buff);
     		packet_num++;
     		i = 0;
     	}
     	nb++;
      }
+    //if ( i != data_size ) make_packet(dout_eth, 1, packet_num, (uint8_t *)buff);
+
 }
 
 //----------------------------------------------------------------------
@@ -145,7 +157,8 @@ static int process_action(snap_membus_t *din_gmem,
 	eth_settings_t eth_settings;
 	eth_settings.fpga_mac_addr = act_reg->Data.fpga_mac_addr;
 	eth_settings.fpga_ipv4_addr = act_reg->Data.fpga_ipv4_addr;
-	eth_settings.fpga_ipv4_addr = 0x0532010A;
+	//eth_settings.fpga_ipv4_addr = 0x0532010A;
+	eth_settings.fpga_ipv4_addr = 0xA013205;
 	eth_settings.expected_packets = act_reg->Data.packets_to_read;
 
 	eth_stat_t eth_stats;
@@ -153,7 +166,6 @@ static int process_action(snap_membus_t *din_gmem,
 	eth_stats.good_packets = 0;
 	eth_stats.ignored_packets = 0;
 
-	//process_frames(din_eth, eth_settings, eth_stats, dout_gmem, out_frame_buffer_addr);
 	process_frames(din_eth, dout_eth, eth_settings, eth_stats );
 
 	act_reg->Data.good_packets = eth_stats.good_packets;
@@ -261,59 +273,32 @@ static inline void __hexdump(FILE *fp, const void *buff, unsigned int size)
 int main(int argc, char *argv[]) {
 	snap_membus_t din_gmem[1024];
 	snap_membus_t *dout_gmem = 0;
-	int dsize;
-	BMPImage *Image;
-	char filename[256];
 	char *error = NULL;
-
-	void *out_frame_buffer = snap_malloc(16384);
-
-	// open and read bmp file
-	strcpy(filename, "/afs/vlsilab.boeblingen.ibm.com/proj/fpga/framework/cvermale/snap/actions/hls_udp_image/tests/images/001.bmp");
-	Image = read_image(filename, &error);
-	dsize = Image->header.size;
-	int rsize;
-	int packet_num;
-	printf("Bitmap size: %d\n",dsize);
-	char buff[data_size];
-
 	AXI_STREAM din_eth;
 	AXI_STREAM dout_eth;
 
-	// Build udp packet into din_eth with image data
-	int pos = 0;
-	rsize = dsize;
-	packet_num = 0;
-	while ( rsize >= 0 ) {
-		packet_num++;
-		if ( rsize > data_size ) memcpy(buff, &Image->data[pos], data_size);
-		else {
-			memcpy(buff, &Image->data[pos], rsize);
-		}
-		make_packet(din_eth, 1, packet_num, (unsigned char *)buff);
-		//make_packet(din_eth, 2, 2, (unsigned short *)&Image->data[4096]);
-		pos = pos + data_size;
-		rsize = rsize - data_size;
-	}
+	make_packet(din_eth, 1, 1, (unsigned char *)tiger_map);
+
+	void *out_frame_buffer = snap_malloc(16384);
+	printf("Input data size : %ld\n", din_eth.size());
 
 	// prepare snap settings
 	action_reg action_register;
 	action_RO_config_reg Action_Config;
 	//action_register.Data.packets_to_read = 1;
-	action_register.Data.packets_to_read = packet_num;
+	action_register.Data.packets_to_read = 1;
 	action_register.Control.flags = 1;
 	action_register.Data.fpga_mac_addr = 0xAABBCCDDEEF1;
-	action_register.Data.fpga_ipv4_addr = 0x0A013205; // 10.1.50.5
+	action_register.Data.fpga_ipv4_addr = 0xA013205; // 10.1.50.5
+	//action_register.Data.fpga_ipv4_addr = 0x0532010A;
 	action_register.Data.out_frame_buffer.addr = (uint64_t) out_frame_buffer;
 
-    printf("Bad packets %ld\n",action_register.Data.bad_packets);
-    printf("Ignored packets %ld\n",action_register.Data.ignored_packets);
-
-	hls_action(din_gmem, dout_gmem, din_eth, dout_eth, &action_register, &Action_Config);
+ 	hls_action(din_gmem, dout_gmem, din_eth, dout_eth, &action_register, &Action_Config);
 
     printf("Good packets %ld\n",action_register.Data.good_packets);
     printf("Bad packets %ld\n",action_register.Data.bad_packets);
     printf("Ignored packets %ld\n",action_register.Data.ignored_packets);
+    printf("Output data size : %ld\n", dout_eth.size());
 
 	return 0;
 }

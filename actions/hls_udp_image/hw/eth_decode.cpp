@@ -96,50 +96,6 @@ void decode_eth_2(ap_uint<512> val_in, packet_header_t &header_out) {
 	header_out.jf_header_version_type = val_in(208-1,200);
 }
 
-void send_gratious_arp(AXI_STREAM &out, ap_uint<48> mac, ap_uint<32> ipv4_address) {
-	ap_axiu_for_eth packet_out;
-	ap_uint<512> packet = 0;
-	packet(47,0) = 0xffffffffffff;
-
-	packet(48+7, 48) = mac(47,40);
-	packet(48+15, 48+8) = mac(39,32);
-	packet(48+23, 48+16) = mac(31,24);
-	packet(48+31, 48+24) = mac(23,16);
-	packet(48+39, 48+32) = mac(15,8);
-	packet(48+47, 48+40) = mac(7,0);
-
-	packet( 96+16, 96) = 0x0608; // 0x0806
-	ap_uint<32> eth_payload_pos = 14*8; // 112 bits
-	packet(eth_payload_pos + 15, eth_payload_pos) = 0x0100; // ETH = 0x0001
-	packet(eth_payload_pos + 31, eth_payload_pos + 16) = 0x0008; // IPv4 = 0x0800
-	packet(eth_payload_pos + 39, eth_payload_pos + 32) = 0x6;
-	packet(eth_payload_pos + 47, eth_payload_pos + 40) = 0x4;
-	packet(eth_payload_pos + 63, eth_payload_pos + 48) = 0x0100; // 1 = request
-	ap_uint<32> arp_sha_pos = eth_payload_pos + 8*8;
-
-	packet(arp_sha_pos + 7,  arp_sha_pos )     = mac(47,40);
-	packet(arp_sha_pos + 15, arp_sha_pos + 8)  = mac(39,32);
-	packet(arp_sha_pos + 23, arp_sha_pos + 16) = mac(31,24);
-	packet(arp_sha_pos + 31, arp_sha_pos + 24) = mac(23,16);
-	packet(arp_sha_pos + 39, arp_sha_pos + 32) = mac(15, 8);
-	packet(arp_sha_pos + 47, arp_sha_pos + 40) = mac( 7, 0);
-
-	ap_uint<32> arp_spa_pos = arp_sha_pos + 6*8;
-
-	packet(arp_spa_pos + 7,  arp_spa_pos )     = ipv4_address(31,24);
-	packet(arp_spa_pos + 15, arp_spa_pos + 8)  = ipv4_address(23,16);
-	packet(arp_spa_pos + 23, arp_spa_pos + 16) = ipv4_address(15, 8);
-	packet(arp_spa_pos + 31, arp_spa_pos + 24) = ipv4_address( 7, 0);
-
-	packet_out.data = packet;
-	packet_out.last = 1;
-	packet_out.keep = 0xFFFFFFFFFFFFFFFF;
-	packet_out.user = 0;
-
-	out << packet_out;
-
-}
-
 void read_eth_packet(AXI_STREAM &in, DATA_STREAM &out, eth_settings_t eth_settings, eth_stat_t &eth_stat) {
 //TODO: ARP + ICMP would be nice
 	rcv_state_t rcv_state = RCV_INIT;
@@ -162,7 +118,8 @@ void read_eth_packet(AXI_STREAM &in, DATA_STREAM &out, eth_settings_t eth_settin
 		case RCV_INIT:
 			decode_eth_1(packet_in.data, header);
 			// UDP port is not checked - should it be as well?
-			if ((header.dest_mac == eth_settings.fpga_mac_addr) && // MAC address
+			//if ((header.dest_mac == eth_settings.fpga_mac_addr) && // MAC address
+			if ((header.ipv4_dest_ip == eth_settings.fpga_ipv4_addr) && // MAC address
 					(header.ether_type == 0x0800) && // IP
 					(header.ip_version == 4) && // IPv4
 					(header.ipv4_protocol == 0x11) && // UDP

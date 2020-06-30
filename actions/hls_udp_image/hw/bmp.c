@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <string.h>  // for strlen, strcopy
 #include <stdlib.h>  // for malloc
-#include <bmp.h>
+#include "../include/bmp.h"
 
 // Correct values for the header
 #define MAGIC_VALUE         0x4D42 
