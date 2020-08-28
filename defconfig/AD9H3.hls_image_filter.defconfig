@@ -31,6 +31,7 @@ NUM_OF_ACTIONS=1
 # HDL_EXAMPLE is not set
 # HLS_ACTION is not set
 # HLS_HELLOWORLD is not set
+# HLS_MEMCOPY is not set
 # HLS_HBM_MEMCOPY is not set
 # HLS_SPONGE is not set
 # HLS_HASHJOIN is not set
