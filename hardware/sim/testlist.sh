@@ -157,10 +157,10 @@
         "1014100b") a1="hls_decimal_mult";;
         "1014100c") a1="hls_scatter_gather";;
         "1014100d") a1="hls_image_filter";;
-        "1014100e") a0="hls_vector_generator";;
-        "1014100f") a0="hls_parallel_memcpy";;
-        "10141010") a0="hls_hbm_memcopy";;
-        "10141011") a0="hls_udp";;
+        "1014100e") a1="hls_vector_generator";;
+        "1014100f") a1="hls_parallel_memcpy";;
+        "10141010") a1="hls_hbm_memcopy";;
+        "10141011") a1="hls_udp";;
         *) echo "unknown action1 type=$t1l, exiting";exit 1;;
       esac; echo "action0 type1s=$t1s type1l=$t1l $a1"
       t="snap_peek 0x188       ";   r=$($t|grep ']'|awk '{print $2}');echo -e "$t result=$r # action1 counter reg"

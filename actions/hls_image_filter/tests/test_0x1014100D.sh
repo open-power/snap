@@ -72,7 +72,7 @@ if [ -z "$SNAP_CONFIG" ]; then
 	echo
 fi
 
-#### HLS8IMAGE_FILTER ##########################################################
+#### HLS_IMAGE_FILTER ##########################################################
 
 function test_image_filter {
     local file_in=$1
