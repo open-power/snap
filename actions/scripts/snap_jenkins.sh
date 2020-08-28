@@ -116,9 +116,9 @@ function test_all_actions() # $1 = card, $2 = accel
 		*"1014100c") # HLS Scatter Gather
 			cmd="./actions/hls_scatter_gather/tests/test_0x1014100C.sh"
 		;;
-                *"1014100d") # HLS Image Filter
-                        cmd="./actions/hls_image_filter/tests/test_0x1014100D.sh
-                ;;
+		*"1014100d") # HLS Image Filter
+			cmd="./actions/hls_image_filter/tests/test_0x1014100D.sh"
+		;;		
 		*"1014100e") # HLS Vector generator
 			cmd="./actions/hls_vector_generator/tests/test_0x1014100E.sh"
 		;;
