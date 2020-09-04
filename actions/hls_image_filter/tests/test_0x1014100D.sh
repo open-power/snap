@@ -33,7 +33,7 @@ function usage() {
     echo "  test_<action_type>.sh"
     echo "    [-C <card>] card to be used for the test"
     echo "    [-t <trace_level>]"
-    echo "    [-duration SHORT/NORMAL/LONG] run tests"
+    echo "    [-d SHORT/NORMAL] run tests"
     echo
 }
 
@@ -72,17 +72,18 @@ if [ -z "$SNAP_CONFIG" ]; then
 	echo
 fi
 
-#### HLS_UDP ##########################################################
+#### HLS_IMAGE_FILTER ##########################################################
 
 function test_image_filter {
-    local size=$1
+    local file_in=$1
+    local file_out=$2
 
 
-    echo  "Executing action_test hls_image_filter"
-    echo  "converting image: ${ACTION_ROOT}/sw/tiger.bmp"
-    echo  "resulting image:  ${ACTION_ROOT}/sw/tiger_new.bmp"
+    echo  "Executing action_test snap_image_filter"
+    echo  "converting image: ${file_in}"
+    echo  "resulting image:  ${file_out}"
 
-    cmd="snap_image_filter -i ${ACTION_ROOT}/sw/tiger.bmp -o ${ACTION_ROOT}/sw/tiger_new.bmp -C ${snap_card}  >> hls_image_filter.log 2>&1"
+    cmd="snap_image_filter -i ${file_in} -o ${file_out} -C ${snap_card}  >> hls_image_filter.log 2>&1"
     eval ${cmd}
 
     if [ $? -ne 0 ]; then
@@ -97,9 +98,11 @@ function test_image_filter {
 rm -f hls_image_filter.log
 touch hls_image_filter.log
 
-if [ "$duration" = "NORMAL" ]; then
-  test_image_filter
-  fi
+if [ "$duration" = "SHORT" ]; then
+  test_image_filter ${ACTION_ROOT}/sw/tiger_small.bmp ${ACTION_ROOT}/sw/tiger_small_new.bmp
+else
+  test_image_filter ${ACTION_ROOT}/sw/tiger.bmp ${ACTION_ROOT}/sw/tiger_new.bmp
+fi
 
 rm -f *.bin *.bin *.out
 echo -e "\nTest OK\n"

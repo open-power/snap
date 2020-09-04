@@ -433,9 +433,11 @@ cloud_merge: allow_cloud_merge $(SNAP_BASE_DCP) $(SNAP_ACTION_DCP)
 	@cd $(BUILD_DIR) && vivado -quiet -mode batch -source $(SETUP_DIR)/snap_cloud_merge.tcl -notrace -log $(LOGS_DIR)/snap_cloud_merge.log -journal $(LOGS_DIR)/snap_cloud_merge.jou
 	@echo -e "[CLOUD MERGE ........] done  `date +"%T %a %b %d %Y"`"
 
+# Add DEBUG=1 (before -C) in make pslse line to get more details from PSLSE
 pslse: prepare_logs
 	@echo -e "[COMPILE PSLSE ......] start `date +"%T %a %b %d %Y"`"
 	@$(SNAP_ROOT)/check_pslse.sh > $(LOGS_DIR)/compile_pslse.log 2>&1
+#        @$(MAKE) DEBUG=1 -C $(PSLSE_ROOT) >> $(LOGS_DIR)/compile_pslse.log 2>&1; \
 	@$(MAKE) -C $(PSLSE_ROOT) >> $(LOGS_DIR)/compile_pslse.log 2>&1; \
 	if [ $$? -ne 0 ]; then echo -e "                        Error: please look into $(LOGS_DIR)/compile_pslse.log"; exit -1; fi
 	@echo -e "[COMPILE PSLSE ......] done  `date +"%T %a %b %d %Y"`"
