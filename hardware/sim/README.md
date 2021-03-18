@@ -1,3 +1,5 @@
+# Beginners, make sure you have read the User's Guide at [snap/doc/UG_CAPI_SNAP-QuickStart_on_a_General_Environment.pdf](../../doc/UG_CAPI_SNAP-QuickStart_on_a_General_Environment.pdf) 
+
 # Simulation
 SNAP supports *Xilinx xsim* and *Cadence irun or xcelium* tools for simulation.
 Other simulators like Mentor Modelsim or questa are supported by the respective Xilinx Vivado version and can be used as well, 
@@ -30,9 +32,9 @@ and the PSL functionality is replaced by the PSL simulation environment (PSLSE),
 
 You may clone `PSLSE` from github [https://github.com/ibm-capi/pslse](https://github.com/ibm-capi/pslse).
 Starting with March 1st 2018, the 'master' branch in PSLSE supports both PSL functions for POWER8 or POWER9,
-but you have to specify which version you need with the environment variable PSLVER=8 or PSLVER=9.
+The proper version is set when you configure your environment `make snap_config` and depends on your card choice. The environment variable is set to PSLVER=8 or PSLVER=9 in snap_env.sh file.
 
-The simulation runtime script 'run_sim' will
+After `make snap_config` configuration step you are invited to run `make model`to prepare the model or directly `make sim`to prepare the model and launch the simulation. Automatically launched simulation runtime script `run_sim` will
 ```
 * start the hardware simulator and load the SNAP framework+action simulation model
 * start the PSLSE behavioral simulator and connect it to the hardware simulator
@@ -43,7 +45,7 @@ In order to enable SNAP's build and simulation process to make use of `PSLSE`,
 the variable `PSLSE_ROOT` (defined in `${SNAP_ROOT}/snap_env.sh`) needs to point to the directory containing the github pslse clone.
 ```
  export PSLSE_ROOT=             # path for the PSL simulation environment
- export PSLVER=                 # PSLSE functionality for POWER8 or POWER9
+ export PSLVER=                 # PSLSE functionality for POWER8 or POWER9 Automatically set by configuration step depends on card choice
  export PSL_DCP=                # path to the PSL checkpoint fitting your target card. For Simulation this is not needed and usually commented out
 ```
 
@@ -83,11 +85,11 @@ export DENALI=                                      # Cadence DENALI tools path 
 ```
 
 ## Running simulation
-You may kick off simulation by calling `make sim` from the SNAP root directory.
+After having run the configuration step with `make snap_config`, you may kick off simulation by calling `make sim` from the SNAP root directory.
 This will start the simulation and then open an xterm window from which the simulation can be controlled interactively.
 
 For the VHDL based example 'hdl_example' you may then execute the example application
-`snap_example` contained in [snap/actions/hdl_example/sw](../actions/hdl_example/sw).
+`snap_example` contained in [snap/actions/hdl_example/sw](../../actions/hdl_example/sw).
 Calling this application with option `-h` will present usage informations.
 
 If you want to run automated from a test list, you can call the simulation script `run_sim` with additional arguments instead.
@@ -104,15 +106,15 @@ This means, that PSLSE&sim only runs, as long as the app/list/xterm is avail.
 If you start an app in the xterm and cntl-C it without exiting from the xterm, the simulation keeps running.
 
 ## card and action settings
-Currently supported are AlphaData KU3 and 8K5, Nallatech 250S and 250S+, Semptian NSA121B
+Check https://github.com/open-power/snap/#31-fpga-card-selection for cards supported
 
-Regression tests are in place for the following cards:
+Regression tests are in place at least for the following cards:
 ```
-card         ADKU3      AD8K5      N250S      N250SP     S121B          # set with
-system       POWER8     POWER8     POWER8     POWER9     POWER8         #
-memory_avail DDR3/BRAM  DDR4/BRAM  DDR4/BRAM  DDR4/BRAM  DDR4/BRAM      # SDRAM_USED, BRAM_USED
-NVMe         no         no         yes        no         no             # NVME_USED=TRUE
-cloud access yes        no         partial    no         no             # not avail yet for NVMe
+card         ADKU3      AD8K5      N250S      S121B          CAPI2      # set with
+system       POWER8     POWER8     POWER8     POWER8         POWER9     #
+memory_avail DDR3/BRAM  DDR4/BRAM  DDR4/BRAM  DDR4/BRAM      DDR4/BRAM  # SDRAM_USED, BRAM_USED
+NVMe         no         no         yes        no             no         # NVME_USED=TRUE
+cloud access yes        no         partial    no             no         # not avail yet for NVMe
 ```
 Depending on the used memory, the card and framework can be combined with the following actions (one action only):
 ```
