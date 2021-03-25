@@ -116,15 +116,16 @@ Notes :
 
 ### P9 CAPI(2.0) Deployment environment (Bare Metal IBM server examples supporting CAPI SNAP) :
 
-|             MTM            | PowerLinux| PCIeGen4x8 for CAPI   | PCIeGen4x16 for CAPI
-|:--------------------------:|:----------|:----------------------|:--------------------
-| 8335-GTH(air cooled)       |Power AC922| 1 (Slot 2 P1-C4)      | 2 (Slot 3 P1-C3, Slot 4 P1-C2)
-| 8335-GTX(water cooled)     |Power AC922| 1 (Slot 2 P1-C4)      | 2 (Slot 3 P1-C3, Slot 4 P1-C2)
-| 9006-12P - 1 proc/1U       |Power LC921| 1 (UIO Slot1)Internal | 0
-| 9006-12P - 2 proc/1U       |Power LC921| 1 (UIO Slot1)Internal | 2 (WIO Slot1 - WIO Slot2)
-| 9006-22P - 1 proc/2U       |Power LC922| 0                     | 1 (UIO Slot1)
-| 9006-22P - 2 proc/2U       |Power LC922| 1 (WIO Slot4)         | 2 (UIO Slot1 - WIO Slot3)
-| ........                   |.....      |                       |
+|             MTM            | PowerLinux| PCIeGen4x8 for CAPI   | PCIeGen4x16 for CAPI          | PCIeGen3x16 for CAPI 
+|:--------------------------:|:----------|:----------------------|:------------------------------|:--------------------
+| 8335-GTH(air cooled)       |Power AC922| 1 (Slot 2 P1-C4)      | 2 (Slot 3 P1-C3, Slot 4 P1-C2)|
+| 8335-GTX(water cooled)     |Power AC922| 1 (Slot 2 P1-C4)      | 2 (Slot 3 P1-C3, Slot 4 P1-C2)|
+| 9006-12P - 1 proc/1U       |Power LC921| 1 (UIO Slot1)Internal | 0                             |
+| 9006-12P - 2 proc/1U       |Power LC921| 1 (UIO Slot1)Internal | 2 (WIO Slot1 - WIO Slot2)     |
+| 9006-22P - 1 proc/2U       |Power LC922| 0                     | 1 (UIO Slot1)                 |
+| 9006-22P - 2 proc/2U       |Power LC922| 1 (WIO Slot4)         | 2 (UIO Slot1 - WIO Slot3)     |
+| 9183-22X - 2 proc/2U       |Power IC922| 0                     | 2                             | 2
+| ........                   |.....      |                       |                               |
 
 ### P9 OpenCAPI(3.0) Deployment environment :
 
