@@ -15,7 +15,9 @@
 # limitations under the License.
 #
 
-version=1.0
+version=1.1   
+# 1.0 : Creation
+# 1.1 : adding Vitis_hls support - March 2021
 program=`basename "$0"`
 
 # output formatting
@@ -103,13 +105,15 @@ done
 shift $((OPTIND-1))
 # now do something with $@
 
+if [ -z $HLS_VITIS_USED ]; then
+	printf "   HLS_VITIS_USED is not set\n" >&2;
+
 #### TCL config script for vivado_hls #########################################
 cat <<EOF
 open_project "${directory}_${part_number}"
 
 set_top ${wrapper}
 
-# Can that be a list?
 foreach file [ list ${files} ] {
   add_files \${file} -cflags "$cflags -I$snap_root/actions/include -I$snap_root/software/include -I../../../software/examples -I../include"
   add_files -tb \${file} -cflags "$cflags -DNO_SYNTH -I$snap_root/actions/include -I$snap_root/software/include -I../../../software/examples -I../include"
@@ -126,3 +130,32 @@ csynth_design
 #export_design -format ip_catalog -rtl vhdl
 exit
 EOF
+
+#### End of TCL config script for vivado_hls #########################################
+
+else
+if [ "X${HLS_VITIS_USED}" == "XTRUE" ]; then 
+    printf "   HLS_VITIS_USED is TRUE\n" >&2;
+    #### TCL config script for vitis_hls #########################################
+cat <<EOF
+open_project "${directory}_${part_number}"
+set_top ${wrapper}
+
+foreach file [ list ${files} ] {
+  add_files \${file} -cflags "$cflags -DHLS_VITIS_USED -I$snap_root/actions/include -I$snap_root/software/include -I../../../software/examples -I../include"
+  add_files -tb \${file} -cflags "$cflags -DHLS_VITIS_USED -DNO_SYNTH -I$snap_root/actions/include -I$snap_root/software/include -I../../../software/examples -I../include"
+}
+	open_solution -flow_target vivado "${name}"
+set_part ${part_number}
+create_clock -period ${clock_period} -name default
+config_interface -m_axi_addr64=true
+#config_rtl -reset all -reset_level low
+config_schedule -enable_dsp_full_reg=true
+csynth_design
+#export_design -format ip_catalog -rtl vhdl
+exit
+EOF
+#### End of TCL config script for vitis_hls #########################################
+
+fi
+fi

@@ -250,7 +250,11 @@ void hls_action(snap_membus_t *din_gmem,
 	// Host Memory AXI Lite Master Interface - NO CHANGE BELOW
 #pragma HLS DATA_PACK variable=Action_Config
 #pragma HLS INTERFACE s_axilite port=Action_Config bundle=ctrl_reg offset=0x010
-#pragma HLS DATA_PACK variable=act_reg
+#ifdef HLS_VITIS_USED
+       #pragma HLS AGGREGATE variable=act_reg
+#else
+       #pragma HLS DATA_PACK variable=act_reg
+#endif
 #pragma HLS INTERFACE s_axilite port=act_reg bundle=ctrl_reg offset=0x100
 #pragma HLS INTERFACE s_axilite port=return bundle=ctrl_reg
 

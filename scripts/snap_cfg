@@ -108,6 +108,18 @@ cp $config $snap_config
 cat $snap_config | sed 's/^\([^#].*\)/export \1/' | tr -d '"' > $snap_config_sh
 chmod +x $snap_config_sh
 cat $snap_config | tr -d '"' | sed 's/^\([^#].*\)/SNAP_CFLAGS += "-DCONFIG_\1"/' > $snap_config_cflags
+
+#Starting with Vivado 2020.2 vivado_hls is replaced by vitis_hls
+hls_support=`grep HLS_SUPPORT $snap_config|grep TRUE`
+Vivado_Major_release=`vivado -version |grep Vivado| cut -d'(' -f1|tr -d "Vivado "|cut -d '.' -f1`
+Vivado_Minor_release=`vivado -version |grep Vivado| cut -d'(' -f1|tr -d "Vivado "|cut -d '.' -f2`
+if [ $Vivado_Major_release -ge 2020 ] && [ $hls_support != "" ]; then
+  if [ $Vivado_Minor_release -gt 1 ]; then
+      echo "export HLS_VITIS_USED=TRUE" >> $snap_config_sh
+      echo "SNAP_CFLAGS += \"-DCONFIG_HLS_VITIS_USED=TRUE\"" >> $snap_config_cflags
+  fi
+fi
+
 echo "Generation of SNAP config files done."
 echo
 
