@@ -1463,7 +1463,8 @@ module top (
   // 8Gb x16: CAPI1.0: N250S  -- CAPI2.0: N250SP - FX609 - RCXVUP //
   //////////////////////////////////////////////////////////////////
 #ifdef CONFIG_FX609
-  ddr4_dimm_fx609 ddr4_dimm_fx609 (
+  //4/26/21: call wrapper to circumvent a xsim issue with vivado 2019.2 and later
+  ddr4_dimm_fx609_wrapper ddr4_dimm_fx609 (
     .sys_reset              (~sys_reset_n_q),
     .c0_ddr4_act_n          (c0_ddr4_act_n),
     .c0_ddr4_adr            (c0_ddr4_adr),
@@ -1482,7 +1483,8 @@ module top (
     );
 #else
 #ifdef CONFIG_S241
-  ddr4_dimm_s121b ddr4_dimm_s121b (
+  //4/26/21: call wrapper to circumvent a xsim issue with vivado 2019.2 and later
+  ddr4_dimm_s121b_wrapper ddr4_dimm_s121b (
     .sys_reset              (~sys_reset_n_q),
     .c0_ddr4_act_n          (c0_ddr4_act_n),
     .c0_ddr4_adr            (c0_ddr4_adr),
@@ -1501,7 +1503,8 @@ module top (
     );
 #else
 #ifdef CONFIG_AD9V3
-  ddr4_dimm_s121b ddr4_dimm_s121b (
+  //4/26/21: call wrapper to circumvent a xsim issue with vivado 2019.2 and later
+  ddr4_dimm_s121b_wrapper ddr4_dimm_s121b (
     .sys_reset              (~sys_reset_n_q),
     .c0_ddr4_act_n          (c0_ddr4_act_n),
     .c0_ddr4_adr            (c0_ddr4_adr),
@@ -1520,7 +1523,8 @@ module top (
     );
 #else
 #ifdef CONFIG_U200
-  ddr4_dimm_u200 ddr4_dimm_u200 (
+  //4/26/21: call wrapper to circumvent a xsim issue with vivado 2019.2 and later
+  ddr4_dimm_u200_wrapper ddr4_dimm_u200 (
     .sys_reset              (~sys_reset_n_q),
     .c0_ddr4_act_n          (c0_ddr4_act_n),
     .c0_ddr4_adr            (c0_ddr4_adr),
@@ -1537,7 +1541,8 @@ module top (
     .c0_ddr4_dqs_t          (c0_ddr4_dqs_t)
     );
 #else
-  ddr4_dimm ddr4_dimm (
+  //4/26/21: call wrapper to circumvent a xsim issue with vivado 2019.2 and later
+  ddr4_dimm_wrapper ddr4_dimm (
     .sys_reset              (~sys_reset_n_q),
     .c0_ddr4_act_n          (c0_ddr4_act_n),
     .c0_ddr4_adr            (c0_ddr4_adr),

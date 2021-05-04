@@ -185,42 +185,56 @@ if { $simulator != "nosim" } {
   if { (($fpga_card == "N250S") || ($fpga_card == "N250SP") || ($fpga_card == "RCXVUP")) && ($sdram_used == "TRUE") } {
     add_files    -fileset sim_1 -norecurse -scan_for_includes $ip_dir/ddr4sdram_ex/imports/ddr4_model.sv  >> $log_file
     add_files    -fileset sim_1 -norecurse -scan_for_includes $sim_dir/core/ddr4_dimm.sv  >> $log_file
+    #4/26/21: add following line to circumvent a xsim issue with vivado 2019.2 and later
+    add_files    -fileset sim_1 -norecurse -scan_for_includes $sim_dir/core/ddr4_dimm_wrapper.vhd  >> $log_file
     set_property used_in_synthesis false           [get_files $sim_dir/core/ddr4_dimm.sv]
   }
   # DDR4 Sim Files
   if { ($fpga_card == "FX609") && ($sdram_used == "TRUE") } {
     add_files    -fileset sim_1 -norecurse -scan_for_includes $ip_dir/ddr4sdram_ex/imports/ddr4_model.sv  >> $log_file
     add_files    -fileset sim_1 -norecurse -scan_for_includes $sim_dir/core/ddr4_dimm_fx609.sv  >> $log_file
+    #4/26/21: add following line to circumvent a xsim issue with vivado 2019.2 and later
+    add_files    -fileset sim_1 -norecurse -scan_for_includes $sim_dir/core/ddr4_dimm_fx609_wrapper.vhd  >> $log_file
     set_property used_in_synthesis false           [get_files $sim_dir/core/ddr4_dimm_fx609.sv]
   }
   # DDR4 Sim Files
   if { ($fpga_card == "S241") && ($sdram_used == "TRUE") } {
     add_files    -fileset sim_1 -norecurse -scan_for_includes $ip_dir/ddr4sdram_ex/imports/ddr4_model.sv  >> $log_file
     add_files    -fileset sim_1 -norecurse -scan_for_includes $sim_dir/core/ddr4_dimm_s121b.sv  >> $log_file
+    #4/26/21: add following line to circumvent a xsim issue with vivado 2019.2 and later
+    add_files    -fileset sim_1 -norecurse -scan_for_includes $sim_dir/core/ddr4_dimm_s121b_wrapper.vhd  >> $log_file
     set_property used_in_synthesis false           [get_files $sim_dir/core/ddr4_dimm_s121b.sv]
   }
   # DDR4 Sim Files
   if { ($fpga_card == "U200") && ($sdram_used == "TRUE") } {
     add_files    -fileset sim_1 -norecurse -scan_for_includes $ip_dir/ddr4sdram_ex/imports/ddr4_model.sv  >> $log_file
     add_files    -fileset sim_1 -norecurse -scan_for_includes $sim_dir/core/ddr4_dimm_u200.sv  >> $log_file
+    #4/26/21: add following line to circumvent a xsim issue with vivado 2019.2 and later
+    add_files    -fileset sim_1 -norecurse -scan_for_includes $sim_dir/core/ddr4_dimm_u200_wrapper.vhd  >> $log_file
     set_property used_in_synthesis false           [get_files $sim_dir/core/ddr4_dimm_u200.sv]
   }
   # DDR4 Sim Files
   if { ($fpga_card == "S121B") && ($sdram_used == "TRUE") } {
     add_files    -fileset sim_1 -norecurse -scan_for_includes $ip_dir/ddr4sdram_ex/imports/ddr4_model.sv  >> $log_file
     add_files    -fileset sim_1 -norecurse -scan_for_includes $sim_dir/core/ddr4_dimm_s121b.sv  >> $log_file
+    #4/26/21: add following line to circumvent a xsim issue with vivado 2019.2 and later
+    add_files    -fileset sim_1 -norecurse -scan_for_includes $sim_dir/core/ddr4_dimm_s121b_wrapper.vhd  >> $log_file
     set_property used_in_synthesis false           [get_files $sim_dir/core/ddr4_dimm_s121b.sv]
   }
   # DDR4 Sim Files
   if { ($fpga_card == "AD8K5") && ($sdram_used == "TRUE") } {
     add_files    -fileset sim_1 -norecurse -scan_for_includes $ip_dir/ddr4sdram_ex/imports/ddr4_model.sv  >> $log_file
     add_files    -fileset sim_1 -norecurse -scan_for_includes $sim_dir/core/ddr4_dimm_ad8k5.sv  >> $log_file
+    #4/26/21: add following line to circumvent a xsim issue with vivado 2019.2 and later
+    add_files    -fileset sim_1 -norecurse -scan_for_includes $sim_dir/core/ddr4_dimm_ad8k5_wrapper.vhd  >> $log_file
     set_property used_in_synthesis false           [get_files $sim_dir/core/ddr4_dimm_ad8k5.sv]
   }
   # DDR4 Sim Files
   if { ($fpga_card == "AD9V3") && ($sdram_used == "TRUE") } {
     add_files    -fileset sim_1 -norecurse -scan_for_includes $ip_dir/ddr4sdram_ex/imports/ddr4_model.sv  >> $log_file
     add_files    -fileset sim_1 -norecurse -scan_for_includes $sim_dir/core/ddr4_dimm_s121b.sv  >> $log_file
+    #4/26/21: add following line to circumvent a xsim issue with vivado 2019.2 and later
+    add_files    -fileset sim_1 -norecurse -scan_for_includes $sim_dir/core/ddr4_dimm_s121b_wrapper.vhd  >> $log_file
     set_property used_in_synthesis false           [get_files $sim_dir/core/ddr4_dimm_s121b.sv]
   }
   # NOTE U50, AD9H3 & AD9H7 have no DDR attached, use HBM instead

@@ -1030,7 +1030,8 @@ module top (
  /////////////////////////////////////////////////////////////
   // DDR4 DIMM INSTANCE                                     //
   ////////////////////////////////////////////////////////////
-  ddr4_dimm ddr4_dimm (
+  //4/26/21: call wrapper to circumvent a xsim issue with vivado 2019.2 and later
+  ddr4_dimm_wrapper ddr4_dimm (
     .sys_reset              (~sys_reset_n_q),
     .c0_ddr4_act_n          (c0_ddr4_act_n),
     .c0_ddr4_adr            (c0_ddr4_adr),
@@ -1049,7 +1050,8 @@ module top (
     );
 #endif
 #if defined(CONFIG_ENABLE_DDR4) && defined(CONFIG_S121B)
-  ddr4_dimm_s121b ddr4_dimm_s121b (
+  //4/26/21: call wrapper to circumvent a xsim issue with vivado 2019.2 and later
+  ddr4_dimm_s121b_wrapper ddr4_dimm_s121b (
     .sys_reset              (~sys_reset_n_q),
     .c0_ddr4_act_n          (c2_ddr4_act_n),
     .c0_ddr4_adr            (c2_ddr4_adr),
@@ -1068,7 +1070,8 @@ module top (
     );
 #endif
 #if defined(CONFIG_ENABLE_DDR4) && defined(CONFIG_AD8K5)
-  ddr4_dimm_ad8k5 ddr4_dimm_ad8k5 (
+  //4/26/21: call wrapper to circumvent a xsim issue with vivado 2019.2 and later
+  ddr4_dimm_ad8k5_wrapper ddr4_dimm_ad8k5 (
     .sys_reset              (~sys_reset_n_q),
     .c0_ddr4_act_n          (c0_ddr4_act_n),
     .c0_ddr4_adr            (c0_ddr4_adr),
